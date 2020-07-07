@@ -1,1 +1,1 @@
-# verify_popularity_FbPages
+# Social Media Monitor extension
