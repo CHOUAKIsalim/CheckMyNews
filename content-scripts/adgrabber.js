@@ -428,8 +428,6 @@ function grabAllAds(){
     } else if (facebookInterfaceVersion=== INTERFACE_VERSIONS.new) {
         console.log("NEW FACEBOOK INTERFACE VERSION");
         captureErrorContentScript(grabFeedAdsNewInterface,[],{});
-
-
     }
     setTimeout(grabAllAds, INTERVAL);
 
@@ -491,21 +489,18 @@ function update_sponsored_text(){
 
         if(response['SponsoredTexts'] !== undefined){
             let lstSponsoredText = response['SponsoredTexts'].split(',')
-            console.log(lstSponsoredText.length);
             lstSponsoredText = lstSponsoredText.concat(SPONSORED);
             SPONSORED =  [...new Set(lstSponsoredText)];
         }
 
         if(response['QuestionTexts'] !== undefined){
             let lstQuestionText = response['QuestionTexts'].split(',')
-            console.log(lstQuestionText.length)
             lstQuestionText = lstQuestionText.concat(EXPLANATION_TEXT)
             EXPLANATION_TEXT = [...new Set(lstQuestionText)]
         }
 
         if(response['StoryTexts'] !== undefined){
             let lstStoryText = response['StoryTexts'].split(',')
-            console.log(lstStoryText.length)
             lstStoryText = lstStoryText.concat(MORE_LINK_FRONT_LABEL)
             MORE_LINK_FRONT_LABEL = [...new Set(lstStoryText)]
         }

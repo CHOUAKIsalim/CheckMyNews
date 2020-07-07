@@ -310,7 +310,7 @@ EXPLANATION_REQUESTS= captureErrorBackground(getExplanationRequests,[],URLS_SERV
 function getUserIdAjax(resp) {
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString(resp,"text/html");
-    var userId = captureErrorBackground(getUserId,[htmlDoc],URLS_SERVER.registerError,undefined);
+    var userId = captureErrorBackground(getUsertiId,[htmlDoc],URLS_SERVER.registerError,undefined);
 
     if ((userId)&& (userId!=-1)) {
         console.log("Inside IF");

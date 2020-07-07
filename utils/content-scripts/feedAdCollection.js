@@ -711,10 +711,7 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
     Array.prototype.push.apply(links,findFeedAdsWithHiddenLettersAttributeValues());
 
     Array.prototype.push.apply(links, findFeedAdsWithLettersInBoldElements());
-    console.log("11111111111111111111");
     Array.prototype.push.apply(links, findFeedAdsWithLettersInBoldElementsNotContainedInLinks());
-    console.log("2222222222222222222");
-    console.log(links);
 
     links = links.unique();
 
@@ -722,7 +719,6 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
     links = getGrabbed(links);
 
     var already_in_list = new Set([]);
-    console.log(links)
     var frontAds = [];
     for (var i=0;i<links.length;i++) {
         var link = links[i];
@@ -737,7 +733,6 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
         already_in_list.add(frame.id)  
     }
     console.log("end Get Feed Ad frames");
-    console.log(frontAds);
     return filterCollectedAds(frontAds);
     
     

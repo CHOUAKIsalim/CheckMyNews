@@ -38,9 +38,11 @@ var loveColor = "rgb(243, 62, 88)";
 var hahaColor = "rgb(247, 177, 37)"; // Same for haha Wow and Sad
 var angryColor = "rgb(233, 113, 15)";
 
+
 var isOnMessaging = false;
 var POST_QUEUE= {};
 
+var Ad_Visible_INTERVAL = 2000;
 
 
 var lastScrolledTs = 0;
@@ -326,7 +328,7 @@ function checkAdVisibleDuration() {
         
         }
     }
-    setTimeout(checkAdVisibleDuration, INTERVAL);
+    setTimeout(checkAdVisibleDuration, Ad_Visible_INTERVAL);
 }
 
 
