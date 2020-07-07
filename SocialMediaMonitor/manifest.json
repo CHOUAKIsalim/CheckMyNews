@@ -1,0 +1,104 @@
+{
+  "name": "Social Media Monitor",
+  "version": "0.0.0.6",
+  "manifest_version": 2,
+  "description": "__MSG_extensionDesc__",
+  "default_locale": "en",
+  "browser_action": {
+    "browser_style": true,
+    "default_icon": "media/alert1.png",
+    "default_popup": "ui/popup.html"
+  },
+  "background": {
+    "scripts": [
+      "third-party/jquery-3.1.1.min.js",
+      "third-party/sha512.min.js",
+      "utils/globalParams.js",
+      "utils/errorHandling.js",
+      "utils/background/general.js",
+      "utils/background/consent.js",
+      "utils/background/preferenceCrawl.js",
+      "utils/background/explanationCrawl.js",
+      "utils/interfaceVersionDetection.js",
+      "utils/userIdentification.js",
+      "background.js",
+      "utils/content-scripts/posts_detection/news_domains_lst.js"
+    ]
+  },
+  "icons": {
+    "16": "media/enabled.png",
+    "48": "media/enabled.png"
+  },
+  "content_scripts": [
+    {
+      "run_at": "document_start",
+      "js": [
+        "content-scripts/preferencesGrabber.js"
+      ],
+      "matches": [
+        "http://www.facebook.com/ads/preferences*",
+        "https://www.facebook.com/ads/preferences*"
+      ]
+    },
+    {
+      "run_at": "document_end",
+      "js": [
+        "third-party/jquery-3.1.1.min.js",
+        "graphics/loading.js",
+        "utils/content-scripts/universalMethods.js",
+        "utils/errorHandling.js",
+        "utils/content-scripts/browserDetection.js",
+        "utils/interfaceVersionDetection.js",
+        "utils/userIdentification.js",
+        "content-scripts/universal.js",
+        "utils/interfaceVersionDetection.js",
+        "third-party/mus.js",
+        "utils/content-scripts/mouse_tracking/general.js",
+        "utils/content-scripts/mouse_tracking/mouse_tracking.js",
+        "utils/content-scripts/mouse_tracking/mouse_tracking_new_interface.js",
+        "utils/content-scripts/posts_detection/general.js",
+        "utils/content-scripts/posts_detection/news_domains_lst.js",
+        "utils/content-scripts/posts_detection/post_detection_new_interface.js",
+        "utils/content-scripts/posts_detection/posts_detection.js",
+        "utils/content-scripts/anyAdCollection.js",
+        "utils/content-scripts/sideAdsCollection.js",
+        "utils/content-scripts/feedAdCollection.js",
+        "utils/content-scripts/feedAdCollectionNewInterface.js",
+        "utils/content-scripts/dialogCaptcha.js",
+        "content-scripts/adgrabber.js"
+      ],
+      "matches": ["http://www.facebook.com/*", "https://www.facebook.com/*"]
+    },
+    {
+      "run_at" : "document_end",
+      "js" : [
+        "third-party/jquery-3.1.1.min.js",
+        "content-scripts/amazon.js"
+      ],
+      "matches" : [
+        "https://www.amazon.fr/*",
+        "http://www.amazon.fr/*",
+        "https://www.amazon.com/*",
+        "http://www.amazon.com/*"
+      ]
+    }
+  ],
+  "permissions": [
+    "http://www.facebook.com/*",
+    "https://www.facebook.com/*",
+    "webRequest",
+    "webRequestBlocking",
+    "storage",
+    "tabs"
+  ],
+  "incognito": "spanning",
+  "web_accessible_resources": [
+    "injections/xhrOverloadAdsNewInterface.js",
+    "injections/xhrOverloadPreferences.js",
+    "injections/xhrOverloadButtons.js",
+    "injections/explanationCrawlOverload.js",
+    "injections/adRequests.js",
+    "third-party/paramOverload.js",
+    "media/solving_captcha.gif"
+  ]
+}

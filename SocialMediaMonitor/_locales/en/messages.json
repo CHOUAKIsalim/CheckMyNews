@@ -1,0 +1,39 @@
+{
+  "extensionName": {
+    "message": "#"
+  },
+  "extensionDesc": {
+    "message": "A tool to help you understand how you are targeted by advertisers on Facebook"
+  },
+  "menuData": {
+    "message": "Data"
+  },
+  "menuAdvertiser": {
+    "message": "Advertisers"
+  },
+  "menuSearch": {
+    "message": "Search"
+  },
+  "menuAds": {
+    "message": "Ads"
+  },
+  "menuContact": {
+    "message": "Contact Us"
+  },
+  "warningAdBlocker": {
+    "message": "It seems an Ad Blocker running. Please turn off all Ad Blocker to make Social Media Monitor work better."
+  },
+  "collectPreferences": {
+    "message": "Collect Preferences"
+  },
+  "notLoggedYet": {
+    "message": " <strong>Note!</strong> If you have not logged in Facebook, Social Media Monitor is not working. <br />If you are already logged in please wait for a few moments..."
+  },
+
+  "consentButton": {
+    "message": "Accept"
+  },
+  "consentAlert": {
+    "message": "<h4 class='alert-heading'>Welcome to Social Media Monitor! Why don't you sign the consent form? </h4> <hr /> <small> This popup will not appear again! </small>"
+  }
+}

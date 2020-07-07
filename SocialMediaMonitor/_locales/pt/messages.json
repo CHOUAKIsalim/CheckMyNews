@@ -1,0 +1,36 @@
+{
+  "extensionName": {
+    "message": "#"
+  },
+  "extensionDesc": {
+    "message": "Uma ferramenta para ajudar você a entender como você é encontrado pelos anunciantes no Facebook"
+  },
+  "menuData": {
+    "message": "Dados Coletados"
+  },
+  "menuAdvertiser": {
+    "message": "Anunciantes"
+  },
+  "menuSearch": {
+    "message": "Busca"
+  },
+  "menuAds": {
+    "message": "Anúncios"
+  },
+  "menuContact": {
+    "message": "Contato"
+  },
+  "warningAdBlocker": {
+    "message": "Parece um bloqueador de anúncios em execução. Desative todo o Ad Blocker para que o nosso Plugin funcione corretamente."
+  },
+  "collectPreferences": {
+    "message": "Coletar Preferências"
+  },
+  "notLoggedYet": {
+    "message": "<strong> Atenção! </strong> Se você não fez login no Facebook, o Plugin não está funcionando. <br /> Se você já está logado, aguarde alguns instantes ..."
+  },
+
+  "consentButton": {
+    "message": "Aceitar"
+  }
+}
