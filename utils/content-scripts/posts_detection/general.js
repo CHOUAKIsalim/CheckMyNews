@@ -17,65 +17,6 @@ var IMG_CLASS_NEW_INTERFACE_CLASS = "i09qtzwb n7fi1qx3 datstx6m pmk7jnqg j9ispeg
  * @param  {objectet } post DOM element of the front ad
  * @return {object}         object to be send to the server
  */
-function processNewsPost(frontAd) {
-
-    var html_ad_id = frontAd.id;
-    ADSA = frontAd
-    let info = getAdvertiserId(frontAd);
-
-    var advertiser_facebook_id = info ? info[0] : "";
-    var advertiser_facebook_page = info ? info[1] : "";
-    var advertiser_facebook_profile_pic = info ? info[2] : "";
-
-    var raw_ad = frontAd.innerHTML;
-    //var raw_ad = frontAd.outerHTML;
-    var timestamp = (new Date).getTime();
-    var pos = getPos(frontAd);
-    var offsetX = pos.x;
-    var offsetY = pos.y;
-    var type = TYPES.newsPost;
-    var [landing_pages, images] = getLandingPagesFrontAds(frontAd.getElementsByTagName(LINK_TAG), frontAd);
-    var video = isVideo(frontAd)
-    var video_id = ''
-    if (video) {
-        video_id = getVideoId(frontAd);
-        images = getBackgroundUrlImages(frontAd);
-
-    }
-
-    var user_id = getUserId();
-
-    //check position ad visible state of ad at time when ad collected
-    try {
-        var ad_elem = document.getElementById(html_ad_id);
-        var domPos = getElementCoordinate(ad_elem)
-        var relPos = toRelativeCoordinate(domPos)
-        var isInView = (relPos == undefined) ? false : true;
-        var visible_fraction = []
-        if (relPos != undefined) {
-            var visible_state = getVisibleHeight(ad_elem);
-            visible_fraction = (visible_state[2] >= 0) ? (visible_state[0] / visible_state[1]) :
-                (-visible_state[0] / visible_state[1]);
-        }
-    } catch (e) {
-        console.log('Error while compute ad position');
-        console.log(e);
-    }
-
-    // console.log('+++++++++++++')
-    // console.log(getDomPosition(ad_elem))
-    // console.log(getUserView())
-    // console.log(isInView)
-    //TODO:GET IMAGE URL
-    //    var image_urls = getImageUrls(frontAd.getElementsByTagName('img'));
-
-    //       fb_id =
-    //    fb_advertiser_id =
-
-    return { 'raw_ad': raw_ad, 'html_ad_id': html_ad_id, 'visible': isInView, 'visible_fraction': visible_fraction, 'visibleDuration': [], 'timestamp': timestamp, 'offsetX': offsetX, 'offsetY': offsetY, 'type': type, 'landing_pages': landing_pages, 'images': images, 'user_id': user_id, advertiser_facebook_id: advertiser_facebook_id, advertiser_facebook_page: advertiser_facebook_page, advertiser_facebook_profile_pic: advertiser_facebook_profile_pic, video: video, video_id: video_id }
-
-
-}
 
 
 /**
