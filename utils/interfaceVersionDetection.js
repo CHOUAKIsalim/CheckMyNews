@@ -36,7 +36,7 @@ function setUserInterfaceVersion(userId,version) {
 function sendNewVersionDetected() {
 
 
-    if(USER_ID !== undefined) {
+    if(CURRENT_USER_ID !== -1) {
 
         new_interface_sent = true;
         var data = {
