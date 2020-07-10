@@ -48,7 +48,6 @@ function grabNewsPostsOldInterface() {
                     postData[MSG_TYPE] = FRONTADINFO;
                     //Extract landing domain from post HTML
                     let _news_domain = getLandingDomain(allDomPosts[i]);
-                    alert(_news_domain);
                     if (isNewsDomain(_news_domain)) {
                         COLLECTED_NEWS_DOMAINS.push(_news_domain)
                         //Store collected domains of news post in order to test

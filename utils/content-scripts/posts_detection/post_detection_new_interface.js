@@ -53,7 +53,7 @@ function grabNewsPostsNewInterface() {
                     // console.log(postData);
                     console.log('News post collected')
                     postData['landing_pages'].push(_news_domain)
-                    captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
+                    captureErrorContentScript(notifyOverloadForMoreAdInfo, [allDomPosts[i], postData], undefined);
 
                 }
                 else {
@@ -74,7 +74,7 @@ function grabNewsPostsNewInterface() {
                                 postData['landing_pages'].push(shortcut_domain);
                             else
                                 postData['landing_pages'].push(landing_domain);
-                            captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
+                            captureErrorContentScript(notifyOverloadForMoreAdInfo, [allDomPosts[i], postData], undefined);
                             break;
                         }
                     }
