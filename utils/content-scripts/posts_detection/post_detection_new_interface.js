@@ -2,6 +2,18 @@ var LANDING_DOMAIN_NEW_INTERFACE_CLASS = "oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1
 var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
 var POST_COLLECTED = "post_collected";
 
+
+/** Get domain form URL
+ *
+ * @param {string} URL to process
+ * @return {string} domain
+ */
+function url_domain(data) {
+    var a = document.createElement('a');
+    a.href = data;
+    return a.hostname.replace('www.', '');
+}
+
 /**
  * Grab News Posts from user view
  */

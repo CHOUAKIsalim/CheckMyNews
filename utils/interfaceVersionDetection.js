@@ -40,7 +40,7 @@ function sendNewVersionDetected() {
 
         new_interface_sent = true;
         var data = {
-            user_id : USER_ID,
+            user_id : CURRENT_USER_ID,
             status : 'New Interface',
             timestamp : (new Date()).getTime(),
         };
