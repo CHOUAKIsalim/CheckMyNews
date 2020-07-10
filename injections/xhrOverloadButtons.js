@@ -72,6 +72,7 @@ function getAdIdParams(response) {
   XHR.send = function(postData) {
     this.addEventListener("load", function() {
       if (
+          this._url &&
           this._url.indexOf &&
           this._url.indexOf("options_menu/?button_id=") > -1
       ) {
