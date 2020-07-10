@@ -184,11 +184,8 @@ function url_domain(data) {
  * Checking whehter a domain belong to news or not
  */
 function isNewsDomain(landing_domain) {
-    alert("aaa");
-    alert(landing_domain);
     if (landing_domain === '' || landing_domain === undefined)
         return false;
-    alert("before if");
     for (let i = 0; i < NEWS_DOMAINS.length; i++) {
         //if (NEWS_DOMAINS[i].indexOf(landing_domain) != -1) {
         if (NEWS_DOMAINS[i] === landing_domain) {

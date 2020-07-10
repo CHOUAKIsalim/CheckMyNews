@@ -49,7 +49,6 @@ function grabNewsPostsOldInterface() {
                     //Extract landing domain from post HTML
                     let _news_domain = getLandingDomain(allDomPosts[i]);
                     alert(_news_domain);
-                    alert("bbb");
                     if (isNewsDomain(_news_domain)) {
                         COLLECTED_NEWS_DOMAINS.push(_news_domain)
                         //Store collected domains of news post in order to test
