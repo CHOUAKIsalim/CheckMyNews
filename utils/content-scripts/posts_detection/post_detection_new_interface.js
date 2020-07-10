@@ -112,6 +112,7 @@ function processNewsPostNewInterface(frontAd) {
         html_ad_id = markAd(frontAd);
         //alert("inside else : " + html_ad_id);
     }
+    adanalyst_ad_id = html_ad_id;
     let info = getAdvertiserId(frontAd);
 
     var advertiser_facebook_id = info ? info[0] : "";
@@ -163,7 +164,7 @@ function processNewsPostNewInterface(frontAd) {
     //       fb_id =
     //    fb_advertiser_id =
 
-    return { 'raw_ad': raw_ad, 'html_ad_id': html_ad_id, 'visible': isInView, 'visible_fraction': visible_fraction, 'visibleDuration': [], 'timestamp': timestamp, 'offsetX': offsetX, 'offsetY': offsetY, 'type': type, 'landing_pages': landing_pages, 'images': images, 'user_id': user_id, advertiser_facebook_id: advertiser_facebook_id, advertiser_facebook_page: advertiser_facebook_page, advertiser_facebook_profile_pic: advertiser_facebook_profile_pic, video: video, video_id: video_id }
+    return { 'raw_ad': raw_ad, 'adanalyst_ad_id':html_ad_id , 'html_ad_id': html_ad_id, 'visible': isInView, 'visible_fraction': visible_fraction, 'visibleDuration': [], 'timestamp': timestamp, 'offsetX': offsetX, 'offsetY': offsetY, 'type': type, 'landing_pages': landing_pages, 'images': images, 'user_id': user_id, advertiser_facebook_id: advertiser_facebook_id, advertiser_facebook_page: advertiser_facebook_page, advertiser_facebook_profile_pic: advertiser_facebook_profile_pic, video: video, video_id: video_id }
 
 
 }
