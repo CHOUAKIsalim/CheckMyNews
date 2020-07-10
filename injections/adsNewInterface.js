@@ -99,15 +99,15 @@ function getAdvertiserImageAndLink(frontAd) {
     
     if (newLinks.length==0) {
     	// TODO:SEND ERROR MESSAGE TO THE SaERVER
-    	console.log("No advertiser link in the ad");
+    	debugLog("No advertiser link in the ad");
     	return 
 
     }
 
     if (newLinks.length>1) {
     	// TODO:SEND ERROR MESSAGE TO THE SERVER
-    	console.log("More than one links that can be the advertiser in the new interface handle");
-    	console.log(newLinks)
+    	debugLog("More than one links that can be the advertiser in the new interface handle");
+    	debugLog(newLinks)
     }
 
    let link = newLinks[0];
@@ -141,7 +141,7 @@ function getReactAdvertiserInfo(frontAd) {
 
     if (reactKey===undefined) {
     	// TODO nnotify server
-    	console.log("Cannot get the key")
+    	debugLog("Cannot get the key")
     	return ["-3",facebookPage,advertiserImage]
     }
 
@@ -260,7 +260,7 @@ function getBackgroundUrlImagesNewInterface(frontAd) {
     }
     if (images.length>1) {
     	// TODO notify server
-    	console.log("More than one images from getBackgroundUrlImagesNewInterface")
+    	debugLog("More than one images from getBackgroundUrlImagesNewInterface")
     }
     return images
      }
@@ -290,8 +290,8 @@ function getImagesFrontAdsNewInterface(links,frontAd) {
 
         if (images.length>1) {
         	// TODO: notify server
-        	console.log("Images more than one");
-        	console.log(images);
+        	debugLog("Images more than one");
+        	debugLog(images);
         }
         imageUrls = [];
         for (let j=0;j<images.length;j++) {
@@ -359,7 +359,7 @@ function getAdExtraData(customId) {
 	let elements = document.querySelectorAll('[adan="'+customId+'"]');
 	if (elements.length!=1) {
 		// TODO: notifys
-		console.log("no elements")
+		debugLog("no elements")
 		return undefined;
 	}
 
@@ -385,7 +385,7 @@ function getAdExtraData(customId) {
 
 
 
-function processAdOverload(customId) {
+function processAd(customId) {
 
 	let data = getAdExtraData(customId);
 	data['newInterface']=true;

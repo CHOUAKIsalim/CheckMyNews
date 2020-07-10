@@ -251,7 +251,6 @@ function addMenuListenersNewInterface(ad) {
  * Grab all post visible in user view
  */
 function grabPostsNewInterface(){
-
     var nextNum = 0;
     if(Object.keys(POST_QUEUE).length>0){
         nextNum = Math.max.apply(null,Object.keys(POST_QUEUE).map(function (x) {return parseInt(x)})) +1 ;
@@ -260,22 +259,18 @@ function grabPostsNewInterface(){
         console.log('Grabbing posts');
         var allPostsId = [];
         var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
-
-        var allDomPosts = document.querySelectorAll('div.j83agx80.l9j0dhe7.k4urcfbm');
-
-        allDomPosts.each(function(){
+        var allDomPosts = document.getElementsByClassName(POST_CLASS_NEW_INTERFACE);
+        for (let i = 0; i < allDomPosts.length; i++) {
             var allPostId = Object.keys(POST_QUEUE).map(key => POST_QUEUE[key]['html_post_id']);
-            if(!allPostId.includes(this.id)){
-                var elmPosition = toRelativeCoordinate(getElementCoordinate($(this)));
+            if(!allPostId.includes(allDomPosts[i].id)){
+                var elmPosition = toRelativeCoordinate(getElementCoordinate($(allDomPosts[i])));
 
-                if(!allAdsId.includes(this.id) && elmPosition !== undefined) {
-                    console.log(this);
-                    POST_QUEUE[nextNum] = { 'html_post_id': this.id, 'timestamp': (new Date).getTime(), 'user_id': getUserId(),'visibleDuration':[] };
-                    console.log(POST_QUEUE[nextNum]);
+                if(!allAdsId.includes(allDomPosts[i].id) && elmPosition !== undefined) {
+                    markAd(allDomPosts[i]);
+                    POST_QUEUE[nextNum] = { 'html_post_id': allDomPosts[i].id, 'timestamp': (new Date).getTime(), 'user_id': getUserId(),'visibleDuration':[] };
                     nextNum++;
                 }
             }
-        });
-
+        }
     }
 }

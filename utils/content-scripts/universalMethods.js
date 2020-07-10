@@ -28,7 +28,7 @@
 
 /**
  * Check whether string is a number
- * 
+ *
  * @param  {string}  value value which is being checked whether it is a number
  * @return {Boolean}       true if number, else false
  */
@@ -41,7 +41,7 @@ function isNumeric(value) {
 
 /**
  * replace all occurences of pattern to string
- * 
+ *
  * @param  {stirng} search      string substring to be replaced
  * @param  {string} replacement string substring to be used as a replacement
  * @return {string}             new string
@@ -59,28 +59,42 @@ String.prototype.replaceAll = function(search, replacement) {
  * @return {object} array that contains each element of the initial array only once
  */
 Array.prototype.unique = function unique() {
-        var self = this;
-        return self.filter(function(a) {
-            var that = this;
+    var self = this;
+    return self.filter(function(a) {
+        var that = this;
 //            console.log(that);
 //            console.log(a)
 //            console.log(that[a])
-            return !that[a] ? that[a] = true : false;
-        },{});}
+        return !that[a] ? that[a] = true : false;
+    },{});}
 
 
+function uniqueArray(list) {
+    let result = [];
+    list.forEach(function (element) {
+        found = false;
+        for(var i=0 ; i < result.length; i++) {
+            if(element.isSameNode(result[i])) {
+                found = true;
+                break;
+            }
+        }
+        if(!found) result.push(element);
+   });
+    return result;
+}
 
 
 
 /**
  * extend an array adding the elements of another array. (similar to python extend)
- * 
+ *
  * @param  {object} other_array array whose elements will be added to the initial array
- * @return            
+ * @return
  */
 Array.prototype.extend = function (other_array) {
     /* you should include a test to check whether other_array really is an array */
-    other_array.forEach(function(v) {this.push(v)}, this);    
+    other_array.forEach(function(v) {this.push(v)}, this);
 }
 
 

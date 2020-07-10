@@ -154,31 +154,3 @@ var createObjFromURI = function(params) {
     return params;
 }
 
-/** Get domain form URL
- *
- * @param {string} URL to process
- * @return {string} domain
- */
-function url_domain(data) {
-    var a = document.createElement('a');
-    a.href = data;
-    return a.hostname.replace('www.', '');
-}
-
-
-
-/**
- * Checking whehter a domain belong to news or not
- */
-function isNewsDomain(landing_domain) {
-    if (landing_domain === '' || landing_domain === undefined)
-        return false;
-    for (let i = 0; i < NEWS_DOMAINS.length; i++) {
-        //if (NEWS_DOMAINS[i].indexOf(landing_domain) != -1) {
-        if (NEWS_DOMAINS[i] === landing_domain) {
-            return true;
-        }
-    }
-    return false;
-}
-

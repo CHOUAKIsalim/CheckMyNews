@@ -33,6 +33,38 @@ if ((window.location.href.indexOf('facebook.com/ads/manager')>-1) || (window.loc
 }
 
 
+if ((window.location.href.indexOf('www.facebook.com/ads/library/')>-1) ) {
+    console.log('exiting script...')
+    throw new Error("Ads Library");
+}
+
+
+if ((window.location.href.indexOf('facebook.com/ds/preferences')===-1) && (window.location.href.indexOf('facebook.com/ads/preferences')===-1)) {
+    console.log('exiting script...')
+    throw new Error("Not Ads Preference Page");
+}
+
+
+let interfaceVersion  = getFacebookInterfaceVersionFromParsedDoc(document);
+
+if ((interfaceVersion === INTERFACE_VERSIONS.new)  && (window.location.href.indexOf('cquick_token')===-1))  {
+    console.log('exiting script...')
+    throw new Error("In new Facebook UI version content script runs in encaptulated iframe");
+}
+
+
+
+
+function injectPreferenceGrabberScripts() {
+    var s = document.createElement("script");
+    s.src = chrome.extension.getURL("injections/xhrOverloadPreferences.js");
+    (document.head||document.documentElement).appendChild(s);
+
+
+}
+
+
+
 function getUserIdStr(elem) {
     var idTag = elem.match(USER_ID_TAG);
     if (!idTag) {
@@ -44,13 +76,6 @@ function getUserIdStr(elem) {
 function getUserId() {
     return getUserIdStr(document.head.innerHTML)
 }
-
-var sOverload = document.createElement("script");
-sOverload.src = chrome.extension.getURL("injections/xhrOverloadPreferences.js");
-var elem = (document.head||document.documentElement)
-// .appendChild(s);
-
-elem.insertBefore(sOverload, elem.firstChild);
 
 
 String.prototype.nthIndexOf = function(pattern, n) {
@@ -145,6 +170,8 @@ function getDemographicsAndBehaviors(){
     try {
         var demographics = getDem();
         var behaviors = getBeh();
+        console.log(demographics)
+        console.log(behaviors)
 
         if ((demographics==-1) && (behaviors==-1) && (count>0)) {
             count--;
@@ -170,36 +197,63 @@ function getDemographicsAndBehaviors(){
     }
 }
 
-if (window.location.href.indexOf('cquick_token')>=0) {
-    window.addEventListener("message", function(event) {
-        if (event.data.type && (event.data.type=='advertisersData')){
-            console.log("Content script received message: ");
-            console.log(event.data)
-            var data = event.data
-            data['user_id'] =getUserId()
-            data['timestamp'] = (new Date).getTime();
-
-            chrome.runtime.sendMessage(data);
-        }
 
 
-        if (event.data.type && (event.data.type=='interestsData')){
-            console.log("Content script received message: " );
-            var data = event.data
-            data['user_id'] =getUserId()
-            data['timestamp'] = (new Date).getTime();
 
-            chrome.runtime.sendMessage(data);
+captureErrorContentScript(getDemographicsAndBehaviors,[],undefined);
 
-        }
+captureErrorContentScript(injectUniversalScripts,[],undefined);
+captureErrorContentScript(injectPreferenceGrabberScripts,[],undefined);
 
-    })
 
+
+
+
+window.addEventListener("message", function(event) {
+    // We only accept messages from ourselves
+
+    if (event.source != window)
+        return;
+
+
+
+    universalCommunicationWithInjections(event);
+
+
+
+})
+
+
+
+function onMessageFunction(msg,sender,sendResponse) {
+
+    /**     global messages */
+    universalOnMessageFunction(msg,sender,sendResponse);
 }
 
 
 
-getDemographicsAndBehaviors();
+
+
+
+if (BrowserDetection()=== BROWSERS.CHROME) {
+    chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
+
+        onMessageFunction(msg,sender,sendResponse)
+
+    });
+}
+
+
+if (BrowserDetection()=== BROWSERS.FIREFOX) {
+    browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
+
+        onMessageFunction(msg,sender,sendResponse)
+
+    });
+}
+
+
 
 
 

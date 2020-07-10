@@ -28,13 +28,13 @@ function mergeAdvertisers(advertisers_payload) {
   XHR.send = function(postData) {
     this.addEventListener("load", function() {
       if (
-        this._url.indexOf &&
-        this._url.indexOf("ads/profile/interests/") > -1
+          this._url.indexOf &&
+          this._url.indexOf("ads/profile/interests/") > -1
       ) {
         var interest_data = JSON.parse(
-          this.responseText.replace("for (;;);", "")
+            this.responseText.replace("for (;;);", "")
         );
-        console.log("interest_data");
+        debugLog("interest_data");
         if (PAYLOAD in interest_data) {
           var data = {
             data: interest_data[PAYLOAD]["interests"],
@@ -45,13 +45,13 @@ function mergeAdvertisers(advertisers_payload) {
       }
 
       if (
-        this._url.indexOf &&
-        this._url.indexOf("ads/profile/advertisers/") > -1
+          this._url.indexOf &&
+          this._url.indexOf("ads/profile/advertisers/") > -1
       ) {
         var advertisers_data = JSON.parse(
-          this.responseText.replace("for (;;);", "")
+            this.responseText.replace("for (;;);", "")
         );
-        console.log("advertisers_data");
+        debugLog("advertisers_data");
         if (PAYLOAD in advertisers_data) {
           var data = {
             data: mergeAdvertisers(advertisers_data[PAYLOAD]["advertisers"]),
@@ -69,3 +69,15 @@ function mergeAdvertisers(advertisers_payload) {
     return send.apply(this, arguments);
   };
 })();
+
+
+
+
+window.addEventListener("message", function(event) {
+  // We only accept messages from ourselves
+  //    console.log(event)
+  if (event.source != window) return;
+
+  handleUniversalCommunication(event);
+
+});

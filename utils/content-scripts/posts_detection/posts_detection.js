@@ -3,6 +3,22 @@ var LANDING_DOMAIN_CLASS = '_6lz _6mb _1t62 ellipsis';
 var HTML_POST_ID ="hyperfeed_story_id";
 
 /**
+ * Checking whehter a domain belong to news or not
+ */
+function isNewsDomain(landing_domain) {
+    if (landing_domain === '' || landing_domain === undefined)
+        return false;
+    for (let i = 0; i < NEWS_DOMAINS.length; i++) {
+        //if (NEWS_DOMAINS[i].indexOf(landing_domain) != -1) {
+        if (NEWS_DOMAINS[i] === landing_domain) {
+            console.log(NEWS_DOMAINS[i] + " " + landing_domain);
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Grab News Posts from user view
  */
 function grabNewsPostsOldInterface() {
@@ -14,9 +30,8 @@ function grabNewsPostsOldInterface() {
         var allDomPosts = $('div[id*="' + HTML_POST_ID + '"]');
         for (let i = 0; i < allDomPosts.length; i++) {
             if (!allAdsId.includes(allDomPosts[i].id)) {
-
                 let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
-                if (elmPosition === undefined || allDomPosts[i].className.indexOf(COLLECTED) != -1) {
+                if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) != -1) {
                     continue;
                 }
 
@@ -33,10 +48,12 @@ function grabNewsPostsOldInterface() {
                     postData[MSG_TYPE] = FRONTADINFO;
                     //Extract landing domain from post HTML
                     let _news_domain = getLandingDomain(allDomPosts[i]);
+                    alert(_news_domain);
+                    alert("bbb");
                     if (isNewsDomain(_news_domain)) {
                         COLLECTED_NEWS_DOMAINS.push(_news_domain)
                         //Store collected domains of news post in order to test
-                        allDomPosts[i].className += " " + COLLECTED;
+                        allDomPosts[i].className += " " + POST_COLLECTED;
                         // console.log(allDomPosts[i].textContent)
                         // console.log(postData);
                         console.log('News post collected')
@@ -54,7 +71,7 @@ function grabNewsPostsOldInterface() {
                             if (isNewsDomain(landing_domain) || shortcut_domain !== '') {
                                 //Store collected domains of news post in order to test
                                 COLLECTED_NEWS_DOMAINS.push(landing_domain)
-                                allDomPosts[i].className += " " + COLLECTED;
+                                allDomPosts[i].className += " " + POST_COLLECTED;
                                 // console.log(allDomPosts[i].textContent)
                                 // console.log(postData);
                                 console.log('News post collected')

@@ -129,6 +129,7 @@ var FACEBOOK_URL = 'www.facebook.com'; //Facebook page with out the http (used t
 var FACEBOOK_PAGE = 'https://www.facebook.com' //USED TO GET USER ID FROM THEs source code of this domain
 var ACCOUNT_SETTINGS = 'https://www.facebook.com/settings' //used to get the email fof the user
 var LANGUAGE_SETTINGS = 'https://www.facebook.com/settings?tab=language&edited=account'
+var LANGUAGE_SETTINGS_WITH_TOKEN_TEMPLATE = 'https://www.facebook.com/settings?tab=language&cquick=jsc_c_e&cquick_token={0}&ctarget=https%3A%2F%2Fwww.facebook.com'
 var ACCOUNT_SETTINGS_WITH_TOKEN_TEMPLATE =  "https://www.facebook.com/settings?cquick=jsc_c_d&cquick_token={0}&ctarget=https%3A%2F%2Fwww.facebook.com"
 
 
@@ -310,15 +311,12 @@ EXPLANATION_REQUESTS= captureErrorBackground(getExplanationRequests,[],URLS_SERV
 function getUserIdAjax(resp) {
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString(resp,"text/html");
-    var userId = captureErrorBackground(getUsertiId,[htmlDoc],URLS_SERVER.registerError,undefined);
+    var userId = captureErrorBackground(getUserId,[htmlDoc],URLS_SERVER.registerError,undefined);
 
     if ((userId)&& (userId!=-1)) {
-        console.log("Inside IF");
         captureErrorBackground(openWindowToNewUsers,[],URLS_SERVER.registerError,undefined);
         LOGGED_IN=true;
-        console.log("Before second IF")
         if ((userId!=CURRENT_USER_ID) || (CURRENT_EMAIL==='')) {
-            console.log("Inside Second IF")
             CURRENT_USER_ID = userId;
             captureErrorBackground(setFacebookInterfaceVersionDoc,[CURRENT_USER_ID,resp],URLS_SERVER.registerError,undefined);
 
@@ -357,7 +355,6 @@ function getCurrentUserId() {
  * @return {string}      email of the user
  */
 function parseCurrentEmail(resp) {
-    console.log("ParseCurrentEmail");
     var parser = new DOMParser();
     var doc = parser.parseFromString(resp,'text/html');
     var links = doc.getElementsByTagName('a');
@@ -373,7 +370,6 @@ function parseCurrentEmail(resp) {
             }
         }
     }
-    console.log("End -  ParseCurrentEmail");
     return email
 }
 
@@ -424,7 +420,6 @@ function updateEmailServer() {
 
 
 function getCurrentUserEmailByVersion() {
-    console.log("getCurrentUserEmailByVersion");
     if (isCurrentUser()!==true) {
         window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
         return;
@@ -439,7 +434,6 @@ function getCurrentUserEmailByVersion() {
     }
 
     if (interfaceVersion===INTERFACE_VERSIONS.old) {
-        console.log("if interfaceversion = old ");
         captureErrorBackground(getCurrentUserEmail,[ACCOUNT_SETTINGS],URLS_SERVER.registerError,undefined);
         return
     }
@@ -451,7 +445,6 @@ function getCurrentUserEmailByVersion() {
 
 
 }
-
 
 
 /**
@@ -466,7 +459,6 @@ function getCurrentUserEmail(targetUrl) {
         url:targetUrl,
         success: function(resp) {
             try {
-                console.log("try");
                 CURRENT_EMAIL = captureErrorBackground(parseCurrentEmail,[resp],URLS_SERVER.registerError,'');
 
                 captureErrorBackground(updateEmailServer,[],URLS_SERVER.registerError,{});
@@ -510,6 +502,129 @@ function getCurrentUserEmailNewInterface() {
         }
     })
 
+}
+
+function getCurrentLanguageByVersion() {
+    if (isCurrentUser()!==true) {
+        window.setTimeout(function() {captureErrorBackground(getCurrentLanguageByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
+        return;
+    }
+
+
+
+
+
+    let interfaceVersion = getUserInterfaceVersion(CURRENT_USER_ID);
+
+
+    if (interfaceVersion===INTERFACE_VERSIONS.unknown) {
+        window.setTimeout(function() {captureErrorBackground(getCurrentLanguageByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
+        return;
+    }
+
+    if (interfaceVersion===INTERFACE_VERSIONS.old) {
+        captureErrorBackground(getCurrentLanguage,[LANGUAGE_SETTINGS],URLS_SERVER.registerError,undefined);
+        return
+    }
+
+    if (interfaceVersion===INTERFACE_VERSIONS.new) {
+        captureErrorBackground(getCurrentLanguageNewInterface,[],URLS_SERVER.registerError,undefined);
+        window.setTimeout(getCurrentLanguageByVersion,ONE_HALF_MINUTE*3)
+        return;
+    }
+
+
+}
+
+function getCurrentLanguageNewInterface() {
+
+    $.get({
+        url:LANGUAGE_SETTINGS,
+        success: function(resp) {
+            try {
+
+                let quickTokenMatch = resp.match(/compat_iframe_token":"[^"]+"|(\+)/);
+                if (!quickTokenMatch || quickTokenMatch.length<1) {
+                    window.setTimeout(function() {captureErrorBackground(getCurrentLanguageByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE*3)
+                    return;
+                }
+
+                let quickToken = quickTokenMatch[0].replace('compat_iframe_token":"','');
+                quickToken = quickToken.slice(0,quickToken.length-1);
+
+                captureErrorBackground(getCurrentLanguage,[LANGUAGE_SETTINGS_WITH_TOKEN_TEMPLATE.replace('{0}',quickToken)],URLS_SERVER.registerError,{});
+
+
+            } catch (e) {
+                console.log('Exception in getting email')
+                console.log(e)
+                window.setTimeout(function() {captureErrorBackground(getCurrentLanguageByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE*3)
+
+
+            }
+        }
+    })
+
+
+
+}
+
+
+/**
+ *  get the language and the user id, save it to local storage,
+ *  and update to the server if needed.
+ *  by performing a get request to the language settings page
+ *
+ * @return {}
+ */
+function getCurrentLanguage(url) {
+    $.get({
+        url:url,
+        success: function(resp) {
+            var lanuid =  captureErrorBackground(getLanguageUserIdFromHtml,[resp],URLS_SERVER.registerError,undefined);
+
+
+            if ((lanuid.language!=undefined) && (lanuid.user_id!=undefined)) {
+
+
+                if (lanuid.user_id!=CURRENT_USER_ID) {
+                    CURRENT_USER_ID=lanuid.user_id;
+                }
+
+                var lastLanguageCrawl = localStorage[CURRENT_USER_ID+'lastLanguageCrawl']?localStorage[CURRENT_USER_ID+'lastLanguageCrawl']:0;
+                var timeNow = (new Date).getTime();
+                var server_message = "";
+                //if one day has passed send it just for update
+                if (timeNow-lastLanguageCrawl>= DAY_MILISECONDS) {
+                    localStorage[CURRENT_USER_ID+'lastLanguageCrawl']=timeNow;
+                    server_message = "Daily language check";
+                    if (lanuid.language!=localStorage[CURRENT_USER_ID+'language']) {
+                        server_message= " detected change from "+
+                            localStorage[CURRENT_USER_ID+'language'] +
+                            " to " + lanuid.language;
+                        localStorage[CURRENT_USER_ID+'language']=lanuid.language;
+
+                    }
+
+                    updateLanguageServer(server_message);
+                    return;
+
+
+                }
+
+
+                if (lanuid.language!=localStorage[CURRENT_USER_ID+'language']) {
+                    server_message = "Polling detected change from "+
+                        localStorage[CURRENT_USER_ID+'language'] +
+                        " to " + lanuid.language;
+                    localStorage[CURRENT_USER_ID+'language']=lanuid.language;
+                    updateLanguageServer(server_message)
+
+                }
+
+            }
+        }
+    })
 }
 
 
@@ -606,77 +721,6 @@ function updateLanguageServer(server_message) {
 
 
 
-
-/**
- *  get the language and the user id, save it to local storage,
- *  and update to the server if needed.
- *  by performing a get request to the language settings page
- *
- * @return {}
- */
-function getLanguageUserIdFromLanguagePageAjax() {
-    $.get({
-        url:LANGUAGE_SETTINGS,
-        success: function(resp) {
-            var lanuid =  captureErrorBackground(getLanguageUserIdFromHtml,[resp],URLS_SERVER.registerError,undefined);
-
-
-            if ((lanuid.language!=undefined) && (lanuid.user_id!=undefined)) {
-
-
-                if (lanuid.user_id!=CURRENT_USER_ID) {
-                    CURRENT_USER_ID=lanuid.user_id;
-                }
-
-                var lastLanguageCrawl = localStorage[CURRENT_USER_ID+'lastLanguageCrawl']?localStorage[CURRENT_USER_ID+'lastLanguageCrawl']:0;
-                var timeNow = (new Date).getTime();
-                var server_message = "";
-                //if one day has passed send it just for update
-                if (timeNow-lastLanguageCrawl>= DAY_MILISECONDS) {
-                    localStorage[CURRENT_USER_ID+'lastLanguageCrawl']=timeNow;
-                    server_message = "Daily language check";
-                    if (lanuid.language!=localStorage[CURRENT_USER_ID+'language']) {
-                        server_message= " detected change from "+
-                            localStorage[CURRENT_USER_ID+'language'] +
-                            " to " + lanuid.language;
-                        localStorage[CURRENT_USER_ID+'language']=lanuid.language;
-
-                    }
-
-                    updateLanguageServer(server_message);
-                    return;
-
-
-                }
-
-
-                if (lanuid.language!=localStorage[CURRENT_USER_ID+'language']) {
-                    server_message = "Polling detected change from "+
-                        localStorage[CURRENT_USER_ID+'language'] +
-                        " to " + lanuid.language;
-                    localStorage[CURRENT_USER_ID+'language']=lanuid.language;
-                    updateLanguageServer(server_message)
-
-                }
-
-            }
-        }
-    })
-}
-
-
-
-function getLanguageUserIdFromLanguagePage() {
-
-    captureErrorBackground(getLanguageUserIdFromLanguagePageAjax,[],URLS_SERVER.registerError,undefined);
-
-    window.setTimeout(getLanguageUserIdFromLanguagePage,ONE_HALF_MINUTE*3)
-
-
-}
-
-//captureErrorBackground(getCurrentUserEmail,[],URLS_SERVER.registerError,undefined)
-
 var CRAWLED_EXPLANATIONS = captureErrorBackground(getCrawledExplanations,[],URLS_SERVER.registerError,undefined);
 var EXPLANATIONS_QUEUE = captureErrorBackground(getExplanationsQueue,[],URLS_SERVER.registerError,undefined);
 
@@ -706,109 +750,6 @@ chrome.windows.onRemoved.addListener(function(windows){
 
 
 
-function addToCrawledExplanations(fbId,adId) {
-
-    if (!CRAWLED_EXPLANATIONS[fbId]) {
-        CRAWLED_EXPLANATIONS[fbId]={};
-    }
-
-    if (!EXPLANATIONS_QUEUE[fbId]) {
-        EXPLANATIONS_QUEUE[fbId] = {}
-    }
-
-
-    let crawledIds = Object.keys(CRAWLED_EXPLANATIONS[fbId]);
-
-    let ts = (new Date()).getTime();
-
-    for (let i =0;i<crawledIds.length;i++) {
-        if (ts - CRAWLED_EXPLANATIONS[fbId][crawledIds[i]] > (DAY_MILISECONDS * 3)) {
-            try {
-                delete CRAWLED_EXPLANATIONS[fbId][crawledIds[i]];
-            } catch (e) {
-                console.log("EXCEPTION IN addToCrawledExplanations");
-                console.log(e)
-            }
-        }
-    }
-
-    CRAWLED_EXPLANATIONS[fbId][adId] = ts;
-    return true;
-}
-
-
-
-
-
-/**
- * checks if it is time to get new explanation, and fetches the next explanation if it is due to be crawled
- *
- * @return {undefined}
- */
-function exploreQueue() {
-    console.log('Check for explanations');
-    if ((EXPLANATIONS_QUEUE) && (CURRENT_USER_ID in EXPLANATIONS_QUEUE)) {
-        captureErrorBackground(cleanRequestLog,[CURRENT_USER_ID],URLS_SERVER.registerError,undefined);
-
-        var ts =  (new Date()).getTime()
-        var maxTs = Math.max.apply(null, EXPLANATION_REQUESTS[CURRENT_USER_ID])
-
-        if (!LOGGED_IN) {
-            console.log('Not logged in! Will check again in ' + (ONE_HALF_MINUTE/(2*60000))+ ' minutes');
-            window.setTimeout(function() {
-                captureErrorBackground(exploreQueue,[],URLS_SERVER.registerError,undefined);
-
-            },ONE_HALF_MINUTE/2);
-            return
-        }
-
-        if ((WAIT_FOR_TWO_HOURS) &&(ts-maxTs < TWO_HOURS)) {
-            console.log('Cannot make request (rate limited). Need to wait for ' + (WAIT_BETWEEN_REQUESTS - (ts-maxTs))/60000 + ' minutes');
-            window.setTimeout(function() {
-                captureErrorBackground(exploreQueue,[],URLS_SERVER.registerError,undefined);
-
-            },WAIT_BETWEEN_REQUESTS);
-            return
-        }
-
-        if ((WAIT_FOR_TWO_HOURS) &&(ts-maxTs >= TWO_HOURS)) {
-            WAIT_FOR_TWO_HOURS=false;
-            window.setTimeout(function() {
-                captureErrorBackground(exploreQueue,[],URLS_SERVER.registerError,undefined);
-
-            },WAIT_BETWEEN_REQUESTS/6);
-
-            return
-        }
-
-        if (ts-maxTs < WAIT_BETWEEN_REQUESTS) {
-            console.log('Cannot make request. Need to wait for ' + (WAIT_BETWEEN_REQUESTS - (ts-maxTs))/60000 + ' minutes');
-            window.setTimeout(function() {
-                captureErrorBackground(exploreQueue,[],URLS_SERVER.registerError,undefined);
-
-            },WAIT_BETWEEN_REQUESTS  - (ts-maxTs));
-            return
-        }
-
-        let params = captureErrorBackground(getNextExplanation,[CURRENT_USER_ID],URLS_SERVER.registerError,-1);
-
-        if (params!=-1) {
-            console.log('Getting explanations for '+ params[0]);
-
-            captureErrorBackground(getExplanationsManually,[params[0],params[1],params[2],params[3],params[4],params[5]],URLS_SERVER.registerError,undefined);
-
-        }
-
-
-    }
-
-
-    window.setTimeout(
-        function() {
-            captureErrorBackground(exploreQueue,[],URLS_SERVER.registerError,undefined);
-
-        },WAIT_BETWEEN_REQUESTS/6);
-}
 
 
 
@@ -821,7 +762,6 @@ function exploreQueue() {
  * @return {undefined}         [description]
  */
 function registerAdSuccess(a,request,sendResponse){
-
     if (!a[STATUS] || (a[STATUS]==FAILURE)) {
         if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
             captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
@@ -836,6 +776,7 @@ function registerAdSuccess(a,request,sendResponse){
 
 
     console.log('Success');
+
     let resp = {saved:true,dbId:a[ADID]}
 //                  console.log(a[MSG_TYPE])
 //                  console.log(a[FBID])
@@ -1030,303 +971,6 @@ function getBase64FromImageUrlClickedAd(url, req_id, request, count = 3) {
     return true;
 }
 
-
-
-/**
- * sends the explanation that was captured in the database
- * @param  {string} adId   adid from facebook
- * @param  {Number} dbRecordId  record of the id in the database
- * @param  {string} explanation explanation string
- * @param  {Number} count       counter on how many times to try
- * @return {boolean}             success or not
- */
-function sendExplanationDB(adId,dbRecordId,explanation,count=10) {
-    if (count==0) {
-        console.log("Explanation not saved");
-        return false;
-    }
-
-    $.ajax({
-        type: REQUEST_TYPE,
-        url: URLS_SERVER.registerExplanation,
-        data: {dbRecordId:dbRecordId,explanation:explanation},
-        success: function (a) {
-            if (!a[STATUS] || (a[STATUS]==FAILURE)) {
-
-                captureErrorBackground(sendExplanationDB,[adId,dbRecordId,explanation,count-1],URLS_SERVER.registerError,false);
-
-                return true
-            };
-
-
-
-            console.log((new Date));
-            console.log('Success saving explanation');
-            captureErrorBackground(addToCrawledExplanations,[CURRENT_USER_ID,adId],URLS_SERVER.registerError,false);
-
-            return true
-
-        },
-    }).fail(function(a){
-        console.log('Failure in saving explanation');
-        console.log(a)
-        captureErrorBackground(sendExplanationDB,[adId,dbRecordId,explanation,count-1],URLS_SERVER.registerError,false);
-
-        return true
-
-
-    });}
-
-/**
- * Return the resources of the explanation dialogue (waist_id)--
- * one of those contains the doc_id that is used to fetch explannations
- * @param  {string} explanationDialogText response from the ad_waist link
- * @return {array}                         a list of strings cotnaining all of the js resources that are being loaded
- */
-function getResourcesFromExplanation(explanationDialogText) {
-
-    const explanationDialogObject = JSON.parse(explanationDialogText.replace("for (;;);",""));
-    const resources = explanationDialogObject['resource_map'];
-    const jsResources = [];
-    for (let property in resources){
-        if (resources[property]['type']!=='js') {
-            continue;
-        }
-
-        jsResources.push(resources[property]['src']);
-    }
-
-    return jsResources;
-
-}
-
-var correctResources = {};
-
-
-
-function getGraphqlExplanation(adId,dbRecordId,timestamp,clientToken,asyncParams,docId) {
-    const variables = {
-        'adId':adId,
-        'clientToken':clientToken
-    }
-
-    const paramsNew = {'variables':variables,'doc_id':docId,
-        'fb_api_caller_class':RelayModern,
-        'fb_api_req_friendly_name':AdsPrefWAISTDialogQuery,'av':asyncParams['__user']
-    };
-
-    const paramsMerged = {...paramsNew,...asyncParams};
-
-    console.log(paramsMerged);
-
-
-}
-
-/**
- * Parsing the doc id from the resource js that contains it
- * @param  {string} jsResource a js file that conntains the functions that Facebook users in order to send the doc_id
- * @return {string}            the doc id in string form
- */
-function getDocId(jsResource) {
-    const resourceLines = jsResource.match(/[^\r\n]+/g);
-    for (let i=0;i<resourceLines.length;i++) {
-        if (resourceLines[i].indexOf('AdsPrefWAISTDialogQuery.graphql",[]')!==-1) {
-            return resourceLines[i].match('name:"AdsPrefWAISTDialogQuery",id:"([0-9]*)"')[1]
-        }
-    }
-    throw "Doc id was not found:"+ jsResource;
-}
-
-function getWaistResource(jsResources,callback) {
-    if (jsResources.length===0) {
-        throw "Waist resource not found"
-    }
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET",jsResources[0], true);
-    xmlhttp.onload = function (e) {
-        // EXPLANATION_REQUESTS[CURRENT_USER_ID].push((new Date()).getTime())
-
-        if (xmlhttp.readyState === 4 && xmlhttp.status === 200){
-            // console.log(xmlhttp.responseText);
-            if (xmlhttp.responseText.indexOf('AdsPrefWAISTDialogQuery.graphql')!==-1) {
-                docId = captureErrorBackground(getDocId,[xmlhttp.responseText],URLS_SERVER.registerError,undefined);
-
-                console.log("Found docId: "+ docId);
-                return;
-                // TODO: send message if doc id has changed
-
-            }
-
-            getWaistResource(jsResources.slice(1,jsResources.length),callback);
-            return;
-
-            // console.log(typeof xmlhttp.responseText);
-        }
-        // TODO: SEND IF ERROR
-        // console.log("Error");
-    }
-
-    // xmlhttp.setRequestHeader('Origin', 'https://www.facebook.com/');
-    // xmlhttp.setRequestHeader('Referer', 'https://www.facebook.com/');
-    xmlhttp.send(null);
-
-}
-
-
-// /**
-//  * The starting point in grabbing explanations manually by first retrieving the docid
-//  *
-//  * @param  {[type]} adId           [description]
-//  * @param  {[type]} explanationUrl [description]
-//  * @param  {[type]} dbRecordId     [description]
-//  * @param  {[type]} timestamp      [description]
-//  * @return {[type]}                [description]
-//  */
-// function getExplanationsManuallyByGrabbingDocId(adId,explanationUrl,dbRecordId,timestamp) {
-//     var xmlhttp = new XMLHttpRequest();
-//     xmlhttp.open("GET",explanationUrl, true);
-//      xmlhttp.onload = function (e) {
-//         EXPLANATION_REQUESTS[CURRENT_USER_ID].push((new Date()).getTime())
-
-//         if (xmlhttp.readyState === 4 && xmlhttp.status === 200){
-
-//             var response = xmlhttp.responseText;
-//             var expStart = getIndexFromList(response,ABOUT_THIS_FACEBOOK_AD);
-//             var expEnd = getIndexFromList(response,MANAGE_YOUR_AD_PREFERENCES);
-//             LALA = [response,adId,explanationUrl];
-//             //Save all explanation even with error or corrupt response
-//             sendExplanationDB(adId,dbRecordId,response);
-
-
-//             //Keep loging if something weird happened
-//             if (getIndexFromList(response,CAPTCHA_EXPLANATION_MSG)!=-1) {
-//                 //This line will got the error "url undefined"
-//                 //console.log('Problem with parsing ' + url);
-//                 console.log('CAPTCHA');
-//                 console.log((new Date));
-//                 WAIT_FOR_TWO_HOURS=true;
-//                 console.log(response);
-//                 var errorInfo = {};
-//                 errorInfo[MSG_TYPE] = ERROR_TYPES.BACKGROUND_PROBLEM;
-//                 errorInfo[ERROR_MESSAGE] = "Captcha problem: {adId : " + adId + ", response : " + response + "} - " +getExtensionVersion();
-//                 sendErrorMessage(errorInfo, URLS_SERVER.registerError);
-
-//                 EXPLANATIONS_QUEUE[CURRENT_USER_ID][adId] =
-//                     {adId:adId,explanationUrl:explanationUrl,dbRecordId:dbRecordId,timestamp:timestamp}
-
-//                 //Testing show Popup
-//                 CAPTCHA_DETECTED = 1;
-//                 localStorage.captchaDetected = CAPTCHA_DETECTED;
-//                 if (NOT_SHOW_POPUP_AGAIN == 1)
-//                     return
-//                 //Send msg to content script -> Show the message to user
-//                 var tsNow = (new Date()).getTime()
-//                 if (TIMESTAMP_SHOWN_POPUP == -1 || TIMESTAMP_SHOWN_POPUP <= (tsNow - ONE_WEEK_EPOCH)) {
-//                     //TIMESTAMP_SHOWN_POPUP = tsNow;
-//                     //localStorage.lastTimeShowPopUp = TIMESTAMP_SHOWN_POPUP;
-//                     chrome.tabs.query({}, function (tabs) {
-//                         for (let i = 0; i < tabs.length; i++) {
-//                             try {
-//                                 chrome.tabs.sendMessage(tabs[i].id, {
-//                                     type: "showInfoPopup"
-//                                 }, function (response) {});
-//                             } catch (err) {
-//                                 console.log(err)
-//                             }
-//                         }
-//                     });
-//                 }
-
-
-//                 return
-//             }
-
-
-//             if (getIndexFromList(response,ERROR_EXPLANATION_MSG)!=-1) {
-//                 console.log('RATE LIMITED');
-
-//                 console.log((new Date));
-//                 WAIT_FOR_TWO_HOURS=true;
-//                 console.log(response);
-//                 EXPLANATIONS_QUEUE[CURRENT_USER_ID][adId] =
-//                     {adId:adId,explanationUrl:explanationUrl,dbRecordId:dbRecordId,timestamp:timestamp}
-
-//                 var errorInfo = {};
-//                 errorInfo[MSG_TYPE] = ERROR_TYPES.BACKGROUND_PROBLEM;
-//                 errorInfo[ERROR_MESSAGE] = "Explanation error: {adId : " + adId + ", response : " + response + "} - "+ getExtensionVersion();
-//                 sendErrorMessage(errorInfo, URLS_SERVER.registerError);
-//                 return
-//             }
-
-//             //Recive valid explanation -> Then, reset captcha status
-//             CAPTCHA_DETECTED = 0;
-//             localStorage.captchaDetected = CAPTCHA_DETECTED;
-
-//             var explanation = response.slice(expStart,expEnd);
-//             console.log(expStart);
-//             console.log(expEnd);
-//             if ((expStart===-1) || (expEnd===-1)) {
-//                 console.log('Something else is wrong with this explanation! Check it out!')
-//                 console.log(response)
-//                 PROBLEMATIC_EXPLANATIONS.push(response);
-
-//                 var errorInfo = {};
-//                 errorInfo[MSG_TYPE] = ERROR_TYPES.BACKGROUND_PROBLEM;
-//                 errorInfo[ERROR_MESSAGE] = "Problematic explanation: {adId : " + adId + "} - " + getExtensionVersion();
-//                 sendErrorMessage(errorInfo, URLS_SERVER.registerError);
-//                 return
-//             }
-
-//         }
-//         else{
-//             //Capture explanation request error
-//             var errorInfo = {};
-//             errorInfo[MSG_TYPE] = ERROR_TYPES.BACKGROUND_PROBLEM;
-//             errorInfo[ERROR_MESSAGE] = "Explantion response error: {adId: " +adId+ ", readyState:" + xmlhttp.readyState + ", status:" + xmlhttp.status + ", response: " + xmlhttp.responseText + "} - " + getExtensionVersion();
-//             sendErrorMessage(errorInfo, URLS_SERVER.registerError);
-//         }
-
-//     }
-
-//     xmlhttp.send(null);
-
-
-// }
-
-
-
-// AdsPrefWAISTDialogQuery.graphql
-
-// LALA ="";
-
-
-
-/**
- * cleans the request log of timestamps of ecplanations that are crawled that are older than one day, and ads a new
- * @param  {string} userId user-id
- * @return {undefined}
- */
-function cleanRequestLog(userId) {
-    if (!(CURRENT_USER_ID in EXPLANATION_REQUESTS)) {
-        EXPLANATION_REQUESTS[userId] = [];
-    }
-    var ts = (new Date()).getTime()
-    var filteredLst = []
-    for (let i=0;i<EXPLANATION_REQUESTS[userId].length;i++) {
-        if (ts - EXPLANATION_REQUESTS[userId][i] <= DAY_MILISECONDS)  {
-            filteredLst.push(EXPLANATION_REQUESTS[userId][i])
-        }
-    }
-
-    EXPLANATION_REQUESTS[userId] = filteredLst;
-    return
-}
-
-
-//https://www.facebook.com/feed/options_menu/?button_id=u_ps_0_0_c&feed_context=%7B%22disable_tracking%22%3Atrue%2C%22fbfeed_context%2
-
-
-
 //https://www.facebook.com/ads/preferences/dialog/?ad_id=6066215713784&optout…mnBCwNoy9Dx6WK&__af=iw&__req=d&__be=-1&__pc=PHASED%3ADEFAULT&__rev=2872472
 chrome.webRequest.onBeforeRequest.addListener(
     function (details) {
@@ -1380,515 +1024,7 @@ chrome.webRequest.onBeforeRequest.addListener(
     { urls: [BLOCKING_URL]},["blocking"]
 );
 
-//chrome.webRequest.onBeforeRequest.addListener(
-//        function (details) {
-//            console.log(details.url);
-//            return   {cancel: true};
-//        },
-//        { urls: [url_2]},["blocking"]
-//    );
 
-var ADSPACE = 'adSpace';
-
-var PREFERENCESCRAWLED = {advertisers:false,interests:false,demBeh:false,adactivity:false}
-var PREFERENCESTAB = -1
-var CRAWLINGPREFERENCES = false
-
-
-function getPreferences() {
-    alert ('It is time for the daily crawl in preferences! A new tab will open, and when the crawling finishes, it will close automaticaly. Thank you very much!');
-    CRAWLINGPREFERENCES=true;
-    chrome.tabs.create({ url: PREFERENCES_URL },function(a){
-        console.log('new tab');
-        PREFERENCESTAB = a['id']
-
-    });
-
-}
-
-
-String.prototype.nthIndexOf = function(pattern, n) {
-    var i = -1;
-
-    while (n-- && i++ < this.length) {
-        i = this.indexOf(pattern, i);
-        if (i < 0) break;
-    }
-
-    return i;
-}
-
-
-function getScriptWithData(doc,txt) {
-    var scripts = doc.getElementsByTagName('script')
-    for (var i = 0; i < scripts.length; i++) {
-        if (scripts[i].innerHTML.indexOf(txt)!=-1) {
-            return scripts[i];
-        }
-    }
-    return -1
-}
-
-function getAllScripstWithData(doc,txt) {
-    var scripts = doc.getElementsByTagName('script')
-    var all_scripts = [];
-    for (var i = 0; i < scripts.length; i++) {
-        if (scripts[i].innerHTML.indexOf(txt)!=-1) {
-            all_scripts.push(scripts[i]) ;
-        }
-    }
-    return all_scripts
-}
-
-
-function parseList(txt,pos=1) {
-    if (pos>txt.length) {
-        return -1
-    }
-    try {
-        return JSON.parse(txt.slice(0,pos))
-    } catch (e) {
-        return parseList(txt,pos+1)
-    }
-}
-
-
-function isBlocked(doc) {
-
-    var helpcenters = ["https://www.facebook.com/help/365194763546571","https://www.facebook.com/help/177066345680802"]
-    var links = doc.getElementsByTagName('a');
-    for (let i=0;i<links.length;i++) {
-        if (getIndexFromList(links[i].href,helpcenters)!==-1) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function getDem(doc) {
-    var txt = 'demographicStatus":'
-    var script = getScriptWithData(doc,txt);
-    if (script ==-1 )
-    {return -1}
-    var pos = script.innerHTML.indexOf(txt);
-    console.log(pos)
-    return parseList(script.innerHTML.slice(pos+txt.length))
-
-}
-
-
-function getBeh(doc) {
-    var txt_0 ='behaviors":'
-    var txt_1 = 'behaviors":[{"fbid'
-    var txt_2 = 'demographicStatus":'
-    var script = getScriptWithData(doc,txt_2);
-    if (script ==-1 )
-    {return -1}
-    var pos = script.innerHTML.nthIndexOf(txt_1,1);
-    console.log(pos)
-    return parseList(script.innerHTML.slice(pos+txt_0.length))
-
-}
-
-
-//var count = 200
-function getDemographicsAndBehaviors(count){
-
-
-    $.get(PREFERENCES_URL,function(resp) {
-        try {
-
-
-            var parser = new DOMParser();
-            var htmlDoc = parser.parseFromString(resp,"text/html");
-            console.log(htmlDoc);
-
-            if (count<0) {
-                var data = {user_id:CURRENT_USER_ID,demographics:-1,behaviors:-1};
-                data['type'] = 'demBehaviors';
-                data['timestamp'] = (new Date).getTime();
-                data['raw'] = resp;
-                console.log(data)
-
-//        chrome.runtime.sendMessage(data)
-                return
-            }
-
-            console.log('getting demographics')
-
-            var demographics = getDem(htmlDoc);
-            var behaviors = getBeh(htmlDoc);
-
-
-
-
-            if ((demographics==-1) && (behaviors==-1) && (count>0)) {
-                count--;
-
-                if (isBlocked(htmlDoc)) {
-                    console.log("Behaviors and demographics blocked");
-                    localStorage.lastErrorBehaviorDemographics = (new Date).getTime();
-                    return;
-                }
-
-                getDemographicsAndBehaviors(count)
-//        window.setTimeout(getDemographicsAndBehaviors,1000)
-                return
-            }
-
-            if ((demographics!=-1) || (behaviors!=-1) ){
-                var data = {user_id:CURRENT_USER_ID,demographics:demographics,behaviors:behaviors};
-                data['type'] = 'demBehaviors';
-                data['timestamp'] = (new Date).getTime();
-                data['raw'] = document.head.innerHTML+document.body.innerHTML;
-                console.log(data)
-                if (hasCurrentUserConsent(0)!==true) {
-                    return
-                }
-
-                $.ajax({
-                    type: REQUEST_TYPE,
-                    url: URLS_SERVER.registerDemBeh,
-                    dataType: "json",
-                    traditional:true,
-                    data: JSON.stringify(replaceUserIdEmail(data)),
-                    tryCount : 0,
-                    retryLimit : 3,
-                    success: function (a) {
-                        if (!a[STATUS] || (a[STATUS]==FAILURE)) {
-                            if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-                            }
-
-                            this.tryCount++;
-                            if (this.tryCount <= this.retryLimit) {
-                                //try again
-                                console.log('Trying again...')
-
-                                $.ajax(this);
-                                return;
-                            }
-                            console.log('Stoping trying...');
-
-                            return true};
-                        localStorage.lastBehaviorCrawl = (new Date()).getTime();
-
-//          sendFrontAd(request,sendResponse);
-                        return true
-                    },
-                    error : function(xhr, textStatus, errorThrown ) {
-                        this.tryCount++;
-                        if (this.tryCount <= this.retryLimit) {
-                            //try again
-                            console.log('Trying again...')
-
-                            $.ajax(this);
-                            return;
-                        }
-                        console.log('Stoping trying...');
-                        return
-                    }
-
-                });
-
-
-
-//        chrome.runtime.sendMessage(data);
-
-            }
-//    ALL_CRAWLED.categories=true;
-        } catch (e) {
-            console.log(e)
-
-            count--;
-            getDemographicsAndBehaviors(count)
-            return
-
-//        window.setTimeout(getDemographicsAndBehaviors,1000)
-        }
-
-
-
-
-    })
-
-
-
-
-
-}
-
-
-function getDemographicsAndBehaviorsNewInterface(count) {
-    $.get({
-        url:PREFERENCES_URL,
-        success: function(resp) {
-            try {
-
-                let quickTokenMatch = resp.match(/compat_iframe_token":"[^"]+"|(\+)/);
-                if (!quickTokenMatch || quickTokenMatch.length<1) {
-                    window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
-                    return;
-                }
-
-                let quickToken = quickTokenMatch[0].replace('compat_iframe_token":"','');
-                quickToken = quickToken.slice(0,quickToken.length-1);
-
-                captureErrorBackground(getDemographicsAndBehaviors,[PREFERENCES_URL_WITH_TOKEN_TEMPLATE.replace('{0}',quickToken),3],URLS_SERVER.registerError,{});
-
-
-            } catch (e) {
-                console.log(e)
-
-
-            }
-        }
-    })
-
-
-
-}
-
-
-function filterOldAPreferenceCrawlAttempts(userId,type) {
-    const now = (new Date()).getTime();
-
-    var allPreferenceCrawlAttempts = JSON.parse(localStorage.preferenceCrawlAttempts)
-
-    var newAttemptsTypeUser = allPreferenceCrawlAttempts[userId+type].filter(function(time) {
-        return Math.abs(now-time)<DAY_MILISECONDS/2
-    });
-
-    allPreferenceCrawlAttempts[userId+type]= newAttemptsTypeUser;
-
-
-    localStorage.preferenceCrawlAttempts = JSON.stringify(allPreferenceCrawlAttempts);
-
-    return
-
-}
-
-function initializeUserPreferenceCrawlAttempts(userId,type){
-    if (!localStorage.preferenceCrawlAttempts) {
-        localStorage.preferenceCrawlAttempts = JSON.stringify({});
-    }
-
-    var allPreferenceCrawlAttempts= JSON.parse(localStorage.preferenceCrawlAttempts);
-
-    if (!allPreferenceCrawlAttempts.hasOwnProperty(userId+type)) {
-        allPreferenceCrawlAttempts[userId+type] =[];
-        localStorage.preferenceCrawlAttempts = JSON.stringify(allPreferenceCrawlAttempts);
-
-    }
-
-
-
-    filterOldAPreferenceCrawlAttempts(userId,type)
-
-
-    if (!localStorage.lastSuccessfulPreferenceCrawl) {
-
-        localStorage.lastSuccessfulPreferenceCrawl = JSON.stringify({});
-    }
-
-
-    var lastSuccessfulPreferenceCrawl =  JSON.parse(localStorage.lastSuccessfulPreferenceCrawl);
-
-    if (!lastSuccessfulPreferenceCrawl.hasOwnProperty(userId+type)) {
-        lastSuccessfulPreferenceCrawl[userId+type] =0;
-        localStorage.lastSuccessfulPreferenceCrawl = JSON.stringify(lastSuccessfulPreferenceCrawl);
-
-    }
-
-}
-
-
-function getLastUserPreferenceCrawlSuccessfullAttempt(userId,type) {
-    initializeUserPreferenceCrawlAttempts(userId,type);
-
-    return JSON.parse(localStorage.lastSuccessfulPreferenceCrawl)[userId+type];
-}
-
-function getUserPreferenceCrawlAttempts(userId,type) {
-    initializeUserPreferenceCrawlAttempts(userId,type);
-
-    return JSON.parse(localStorage.preferenceCrawlAttempts)[userId+type];
-}
-
-function canUserPreferenceCrawl(userId,type) {
-    const lastSuccessfulAttempt = getLastUserPreferenceCrawlSuccessfullAttempt(userId,type);
-    const now = (new Date()).getTime();
-
-    // user has crawled preference the last halfday so no need to crawl more
-    if ((Math.abs(now-lastSuccessfulAttempt)< DAY_MILISECONDS/2)) {
-        console.log(type + " collected the last halfday")
-        return false;
-    }
-
-
-    const attemptsTheLastHalfDay = getUserPreferenceCrawlAttempts(userId,type);
-
-    // user has not crawled and has not attempted the last halfday
-    if (attemptsTheLastHalfDay.length==0) {
-        console.log("user has not crawled"+ type + " and has not attempted the last halfday")
-
-        return true;
-    }
-
-
-    // user has not crawled and has  attempted the last halfday three or more times
-    if (attemptsTheLastHalfDay.length>=3) {
-        console.log("user has not crawled"+type+" and the last halfday three or more times")
-
-        return false;
-    }
-
-    // user has not crawled and has  attempted the last halfday less than three times
-    // true if last attempt was more than an hour ago
-    return Math.abs(now-attemptsTheLastHalfDay[attemptsTheLastHalfDay.length-1])>=DAY_MILISECONDS/24;
-
-}
-
-function setUserPreferenceCrawlAttempt(userId,type) {
-    initializeUserPreferenceCrawlAttempts(userId,type);
-
-    const allPreferenceCrawlAttempts = JSON.parse(localStorage.preferenceCrawlAttempts);
-    allPreferenceCrawlAttempts[userId+type].push((new Date()).getTime());
-    allPreferenceCrawlAttempts[userId+type].sort()
-    localStorage.preferenceCrawlAttempts = JSON.stringify(allPreferenceCrawlAttempts);
-}
-
-/**
- * checks if it is time (and app allows it) to retrieve the behaviors/profile data of current user
- * @return {}
- */
-function checkForBehaviorsDemographics(){
-    if (hasCurrentUserConsent(0)!==true) {
-        captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
-        return;
-
-    }
-
-    if ((localStorage.collectPrefs!=='true') ) {
-        console.log("CollectPrefs set to no");
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
-        return
-    }
-
-    if (!canUserPreferenceCrawl(CURRENT_USER_ID,'behdem')) {
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
-        return
-    }
-
-
-
-    let interfaceVersion = getUserInterfaceVersion(CURRENT_USER_ID);
-    console.log(interfaceVersion)
-
-    setUserPreferenceCrawlAttempt(CURRENT_USER_ID,'behdem');
-
-
-    if (interfaceVersion===INTERFACE_VERSIONS.unknown) {
-        window.setTimeout(function() {captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
-        return;
-    }
-
-    if (interfaceVersion===INTERFACE_VERSIONS.old) {
-        captureErrorBackground(getDemographicsAndBehaviors,[PREFERENCES_URL, 3],URLS_SERVER.registerError,undefined);
-
-        window.setTimeout(function() {captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
-
-        return
-    }
-
-    if (interfaceVersion===INTERFACE_VERSIONS.new) {
-        captureErrorBackground(getDemographicsAndBehaviorsNewInterface,[3],URLS_SERVER.registerError,undefined);
-        return;
-    }
-
-
-    window.setTimeout(function() {captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
-
-
-
-}
-
-
-
-/**
- * checks if it is time (and app allows it) to retrieve the behaviors/profile data of current user
- * @return {}
- */
-function checkForBehaviors(){
-    if (hasCurrentUserConsent(0)!==true) {
-        captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-        window.setTimeout(checkForBehaviors,ONEMINUTE);
-        return;
-
-    }
-    var lastTs = localStorage.lastBehaviorCrawl? localStorage.lastBehaviorCrawl:0
-
-    var lastErrorTs = localStorage.lastErrorBehaviorDemographics ? localStorage.lastErrorBehaviorDemographics :0
-    if (!lastTs) {
-        lastTs = 0;
-    }
-
-    if (!lastErrorTs) {
-        lastErrorTs = 0;
-    }
-
-    ts = (new Date()).getTime()
-    if ((ts-lastTs > DAY_MILISECONDS/2) && (ts-lastErrorTs > DAY_MILISECONDS)) {
-        getDemographicsAndBehaviors(3)
-    }
-
-    if (ts-lastErrorTs <= DAY_MILISECONDS) {
-        console.log("Behavior and demographic crawl Is blocked for a day");
-    }
-    window.setTimeout(checkForBehaviors,ONEMINUTE)
-
-}
-
-function getInterests() {
-
-    chrome.tabs.query({}, function(tabs){
-
-        for (let i=0;i<tabs.length;i++) {
-            try{
-                chrome.tabs.sendMessage(tabs[i].id, {type: "getInterests"}, function(response) {});
-
-            } catch (err) {
-                  console.log(err)
-            }
-//            if (tabs[i].url.indexOf('facebook.com') !== -1) {
-//                    ret.urn
-//            }
-        }
-    });
-
-
-}
-
-function getAdvertisers() {
-
-    chrome.tabs.query({}, function(tabs){
-
-        for (let i=0;i<tabs.length;i++) {
-            try{
-//            if (tabs[i].url.indexOf('facebook.com') !== -1) {
-                chrome.tabs.sendMessage(tabs[i].id, {type: "getAdvertisers"}, function(response) {});
-//                    return
-//            }
-            } catch (err) {
-                console.log(err)
-            }
-
-        }
-    });
-
-}
 
 function getAdActivity(lastItem) {
 
@@ -1910,78 +1046,6 @@ function getAdActivity(lastItem) {
 
 }
 
-/**
- * checks if it is time (and app allows it) to retrieve the interests of current user
- * @return {}
- */
-
-/**
- * checks if it is time (and app allows it) to retrieve the interests of current user
- * @return {}
- */
-function checkForInterests(){
-
-    if (hasCurrentUserConsent(0)!==true) {
-        captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-        window.setTimeout(checkForInterests,ONEMINUTE);
-        return
-
-    }
-
-    if ((localStorage.collectPrefs!=='true') ) {
-        console.log("CollectPrefs set to no");
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
-
-        return
-    }
-
-
-    if (canUserPreferenceCrawl(CURRENT_USER_ID,'interests')) {
-        console.log("User can crawl for interests");
-        getInterests();
-    }
-
-
-
-    window.setTimeout(checkForInterests,ONEMINUTE)
-
-}
-
-
-
-/**
- * checks if it is time (and app allows it) to retrieve the advertisers (preference page) of current user
- * @return {}
- */
-function checkForAdvertisers(){
-
-
-    if (hasCurrentUserConsent(0)!==true) {
-        captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-        window.setTimeout(checkForAdvertisers,ONEMINUTE);
-        return;
-
-    }
-
-    if ((localStorage.collectPrefs!=='true') ) {
-        console.log("CollectPrefs set to no");
-
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
-        return
-    }
-
-    if (canUserPreferenceCrawl(CURRENT_USER_ID,'advertisers')) {
-        console.log("User can crawl for advertisers");
-
-        getAdvertisers();
-    }
-
-
-
-
-    window.setTimeout(checkForAdvertisers,ONEMINUTE)
-
-}
 /**
  * Get languages supports(list of support languages, sponsored_text,
  * question_text and story_text) for the adgrabber.js
@@ -2013,37 +1077,6 @@ function getSupportedLangs(){
 
 
 captureErrorBackground(getSupportedLangs,[],URLS_SERVER.registerError,undefined)
-
-/**
- * checks if it is time (and app allows it) to retrieve the clicked ads of the user.
- * (Note: this is allowed only for users that have signed the new privacy policy --with id==3)
- * @return {}
- */
-function checkForAdActivity() {
-    // can collect only from people who signed the new consent
-    if (hasCurrentUserConsent(3)!==true) {
-        captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,3,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-        window.setTimeout(checkForAdvertisers,ONEMINUTE);
-        return;
-
-    }
-
-
-    var lastTs = localStorage.lastAdActivityCrawl ? localStorage.lastAdActivityCrawl : 0
-    if (!lastTs) {
-        lastTs = 0;
-    }
-
-    ts = (new Date()).getTime()
-    if (ts - lastTs > DAY_MILISECONDS / 2) {
-        console.log('Getting ad activity')
-        getAdActivity("-1");
-    }
-
-
-    window.setTimeout(checkForAdActivity, ONEMINUTE)
-
-}
 
 
 function mediaRequestsDone(reqId) {
@@ -2167,14 +1200,6 @@ function sendSideAd(request,sendResponse) {
 
 
 }
-
-
-
-
-
-
-
-
 
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
@@ -2587,9 +1612,6 @@ chrome.runtime.onMessage.addListener(
                 console.log('advertisers...')
                 console.log(request)
                 console.log( URLS_SERVER.registerAdvertisers);
-                if (CRAWLINGPREFERENCES) {
-                    PREFERENCESCRAWLED.advertisers=true;
-                }
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(0)!=true)) {
                     return
                 }
@@ -2620,7 +1642,7 @@ chrome.runtime.onMessage.addListener(
                             return true};
 
 
-                        localStorage.lastAdvertiserCrawl = (new Date()).getTime()
+                        setLastUserPreferenceCrawlSuccessfullAttempt(CURRENT_USER_ID,'advertisers')
 //          sendFrontAd(request,sendResponse);
                         return true
                     },
@@ -2646,9 +1668,7 @@ chrome.runtime.onMessage.addListener(
                 CURRENT_USER_ID = request['user_id'];
                 console.log('ad activity...')
                 console.log(request)
-                if (CRAWLINGPREFERENCES) {
-                    PREFERENCESCRAWLED.adactivity = true;
-                }
+
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(3)!=true)) {
                     return
                 }
@@ -2671,9 +1691,6 @@ chrome.runtime.onMessage.addListener(
                 CURRENT_USER_ID = request['user_id'];
                 console.log('ad activity data...')
                 console.log(request)
-                if (CRAWLINGPREFERENCES) {
-                    PREFERENCESCRAWLED.adactivity = true;
-                }
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(3)!=true)) {
                     return
                 }
@@ -2713,16 +1730,16 @@ chrome.runtime.onMessage.addListener(
             }
 
             if (request[TYPE] == TYPES.interests) {
-                  CURRENT_USER_ID = request['user_id'];
+                CURRENT_USER_ID = request['user_id'];
                 console.log('interests...')
                 console.log(request)
-                if (CRAWLINGPREFERENCES) {
-                    PREFERENCESCRAWLED.interests=true;
-                }
 
+                if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(0)!=true)) {
+                    return
+                }
                 $.ajax({
                     type: REQUEST_TYPE,
-                    url: URLS_SERVER.registerInterests,
+                    url: URLS_SERVER.   registerInterests,
                     dataType: "json",
                     traditional:true,
                     data: JSON.stringify(replaceUserIdEmail(request)),
@@ -2744,13 +1761,12 @@ chrome.runtime.onMessage.addListener(
                                 return;
                             }
                             console.log('Stoping trying...');
-                            return
-                            console.log('failure')
                             return true};
 
                         console.log('saving last interest scroll')
 
-                        localStorage.lastInterestCrawl = (new Date()).getTime()
+                        setLastUserPreferenceCrawlSuccessfullAttempt(CURRENT_USER_ID,'interests')
+                        // localStorage.lastInterestCrawl = (new Date()).getTime()
 
 //          sendFrontAd(request,sendResponse);
                         return true
@@ -2774,59 +1790,18 @@ chrome.runtime.onMessage.addListener(
 
             if (request[TYPE] == TYPES.demographics) {
                 CURRENT_USER_ID = request['user_id'];
-                console.log('demographics...')
+                console.log('demographics and behaviors...');
                 console.log(request)
-                if (CRAWLINGPREFERENCES) {
-                    PREFERENCESCRAWLED.demBeh=true;
-                }
+
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(0)!=true)) {
+
+                    console.log(localStorage.collectPrefs);
+                    console.log(hasCurrentUserConsent(0));
+                    console.log("No consent or no preferences")
                     return
                 }
-                $.ajax({
-                    type: REQUEST_TYPE,
-                    url: URLS_SERVER.registerDemBeh,
-                    dataType: "json",
-                    traditional:true,
-                    data: JSON.stringify(replaceUserIdEmail(request)),
-                    tryCount : 0,
-                    retryLimit : 3,
-                    success: function (a) {
-                        if (!a[STATUS] || (a[STATUS]==FAILURE)) {
-                            if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-                            }
+                registerDemBehToServer(request);
 
-                            this.tryCount++;
-                            if (this.tryCount <= this.retryLimit) {
-                                //try again
-                                console.log('Trying again...')
-
-                                $.ajax(this);
-                                return;
-                            }
-                            console.log('Stoping trying...');
-                            return
-
-                            return true};
-                        localStorage.lastBehaviorCrawl = (new Date()).getTime();
-
-//          sendFrontAd(request,sendResponse);
-                        return true
-                    },
-                    error : function(xhr, textStatus, errorThrown ) {
-                        this.tryCount++;
-                        if (this.tryCount <= this.retryLimit) {
-                            //try again
-                            console.log('Trying again...')
-
-                            $.ajax(this);
-                            return;
-                        }
-                        console.log('Stoping trying...');
-                        return
-                    }
-
-                });
             }
 
             if(request[TYPE] === TYPES.statusAdBlocker){
@@ -2934,232 +1909,13 @@ chrome.tabs.onUpdated.addListener(onFacebookLogin);
 
 captureErrorBackground(getCurrentUserId,[],URLS_SERVER.registerError,undefined)
 
-captureErrorBackground(getLanguageUserIdFromLanguagePage,[],URLS_SERVER.registerError,undefined)
+captureErrorBackground(getCurrentLanguageByVersion,[],URLS_SERVER.registerError,undefined)
+
+
+captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined);
+captureErrorBackground(checkForAdvertisers,[],URLS_SERVER.registerError,undefined);
+captureErrorBackground(checkForInterests,[],URLS_SERVER.registerError,undefined);
 
 captureErrorBackground(exploreQueue,[],URLS_SERVER.registerError,undefined);
 
 
-
-/******************************************************************* News organisaton sites ****************************************/
-
-var NEWS_ARTICLES = {};
-
-
-function sendTabArticle(request){
-    $.ajax({
-        type: REQUEST_TYPE,
-        url: URLS_SERVER.registerArticle,
-        dataType: "json",
-        traditional: true,
-        data: JSON.stringify(replaceUserIdEmail(request)),
-        tryCount: 0,
-        retryLimit: 3,
-        success: function (a) {
-            console.log(a)
-            if (!a[STATUS] || (a[STATUS] == FAILURE)) {
-                if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
-                    captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
-                }
-
-                this.tryCount++;
-                if (this.tryCount <= this.retryLimit) {
-                    //try again
-                    console.log('Trying again...')
-
-                    $.ajax(this);
-                    return;
-                }
-                console.log('Stoping trying...');
-                console.log('failure')
-                return true
-            };
-
-            return true
-        },
-        error: function (xhr, textStatus, errorThrown) {
-            this.tryCount++;
-            if (this.tryCount <= this.retryLimit) {
-                //try again
-                console.log('Trying again...')
-
-                $.ajax(this);
-                return;
-            }
-            console.log('Stoping trying...');
-            return
-        }
-
-    });
-    return true;
-}
-
-
-/**
- * Set tab with ID as active, other tabs inactive - Update time-elapsed for these tab
- * @param {number} activeTabID to be set as active
- *
- */
-function setActiveTab(activeTabID){
-    let tsNow = (new Date()).getTime();
-    //NEWS_ARTICLES[activeTabID].time_elapsed.push({'start':tsNow, 'end':-1})
-    for(let key in NEWS_ARTICLES){
-        if(NEWS_ARTICLES[key].id !== activeTabID){
-            let l = NEWS_ARTICLES[key].time_elapsed.length;
-            if (l > 0 && NEWS_ARTICLES[key].time_elapsed[l - 1]['end_ts'] === -1){
-                NEWS_ARTICLES[key].time_elapsed[l-1]['end_ts'] = tsNow;
-            }
-
-            NEWS_ARTICLES[key].active = false;
-        }
-    }
-}
-
-function addToNewsQueue(tabData){
-    if (Object.keys(NEWS_ARTICLES).includes(tabData.id.toString())){
-        let key = tabData.id;
-        if(NEWS_ARTICLES[key].url !== tabData.url){//Changed url
-            let l = NEWS_ARTICLES[key].length;
-            tsNow = (new Date()).getTime();
-            if (l > 0 && NEWS_ARTICLES[key].time_elapsed[l-1]['end_ts'] === -1){
-                NEWS_ARTICLES[key].time_elapsed[l - 1]['end_ts'] = tsNow;
-            }
-            NEWS_ARTICLES[key]['end_ts'] = tsNow;
-            NEWS_ARTICLES[key]['status'] = 'closed';
-            sendTabArticle({...NEWS_ARTICLES[key]});
-            delete NEWS_ARTICLES[key];
-
-            NEWS_ARTICLES[key] = tabData;
-            if (tabData.active) {
-                setActiveTab(tabData.id)
-            }
-        }
-    }
-    else{
-        NEWS_ARTICLES[tabData.id] = tabData;
-        if (tabData.active) {
-            setActiveTab(tabData.id)
-        }
-    }
-}
-
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab){
-    if (changeInfo['status'] === 'complete'){
-        var _domain = url_domain(tab.url);
-        if (isNewsDomain(_domain)){
-            let tsNow = (new Date()).getTime();
-            var time_elapsed = [];
-            if (tab.active) {
-                time_elapsed.push({ 'start_ts': tsNow, 'end_ts': -1 });
-            }
-            let tabData = {
-                'id': tabId,
-                'start_ts': (new Date()).getTime(),
-                'end_ts': -1,
-                'url':tab.url,
-                'user_id': CURRENT_USER_ID,
-                'time_elapsed': time_elapsed,
-                'active': tab.active
-            };
-            addToNewsQueue(tabData);
-        }
-        else {
-            if(Object.keys(NEWS_ARTICLES).includes(tabId.toString())) {
-                let l = NEWS_ARTICLES[tabId].time_elapsed.length;
-                tsNow = (new Date()).getTime();
-                if(l > 0 && NEWS_ARTICLES[tabId].time_elapsed[l-1]['end_ts'] === -1){
-                    NEWS_ARTICLES[tabId].time_elapsed[l - 1]['end_ts'] = tsNow;
-                }
-                NEWS_ARTICLES[tabId]['end_ts'] = tsNow;
-                NEWS_ARTICLES[tabId]['status'] = 'closed';
-
-                sendTabArticle({...NEWS_ARTICLES[tabId]})
-                console.log("Just below");
-                console.log(NEWS_ARTICLES[tabId]);
-                delete NEWS_ARTICLES[tabId];
-            }
-        }
-    }
-});
-
-chrome.tabs.onActivated.addListener(function (info){
-    setActiveTab(info.tabId);
-    if(Object.keys(NEWS_ARTICLES).includes(info.tabId.toString())){
-        let tsNow = (new Date()).getTime();
-        NEWS_ARTICLES[info.tabId].time_elapsed.push({ 'start_ts': tsNow, 'end_ts': -1 });
-        NEWS_ARTICLES[info.tabId].active = true;
-    }
-
-});
-
-chrome.tabs.onRemoved.addListener(function(tabId, changeInfo){
-    let tsNow = (new Date()).getTime();
-    if(Object.keys(NEWS_ARTICLES).includes(tabId.toString())){
-        let l = NEWS_ARTICLES[tabId].time_elapsed.length;
-        if(l > 0 && NEWS_ARTICLES[tabId].time_elapsed[l-1]['end_ts'] === -1){
-            NEWS_ARTICLES[tabId].time_elapsed[l - 1]['end_ts'] = tsNow;
-        }
-        NEWS_ARTICLES[tabId]['end_ts'] = tsNow;
-        NEWS_ARTICLES[tabId]['status'] = 'closed';
-
-        sendTabArticle({...NEWS_ARTICLES[tabId]})
-        console.log("Just below");
-        console.log(NEWS_ARTICLES[tabId]);
-        delete NEWS_ARTICLES[tabId];
-    }
-});
-
-
-
-
-
-/**********************DEPRECATED******************************************/
-
-function getParameterByName(name, url) {
-    if (!url) {
-        url = window.location.href;
-    }
-    name = name.replace(/[\[\]]/g, "\\$&");
-    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-        results = regex.exec(url);
-    if (!results) return null;
-    if (!results[2]) return '';
-
-    return decodeURIComponent(results[2].replace(/\+/g,  " "));
-}
-/***************************************************************************/
-
-/***********************TEST FUNCTIONS*********************
-
- /**  TESTS background script register error
- */
-// captureErrorBackgroundTest(URLS_SERVER.registerError);
-
-
-
-/** Get domain form URL
- *
- * @param {string} URL to process
- * @return {string} domain
- */
-function url_domain(data) {
-    var a = document.createElement('a');
-    a.href = data;
-    return a.hostname.replace('www.', '');
-}
-
-/**
- * Checking whehter a domain belong to news or not
- */
-function isNewsDomain(landing_domain) {
-    if (landing_domain === '' || landing_domain === undefined)
-        return false;
-    for (let i = 0; i < NEWS_DOMAINS.length; i++) {
-        //if (NEWS_DOMAINS[i].indexOf(landing_domain) != -1) {
-        if (NEWS_DOMAINS[i] === landing_domain) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/*****************************************************/

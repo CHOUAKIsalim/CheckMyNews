@@ -1,5 +1,6 @@
 var LANDING_DOMAIN_NEW_INTERFACE_CLASS = "oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1et5uql a8c37x1j hop8lmos enqfppq2 e9vueds3 j5wam9gi knj5qynh m9osqain ni8dbmo4 stjgntxs ltmttdrg g0qnabr5";
-
+var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
+var POST_COLLECTED = "post_collected";
 
 /**
  * Grab News Posts from user view
@@ -10,13 +11,12 @@ function grabNewsPostsNewInterface() {
 
         var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
 
-        var allDomPosts = $('div[class*="' + POSTS_CLASS + '"]');
-        var allDomPosts = document.querySelectorAll('div.j83agx80.l9j0dhe7.k4urcfbm');
+        var allDomPosts = document.getElementsByClassName(POST_CLASS_NEW_INTERFACE);
         for (let i = 0; i < allDomPosts.length; i++) {
             if (!allAdsId.includes(allDomPosts[i].id)) {
 
                 let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
-                if (elmPosition === undefined || allDomPosts[i].className.indexOf(COLLECTED) != -1) {
+                if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) != -1) {
                     continue;
                 }
 
@@ -36,7 +36,7 @@ function grabNewsPostsNewInterface() {
                 if (isNewsDomain(_news_domain)) {
                     COLLECTED_NEWS_DOMAINS.push(_news_domain)
                     //Store collected domains of news post in order to test
-                    allDomPosts[i].className += " " + COLLECTED;
+                    allDomPosts[i].className += " " + POST_COLLECTED;
                     // console.log(allDomPosts[i].textContent)
                     // console.log(postData);
                     console.log('News post collected')
@@ -54,7 +54,7 @@ function grabNewsPostsNewInterface() {
                         if (isNewsDomain(landing_domain) || shortcut_domain !== '') {
                             //Store collected domains of news post in order to test
                             COLLECTED_NEWS_DOMAINS.push(landing_domain)
-                            allDomPosts[i].className += " " + COLLECTED;
+                            allDomPosts[i].className += " " + POST_COLLECTED;
                             // console.log(allDomPosts[i].textContent)
                             // console.log(postData);
                             console.log('News post collected')

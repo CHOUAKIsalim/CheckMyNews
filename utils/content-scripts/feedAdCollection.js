@@ -35,7 +35,7 @@ var EXPLANATION_TEXT = ["Why am I seeing this?", "Why am I seeing this ad", "Pou
 /**
  * check if DOM element is hidden
  *
- * 
+ *
  * @param  {object}  el DOM element to be examined
  * @return {Boolean}    true if DOM element is hidden, else false
  */
@@ -49,7 +49,7 @@ function isHidden(el) {
 /**
  * check if DOM element is scrolled into the view of the user
  *
- * 
+ *
  * @param  {object}  elem DOM element to be examined
  * @return {Boolean}      true if DOM element is scrolled into the view of the user else, false
  */
@@ -78,7 +78,7 @@ function isScrolledIntoView(elem)
 /**
  * check if DOM element is/was scrolled into the view of the user
  *
- * 
+ *
  * @param  {object}  elem DOM element to be examined
  * @return {Boolean}      true if DOM element is scrolled into the view of the user else, false
  */
@@ -101,12 +101,12 @@ function isWasScrolledIntoView(elem)
 
 /**
  * filter out links that do not correspond to front ad links (sponsored) that are not hidden from array.
- * can detect ads that are tagged with the political tag, but for the rest, 
- * it currently cannot capture them for some users 
- * (TODO: check if it is for more users these days) due to 
- * changes in the way Facebook shows sponsored ad, 
+ * can detect ads that are tagged with the political tag, but for the rest,
+ * it currently cannot capture them for some users
+ * (TODO: check if it is for more users these days) due to
+ * changes in the way Facebook shows sponsored ad,
  * so it should be used in combination with other functions that can detect front ads
- * 
+ *
  * @param  {Array} lst  array that contains links marked with the <a> tag
  * @return {Array}      array that contains only links are front Ad links (and not hidden)
  */
@@ -114,33 +114,33 @@ function filterFeedAds(lst) {
     var newLst = [];
     for (var i=0;i<lst.length;i++) {
         let ajaxify = lst[i].getAttribute('ajaxify');
-        
-        if ((ajaxify!=null) && (ajaxify.indexOf(POLITICAL_AD)>-1)   && (isScrolledIntoView(lst[i])) && (lst[i].getAttribute('class').indexOf(NOT_FRONT_AD)===-1)){
-             newLst.push(lst[i]);
+
+        if ((ajaxify!=null) && (ajaxify.indexOf(POLITICAL_AD)>-1) && (lst[i].getAttribute('class').indexOf(NOT_FRONT_AD)===-1)){
+            newLst.push(lst[i]);
             continue
         }
 
-        if ((SPONSORED.indexOf(lst[i].text)>=0 ) && (lst[i].getAttribute('class')) &&  (lst[i].getAttribute('class').indexOf(NOT_FRONT_AD)===-1) && (isScrolledIntoView(lst[i]))) {
+        if ((SPONSORED.indexOf(lst[i].text)>=0 ) && (lst[i].getAttribute('class')) &&  (lst[i].getAttribute('class').indexOf(NOT_FRONT_AD)===-1)) {
             newLst.push(lst[i])
 
         }
-        
-                    if ((SPONSORED.indexOf(lst[i].text)>=0 ) && (lst[i].getAttribute('class')) &&  (lst[i].getAttribute('class').indexOf(NOT_FRONT_AD)===-1) && (!isScrolledIntoView(lst[i]))){
-                console.log(lst[i])
-                            console.log('*****************HIDDEN*************');
 
-            }
+        if ((SPONSORED.indexOf(lst[i].text)>=0 ) && (lst[i].getAttribute('class')) &&  (lst[i].getAttribute('class').indexOf(NOT_FRONT_AD)===-1) && (!isScrolledIntoView(lst[i]))){
+            console.log(lst[i])
+            console.log('*****************HIDDEN*************');
+
+        }
     }
-    
+
     return newLst
 }
 
 
 
 /**
- * filter out links that are not ads and are hidden, from the links 
- * that are signified as sponsored content through their class 
- * 
+ * filter out links that are not ads and are hidden, from the links
+ * that are signified as sponsored content through their class
+ *
  * @param  {Array} lst  array that contains links marked with the <a> tag
  * @return {Array}      array that contains only links are front Ad links (and not hidden)
  */
@@ -151,14 +151,14 @@ function filteredClassedAds(lst) {
             newLst.push(lst[i])
 
         }
-        
+
                     if ((SPONSORED.indexOf(lst[i].text)>=0 ) && (lst[i].getAttribute('class')) &&  (lst[i].getAttribute('class').indexOf(NOT_FRONT_AD)===-1) && (!isScrolledIntoView(lst[i]))){
                 console.log(lst[i])
                             console.log('*****************HIDDEN classed ads*************');
 
             }
     }
-    
+
     return newLst
 }
 
@@ -208,7 +208,7 @@ function filterCollectedAds(ads) {
 /**
  * filter out css sheets that for sure do not contain the class of the sponsored tag
  * (to be used in older method that detects ads)
- * 
+ *
  * @param  {array} sheets array containing all the CSS sheets of the page
  * @return {array}        array containing sheets that for sure do not contain the class of the sponsored tag
  */
@@ -225,40 +225,40 @@ function filterSheets(sheets) {
 
 
 /**
- * find the class name of the sponsored tag, if it is included in the page 
+ * find the class name of the sponsored tag, if it is included in the page
  * (old method that do not work any more)
  *
  * @param  {object} sheet css sheet
  * @return {string}       class name of string with the sponsored class
  */
 function findSponsoredClass(sheet) {
-    
+
     if ((!sheet.hasOwnProperty('rules')) || (!sheet.hasOwnProperty('cssRules'))) {
         return
     }
-    
+
     let rules = sheet.hasOwnProperty('rules')?sheet.rules:sheet.cssRules
     if (!rules) {
          console.log(rules)
-        return 
+        return
     }
-    
+
     for (var i=0;i<rules.length;i++) {
         if (!rules[i].cssText) {
             continue
         }
-        
+
         var text = rules[i].cssText;
         for (let k=0;k<SPONSORED.length;k++) {
             if (text.indexOf('::after { content: "'+SPONSORED[k]+'"; }')>-1) {
             return text.replace('::after { content: "'+SPONSORED[k]+'"; }','')
         }
-            
+
         }
-        
-        
+
+
     }
-    return 
+    return
 }
 
 
@@ -266,55 +266,54 @@ function findSponsoredClass(sheet) {
 
 
 
-
 /**
- * find front ads that can be detected throught their css class 
+ * find front ads that can be detected throught their css class
  * (old method that doesn't work any more)
- * 
+ *
  * @return {array} array of front ad objects
  */
 function getFeedAdsByClass() {
-    
+
     var sheets = document.styleSheets;
     var filteredSheets = filterSheets(sheets);
-    var sponsoredClass = getSponsoredFromClasses(filteredSheets) 
-    
+    var sponsoredClass = getSponsoredFromClasses(filteredSheets)
+
     if (!sponsoredClass) {
         return []
     }
-    
+
     return filteredClassedAds(document.getElementsByClassName(sponsoredClass));
 
-    
+
 }
 
 
 
 /**
  * Get text of children of DOM element that is visible
- * 
+ *
  * @param  {array} children array that contains children of DOM element
  * @return {string}         non hidden text that is included in the DOM elements of children array
  */
 function getNonHiddenTextByChildren(children){
         var txt = ''
-    
+
     for (let i=0;i<children.length;i++) {
-        
+
         if ((getComputedStyle(children[i])['font-size'] === "0px") || (getComputedStyle(children[i])['opacity'] === "0")  ){
             continue;
         }
         txt += children[i].innerText;
     }
-    
+
     return txt
 }
 
 
-// 
+//
 /**
- * checks if link contains hidden sponsored letters. 
- * Facebook currently adds in the "sponsored" tag hidden letters with font-size:0px or opacity of 0, 
+ * checks if link contains hidden sponsored letters.
+ * Facebook currently adds in the "sponsored" tag hidden letters with font-size:0px or opacity of 0,
  * so this is required to find sponsored tags
  *
  * @param  {object}  elem DOM element(link) to be examined
@@ -324,13 +323,13 @@ function isLinkSponsoredHiddenLetters(elem) {
     if (elem.children.length!==1) {
         return false;
     }
-    
+
     if (elem.children[0].children.length===0) {
         return false;
     }
-    
+
     var children = elem.children[0].children;
-    
+
     var tag = getNonHiddenTextByChildren(children);
 
     for (let i=0;i<SPONSORED.length;i++) {
@@ -338,14 +337,14 @@ function isLinkSponsoredHiddenLetters(elem) {
             return true;
         }
     }
-    
+
     return false
 }
 
 
 /**
  * Get text of children of DOM element that is visible (revision August 2019)
- * 
+ *
  * @param  {array} children array that contains children of DOM element
  * @return {string}         non hidden text that is included in the DOM elements of children array
  */
@@ -375,19 +374,19 @@ function getNonHiddenTextInAttributeByChildren(children){
 
         // console.log(typeof(child),getComputedStyle(child))
 
-        
+
         if ((getComputedStyle(node)['display'] != "inline")  ){
             continue;
         }
         txt += node.getAttribute('data-content')
     }
-    
+
     return txt
 }
 
 
 /**
- * checks if link contains hidden sponsored letters (revision August 2019). 
+ * checks if link contains hidden sponsored letters (revision August 2019).
  * Facebook  adds in the "sponsored" tag hidden letters that have a "display" of none
  * and their values are stored as attribute values of the data-content attribute
  * so this is required to find sponsored tags
@@ -440,7 +439,7 @@ function isSpanSponsoredTagHiddenLettersAttributeValues(elem){
             return true;
         }
     }
-    
+
     return false
 
 
@@ -457,10 +456,10 @@ function isSpanSponsoredTagHiddenLettersAttributeValues(elem){
 
 /**
  * check if sponsored link is hidden based on its computed style.
- * 
+ *
  * @param  {object}  el DOM object that corresponds to the sponsored link
- * @return {Boolean}    true if its computed style is None 
- * which means that it does not appear. 
+ * @return {Boolean}    true if its computed style is None
+ * which means that it does not appear.
  */
 function isSponsoredLinkHidden(el) {
     var style = window.getComputedStyle(el);
@@ -470,20 +469,19 @@ function isSponsoredLinkHidden(el) {
 
 /**
  * return Front ads that contain links with the masked "Sponsored" tag
- * 
+ *
  * @return {array} array of links that contain the sponsored tag
  */
 function findFeedAdsWithHiddenLetters() {
     var elems = document.getElementsByTagName('a');
     var links = [];
     for (let i=0;i<elems.length;i++) {
-        if ((isLinkSponsoredHiddenLetters(elems[i])) && (isScrolledIntoView(elems[i]))) {
+        if ((isLinkSponsoredHiddenLetters(elems[i]))) {
             links.push(elems[i]);
         }
     }
-    
     return links;
-    
+
 }
 
 
@@ -493,7 +491,7 @@ function findFeedAdsWithHiddenLetters() {
 
 /**
  * add links that are marked with the class name of GRAB_ME (for test reasons)
- * 
+ *
  * @param  {array} links links that have the sponsored tag
  * @return {array}       links that have the sponsored tag + links that hae the class name GRAB_ME
  */
@@ -521,16 +519,16 @@ function getGrabbed(links){
  */
 function getChildren(n, skipMe){
     var r = [];
-    for ( ; n; n = n.nextSibling ) 
+    for ( ; n; n = n.nextSibling )
        if ( n.nodeType == 1 && n != skipMe)
-          r.push( n );        
+          r.push( n );
     return r;
 };
 
 
 /**
  * get siblings of DOM element n
- * 
+ *
  * @param  {object} n DOM element n
  * @return {array}    array containing all DOM siblings of n
  */
@@ -541,10 +539,10 @@ function getSiblings(n) {
 
 
 /**
- * return siblings of element that have sponsored tag 
- * (different way of masking sponsored tag where the link 
+ * return siblings of element that have sponsored tag
+ * (different way of masking sponsored tag where the link
  * is a sibling of the elements that contain the masked "Sponsored tag")
- * 
+ *
  * @param  {object} n DOM element n
  * @return {array}    array containing all DOM siblings of n
  */
@@ -563,7 +561,7 @@ function areSiblingsSponsored(elem){
 }
 
 
-/** 
+/**
  * find all links whose siblings contain the "Sponsored" tag
  *
  * @return {array} array containing all the sponsored links
@@ -575,7 +573,7 @@ function findFeedAdsWithHiddenLettersSiblings(){
 
     for (let i=0;i<linksPrivacy.length;i++) {
         if (areSiblingsSponsored(linksPrivacy[i])) {
-            links.push(linksPrivacy[i])        
+            links.push(linksPrivacy[i])
         }
     }
 
@@ -585,8 +583,8 @@ function findFeedAdsWithHiddenLettersSiblings(){
 
 
 
-/** 
- * find all elements that contain the "Sponsored" tag when we have hidden letters 
+/**
+ * find all elements that contain the "Sponsored" tag when we have hidden letters
  * and letters are stored as attribute values
  *
  * @return {array} array containing all the sponsored links
@@ -597,12 +595,12 @@ function findFeedAdsWithHiddenLettersAttributeValues() {
     var links = [];
     for (let i=0;i<linksSubtitles.length;i++) {
         // if ((isSpanSponsoredTagHiddenLettersAttributeValues(linksSubtitles[i])) && (!isSponsoredLinkHidden(linksSubtitles[i]))) {
-        if ((isSpanSponsoredTagHiddenLettersAttributeValues(linksSubtitles[i])) && (isScrolledIntoView(linksSubtitles[i]))) {
+        if ((isSpanSponsoredTagHiddenLettersAttributeValues(linksSubtitles[i])) ) {
 
             links.push(linksSubtitles[i]);
         }
     }
-    
+
     return links;
 }
 
@@ -639,7 +637,7 @@ function findFeedAdsWithLettersInBoldElements() {
     var elems = document.getElementsByTagName('a');
     var links = [];
     for(let i=0; i<elems.length; i++){
-        if ((isLinkSponsoredHiddenInBoldElement(elems[i])) && (isScrolledIntoView(elems[i]))) {
+        if ((isLinkSponsoredHiddenInBoldElement(elems[i]))) {
             links.push(elems[i]);
         }
     }
@@ -674,7 +672,7 @@ function findFeedAdsWithLettersInBoldElementsNotContainedInLinks() {
             j++;
         }
         if(found) {
-            if(isLinkSponsoredHiddenInBoldElement(currentElement) && isScrolledIntoView(elems[i])) {
+            if(isLinkSponsoredHiddenInBoldElement(currentElement)) {
                 links.push(currentElement)
             }
         }
@@ -686,36 +684,23 @@ function findFeedAdsWithLettersInBoldElementsNotContainedInLinks() {
     return links;
 
 }
-
 /**
  * get all front ad DOM elements. Since several methods have been employed over the years,
  * and Facebook is known to return to old methods from time to time, we use all methods in conjuction
- * 
- * 
- * @return {array} array containing all front ads
+ *
+ *
+ * @return {array} array containing all front adsu
  */
 function getFeedAdFrames(funParent=getParentAdDiv) {
-    console.log("begin Get Feed Ad frames");
     var links = document.getElementsByTagName('a');
-    
-
     links = filterFeedAds(links);
-
     Array.prototype.push.apply(links,getFeedAdsByClass());
-
-    
-    
     Array.prototype.push.apply(links,findFeedAdsWithHiddenLetters());
-
     Array.prototype.push.apply(links,findFeedAdsWithHiddenLettersSiblings());
     Array.prototype.push.apply(links,findFeedAdsWithHiddenLettersAttributeValues());
-
-    Array.prototype.push.apply(links, findFeedAdsWithLettersInBoldElements());
-    Array.prototype.push.apply(links, findFeedAdsWithLettersInBoldElementsNotContainedInLinks());
-
-    links = links.unique();
-
-    
+    Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElements());
+    Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElementsNotContainedInLinks());
+    links = uniqueArray(links);
     links = getGrabbed(links);
 
     var already_in_list = new Set([]);
@@ -729,13 +714,15 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
             continue
         }
 
-        frontAds.push(frame);  
-        already_in_list.add(frame.id)  
+        frontAds.push(frame);
+        already_in_list.add(frame.id)
     }
-    console.log("end Get Feed Ad frames");
-    return filterCollectedAds(frontAds);
-    
-    
+
+    frontAds = uniqueArray(frontAds);
+    frontAds = filterCollectedAds(frontAds);
+    console.log("heeeeeeeeeeeeeeeeeeeeeeeeeere");
+    console.log(frontAds);
+    return frontAds;
 }
 
 
@@ -745,7 +732,7 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
 
 
 /**
- * return landing pages and images from the front ads. 
+ * return landing pages and images from the front ads.
  * Currently landing pages are not updated, so we collect only a subset.
  *
  * @param  {array} links    array of link DOM elements that are included in the front ad
@@ -761,12 +748,12 @@ function getLandingPagesFeedAds(links,frontAd) {
         if (!onmouseover) {
             continue
         }
-        
+
         let imgs = link.getElementsByTagName('img');
         if (imgs.length>0) {
             for (let j=0;j<imgs.length;j++) {
                 if (imgs[j].src) {
-                    images.push(imgs[j].src)   
+                    images.push(imgs[j].src)
                     continue
                 }
                     console.log(imgs[j])
@@ -775,41 +762,41 @@ function getLandingPagesFeedAds(links,frontAd) {
         if ( (onmouseover.indexOf('LinkshimAsyncLink')===-1)) {
             continue
         }
-        
-        
+
+
         let urls = onmouseover.match(/"[\s\S]*"/);
         if (!urls) {
             continue
         }
-        
-        
+
+
         landingPages.extend(urls);
-        
+
     }
-    
-    
+
+
         var additionalImages = frontAd.getElementsByClassName('scaledImageFitWidth');
 //    console.log(additionalImages)
     for (let i=0;i<additionalImages.length;i++) {
         images.push(additionalImages[i].src);
 
     }
-    
+
         var additionalImages = frontAd.getElementsByClassName('scaledImageFitHeight');
 //    console.log(additionalImages)
     for (let i=0;i<additionalImages.length;i++) {
         images.push(additionalImages[i].src);
 
     }
-    
-    
+
+
       var additionalImages = frontAd.getElementsByClassName('_kvn img');
 //    console.log(additionalImages)
     for (let i=0;i<additionalImages.length;i++) {
         images.push(additionalImages[i].src);
 
     }
-    
+
 
     return [landingPages.unique(),images.unique()];
 }
@@ -823,7 +810,7 @@ function getLandingPagesFeedAds(links,frontAd) {
 /**
  * return advertiser id from the front ad
  *
- * 
+ *
  * @param  {object} frontAd DOM element of the front ad
  * @return {string}         advertiser id
  */
@@ -836,7 +823,7 @@ function getAdvertiserId(frontAd) {
             break
         }
     }
-    
+
     if (!link) {
         links = frontAd.getElementsByClassName("oajrlxb2 gs1a9yip g5ia77u1 mtkw9kbi tlpljxtp qensuy8j ppp5ayq2 goun2846 ccm00jje s44p3ltw mk2mc5f4 rt8b4zig n8ej3o3l agehan2d sk4xxmp2 rq0escxv nhd2j8a9 q9uorilb mg4g778l btwxx1t3 pfnyh3mw p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x tgvbjcpo hpfvmrgz jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso l9j0dhe7 i1ao9s8h esuyzwwr f1sip0of du4w35lb lzcic4wl abiwlrkh p8dawk7l oo9gr5id");
         for(let i=0; i < links.length; i++) {
@@ -853,7 +840,7 @@ function getAdvertiserId(frontAd) {
         }
 
     }
-    
+
     var advertiserId = '-1';
     try {
          let hovercard = link.getAttribute('data-hovercard')
@@ -863,15 +850,15 @@ function getAdvertiserId(frontAd) {
     if (!isNumeric(advertiserId)) {
         advertiserId ='-1';
     }
-        
+
     } catch (e) {
         console.log(e)
     }
-   
+
     let facebookPage = link.href.substring(0, link.href.indexOf('?'));
     let advertiserImage = link.getElementsByTagName('img')[0].src
     return [advertiserId,facebookPage,advertiserImage]
-    
+
 }
 
 
@@ -880,7 +867,7 @@ function getAdvertiserId(frontAd) {
 
 /**
  * check if front ad contains a video
- * 
+ *
  * @param  {object}  frontAd DOM element of front ad
  * @return {Boolean}         true if front ad has a video, else false
  */
@@ -891,7 +878,7 @@ function isVideo(frontAd) {
 
 /**
  * get video id of front ad video
- * 
+ *
  * @param  {object} frontAd DOM element of front ad
  * @return {string(TODO: check if number)}         video id of front ad
  */
@@ -917,7 +904,7 @@ function getVideoId(frontAd) {
  */
 function getBackgroundUrlImages(frontAd) {
     let images = [];
-    
+
 
     var additionalImages = frontAd.getElementsByTagName('img');
     for (let i=0;i<additionalImages.length;i++) {
@@ -927,10 +914,10 @@ function getBackgroundUrlImages(frontAd) {
             images.push(backgroundImage);
         }
     }
-        
+
 
     return images;
-    
+
 }
 
 
@@ -938,16 +925,16 @@ function getBackgroundUrlImages(frontAd) {
 
 
 /**
- * processes feed ad object adding in the object 
+ * processes feed ad object adding in the object
  * all the data/meta data that we save in the server (except of explanation of the ad)
- * 
+ *
  * @param  {object} feedAd DOM element of the front ad
  * @return {object}         object to be send to the server
  */
 function processFeedAd(frontAd) {
     //frontAd.className += " " + COLLECTED;
+    console.log(frontAd)
     var html_ad_id = frontAd.id;
-    ADSA  =  frontAd;
     let  info  =  getAdvertiserId ( frontAd ) ;
     var advertiser_facebook_id = info ? info[0] : "";
     var advertiser_facebook_page = info ? info[1] : "";
@@ -967,7 +954,7 @@ function processFeedAd(frontAd) {
         images = getBackgroundUrlImages(frontAd);
     }
 
-    var  user_id  =  getUsertiId ( ) ;
+    var  user_id  =  getUserId() ;
 
     //check position ad visible state of ad at time when ad collected
     try{
@@ -996,20 +983,21 @@ function processFeedAd(frontAd) {
 /**
  * get the DOM element that cprresponds to the more button of the (TODO: make sure it is only front) ad
  *
- * 
+ *
  * @param  {object} adFrame DOM element of the ad
  * @return {object}         more button DOM element
  */
 function getMoreButtonFrontAd(adFrame) {
+    console.log("getMoreButtonFrontAd");
     var links = adFrame.getElementsByTagName('a');
     for (var i=0;i<links.length;i++) {
         if (MORE_LINK_FRONT_LABEL.indexOf(links[i].getAttribute("aria-label"))>=0) {
             return links[i]
         }
     }
-    
-    
-    
+
+
+
 }
 
 
@@ -1020,20 +1008,21 @@ function getMoreButtonFrontAd(adFrame) {
  * @return {string}         id of the "More" button
  */
 function getButtonId(adFrame) {
+    console.log("getButtonId");
     var moreButton = getMoreButtonFrontAd(adFrame);
     return moreButton.parentElement.id;
 }
 
 /**
  * hover over the front ad's "More" button. This triggers the an ajax request to Facebook
- * which retrieves the more button contents, including the parameters 
+ * which retrieves the more button contents, including the parameters
  * embeded in the "Why Am I Seiing This?" button.
- * 
+ *
  * @param  {object} adFrame DOM element of the front ad
- * @return 
+ * @return
  */
 function hoverOverButton(adFrame) {
-    
+    console.log("hover over button");
     var moreButton = getMoreButtonFrontAd(adFrame);
     moreButton.dispatchEvent(new MouseEvent('mouseover'));
 }

@@ -74,8 +74,30 @@ if ((window.location.href.indexOf('facebook.com/ads/manager')>-1) || (window.loc
     throw new Error("Ads Manager");
 }
 
+if ((window.location.href.indexOf('www.facebook.com/ads/library/')>-1) ) {
+    console.log('exiting script...')
+    throw new Error("Ads Library");
+}
 
-captureErrorContentScript(updateAsyncParams,[],undefined);
+
+if ((window.location.href.indexOf('facebook.com/ds/preferences')>-1) || (window.location.href.indexOf('facebook.com/ads/preferences')>-1)) {
+    console.log('exiting script...')
+    throw new Error("Ads Preference Page");
+}
+
+
+
+function injectAdGrabberScripts() {
+    var s = document.createElement("script");
+    s.src = chrome.extension.getURL("injections/adsNewInterface.js");
+    (document.head||document.documentElement).appendChild(s);
+
+
+    var s1 = document.createElement("script");
+    s1.src = chrome.extension.getURL("injections/xhrOverloadButtons.js");
+    (document.head || document.documentElement).appendChild(s1);
+
+}
 
 
 function addToFrontAdQueue(ad) {
@@ -90,11 +112,8 @@ function addToFrontAdQueue(ad) {
     addEventListeners(ad);
     MouseTrack(ad);
     return true;
-    
+
 }
-
-
-/******************************************************************************************************/
 
 
 
@@ -206,7 +225,6 @@ function clickOnMenusAd(adId,sideAd,adData) {
 }
 
 
-
 function getExplanationUrlFrontAds(frontAd,adData) {
 //    sideAds[adId] = sideAd;
 
@@ -250,23 +268,23 @@ function notifyOverloadForMoreAdInfo(adData) {
 /**
  * Grabs front Ads periodically
  *
- * 
+ *
  * @return {}
  */
 function grabFeedAds() {
     if (window.location.href.indexOf('ads/preferences') == -1) {
+        console.log('Grabbing front ads...')
         var frontAds = captureErrorContentScript(getFeedAdFrames, [], []);
-        console.log(frontAds);
         for (let i = 0; i < frontAds.length; i++) {
             let adData = captureErrorContentScript(processFeedAd, [frontAds[i]], {});
             if (isEqual(adData, {}) == true) {
                 continue;
             }
-        //    if (adData['visible']) {
-                frontAds[i].className += " " + COLLECTED;
-                adData[MSG_TYPE] = FRONTADINFO;
-                captureErrorContentScript(getExplanationUrlFrontAds, [frontAds[i], adData], undefined);
-         //   }
+            //    if (adData['visible']) {
+            frontAds[i].className += " " + COLLECTED;
+            adData[MSG_TYPE] = FRONTADINFO;
+            captureErrorContentScript(getExplanationUrlFrontAds, [frontAds[i], adData], undefined);
+            //   }
         }
     }
 }
@@ -282,18 +300,16 @@ function grabFeedAdsNewInterface() {
     if (window.location.href.indexOf('ads/preferences')==-1) {
         console.log('Grabbing front ads...')
         var frontAds = captureErrorContentScript(getFeedAdFrames,[getParentAdDivNewInterface],[]);
-        console.log(frontAds);
         for (let i=0;i<frontAds.length;i++) {
             let adData = captureErrorContentScript(processFeedAdNewInterface,[frontAds[i]],{});
             if (isEqual(adData,{})==true) {
                 continue;
             }
-            console.log(adData['visible']);
-            if (adData['visible']) {
-                frontAds[i].className += " " + COLLECTED;
-                adData[MSG_TYPE] = FRONTADINFO;
-                captureErrorContentScript(notifyOverloadForMoreAdInfo,[adData],undefined);
-            }
+            //      if (adData['visible']) {
+            frontAds[i].className += " " + COLLECTED;
+            adData[MSG_TYPE] = FRONTADINFO;
+            captureErrorContentScript(notifyOverloadForMoreAdInfo,[adData],undefined);
+            //      }
         }
     }
 
@@ -344,10 +360,9 @@ function getSideAdExplanationUrlAndNotifyBackgroundScript(adData,paramsFinal,adI
 
 
 }
-
 /**
  * Collect the explanation url from the ads and then send the adData to the background script
- * 
+ *
  * @param  {object} adData. Data to be sent to the AdAnalyst server
  * @param  {object} sideAds All side ad objects thtat were detected
  * @param  {string} adId The ad id of the ad detected
@@ -384,42 +399,60 @@ function sendSideAdWithExplanationnUrl(adData,sideAds,adId) {
 
 
 
-
 /** Grab side Ads
  *
- * 
+ *
  * @return {}
  */
 function grabSideAds() {
+
     if ((Object.keys(ASYNCPARAMS).length<=0) || (Object.keys(SECOND_ASYNCPARAMS).length<=0) || (Object.keys(ASYNCPARAMSGET).length<=0)) {
 
         captureErrorContentScript(updateAsyncParams,[],undefined);
         console.log("need to update asyncparams...");
-        setTimeout(grabSideAds, INTERVAL);
+        setTimeout(grabAllAds, INTERVAL);
         return;
+
     }
     if (window.location.href.indexOf('ads/preferences')==-1) {
         sideAds = captureErrorContentScript(getSideAds,[],{});
+
+
+
         var noNewAds = Object.keys(sideAds).length;
+
         if (noNewAds>0) {
+
             let adsToProcessKeys =Object.keys(sideAds);
             for (var i=0; i<adsToProcessKeys.length;i++) {
                 let adId = adsToProcessKeys[i];
                 console.log('Processing sideAd'+ adId);
+
+
                 let adData = captureErrorContentScript(processSideAd,[sideAds[adId],adId],{});
                 if (isEqual(adData,{})==true) {
                     continue
                 }
+
+
                 captureErrorContentScript(sendSideAdWithExplanationnUrl,[adData,sideAds,adId],{});
+
+
+
+
+
             }
+
         }
     }
+
+    // setTimeout(grabAds, INTERVAL);
+
 }
 
 
 
 function grabAllAds(){
-    console.log("grabAllAds");
     let facebookInterfaceVersion = getFacebookInterfaceVersionFromParsedDoc(document);
     if (facebookInterfaceVersion=== INTERFACE_VERSIONS.old) {
         console.log("OLD FACEBOOK INTERFACE VERSION");
@@ -446,6 +479,7 @@ function permissionToGrab() {
             captureErrorContentScript(checkAdVisibleDuration, [], {});
             captureErrorContentScript(grabPosts, [], {});
             captureErrorContentScript(checkPostVisibleDuration, [],{});
+            captureErrorContentScript(onFbMessaging, [], {});
 
             // $(window).scrollEnd(function () {
             //     console.log('Scrolling end... ');
@@ -466,12 +500,11 @@ function permissionToGrab() {
             //         captureErrorContentScript(checkPostVisibleDuration, [], {});
             //     }
             // });
-            captureErrorContentScript(onFbMessaging, [], {});
             return true
         }
-
-        setTimeout(permissionToGrab, INTERVAL);
-
+        else {
+            setTimeout(permissionToGrab, INTERVAL);
+        }
     })
 }
 
@@ -507,32 +540,11 @@ function update_sponsored_text(){
     });
 }
 
-var s = document.createElement("script");
-s.src = chrome.extension.getURL("injections/xhrOverloadButtons.js");
-(document.head||document.documentElement).appendChild(s);
-
-var s1 = document.createElement("script");
-s1.src = chrome.extension.getURL("injections/adRequests.js");
-(document.head || document.documentElement).appendChild(s1);
-
-var s2 = document.createElement("script");
-s2.src = chrome.extension.getURL("third-party/paramOverload.js");
-(document.head||document.documentElement).appendChild(s2);
-
-var s3 = document.createElement("script");
-s3.src = chrome.extension.getURL("injections/explanationCrawlOverload.js");
-(document.head||document.documentElement).appendChild(s3);
-
-var s4 = document.createElement("script");
-s4.src = chrome.extension.getURL("injections/xhrOverloadAdsNewInterface.js");
-(document.head||document.documentElement).appendChild(s4);
-
-
 
 
 $(document).ready(function() {
     const updateNumberOfSurveyData = {
-        'user_id': getUsertiId() //getUsertiId()
+        'user_id': getUserId() //getUserId()
     };
     updateNumberOfSurveyData[MSG_TYPE] = UPDATE_NUMBER_OF_SURVEYS;
     chrome.runtime.sendMessage(updateNumberOfSurveyData);
@@ -585,7 +597,8 @@ window.addEventListener("message", function(event) {
     }
 
     if (event.data.adButton)    {
-        console.log("99999999999999999999999999999999999999999999999");
+        console.log('Data received');
+        console.log(event.data)
         var qId = event.data.qId;
         var buttonId = event.data.buttonId
         var adData = getAdFromButton(qId,buttonId);
@@ -594,7 +607,7 @@ window.addEventListener("message", function(event) {
 
         adData.graphQLAsyncParams = event.data.graphQLAsyncParams;
         adData.clientToken = event.data.clientToken;
-
+        console.log(adData);
         chrome.runtime.sendMessage(adData, function(response) {
             adData['saved'] = response['saved'];
             adData['dbId'] = response['dbId'];
@@ -605,106 +618,9 @@ window.addEventListener("message", function(event) {
         return;
     }
 
-
-    if (event.data.type && (event.data.type=='advertisersData')){
-        console.log("Content script received message: ");
-        console.log(event.data)
-        var data = event.data
-        data['user_id'] =getUsertiId()
-        data['timestamp'] = (new Date).getTime();
-
-        chrome.runtime.sendMessage(data);
-        }
-
-
-    if (event.data.type && (event.data.type=='interestsData')){
-        console.log("Content script received message: " );
-
-        var data = event.data
-        data['user_id'] =getUsertiId()
-        data['timestamp'] = (new Date).getTime();
-        var i =0;
-        console.log(data.data.length);
-        while(i < data.data.length) {
-            var dataToSend = { ...data };
-            dataToSend.data = dataToSend.data.slice(i, Math.min(i+100, data.data.length));
-            //setTimeout(chrome.runtime.sendMessage(dataToSend), i/100 * 3000);
-            chrome.runtime.sendMessage(dataToSend);
-            i = Math.min(i+100, data.data.length);
-        }
-    }
-
-    if (event.data.type && (event.data.type == 'adActivityList')) {
-        console.log("Content script received adActivityList: ");
-        var data = event.data
-        data['user_id'] = getUsertiId()
-        data['timestamp'] = (new Date).getTime();
-        console.log('Content: received adActivityList...')
-        console.log(data);
-
-        chrome.runtime.sendMessage(data);
-
-        // //Get ad activity from next page
-        if (data['hasmore'] == true) {
-            console.log('get ad activity next page ..' + data['lastItem']);
-            var lastItem = data['lastItem']
-            data = { 'grabAdActivity': true, 'lastItem': lastItem };
-            window.postMessage(data, '*');
-        }
-
-    }
-
-    if (event.data.type && (event.data.type == 'adActivityData')) {
-        console.log("Content script received adActivityData: ");
-        var data = event.data
-        data['user_id'] = getUsertiId()
-        data['timestamp'] = (new Date).getTime();
-
-        chrome.runtime.sendMessage(data);
-    }
-
-    if (event.data.type && (event.data.type == 'statusAdBlocker')) {
-        if(event.data.value === true) {
-            if(timeNotUsingAdBlock === undefined || timeUsingAdBlock > timeNotUsingAdBlock) {
-                let currentTime = (new Date()).getTime();
-                timeNotUsingAdBlock = currentTime;
-                dataToSend = {
-                    'user_id': getUsertiId(),
-                    'timestamp': currentTime,
-                    'event' : 'usingAdBlocker'
-                };
-                dataToSend[MSG_TYPE] = 'adblock-detection';
-                chrome.runtime.sendMessage(dataToSend);
-
-            }
-        }
-        else {
-            if(timeUsingAdBlock === undefined || timeUsingAdBlock < timeNotUsingAdBlock) {
-                let currentTime = (new Date()).getTime();
-                timeUsingAdBlock = currentTime;
-                dataToSend = {
-                    'user_id': getUsertiId(),
-                    'timestamp': currentTime,
-                    'event' : 'notUsingAdBlocker'
-                };
-                dataToSend[MSG_TYPE] = 'adblock-detection';
-                chrome.runtime.sendMessage(dataToSend);
-
-            }
-
-        }
-
-        console.log("Content script recieved STATUS ADBLOCKER");
-        console.log('AdBlocker detected:' + event.data.value);
-        var data = event.data;
-        chrome.runtime.sendMessage(data);
-
-    }
-
     universalCommunicationWithInjections(event);
 
 });
-
 
 
 function onMessageFunction(msg,sender,sendResponse) {
@@ -718,9 +634,23 @@ function onMessageFunction(msg,sender,sendResponse) {
         }
 
     }
+
+
     /**     global messages */
     universalOnMessageFunction(msg,sender,sendResponse);
 }
+
+
+
+
+captureErrorContentScript(injectUniversalScripts,[],undefined);
+captureErrorContentScript(injectAdGrabberScripts,[],undefined);
+
+captureErrorContentScript(updateAsyncParams,[],undefined);
+
+
+
+
 
 if (BrowserDetection()=== BROWSERS.CHROME) {
     chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {

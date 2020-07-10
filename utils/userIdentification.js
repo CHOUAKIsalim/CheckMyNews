@@ -73,7 +73,7 @@ function getUserIdStr(elem) {
  * 
  * @return {string} user id of user that is logged in
  */
-function getUsertiId(doc) {
+function getUserId(doc) {
     doc=!!doc?doc:document;
     facebookInterfaceVersion = getFacebookInterfaceVersionFromParsedDoc(doc);
     if (facebookInterfaceVersion=== INTERFACE_VERSIONS.old) {

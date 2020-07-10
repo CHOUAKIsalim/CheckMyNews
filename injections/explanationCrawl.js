@@ -27,7 +27,7 @@ function getIndexFromList(txt,lst) {
     for (let i=0;i<lst.length;i++) {
         idx = txt.indexOf(lst[i]);
         if (idx>=0) {
-            console.log(idx);
+            debugLog(idx);
             return idx;
         }
     }
@@ -37,70 +37,6 @@ function getIndexFromList(txt,lst) {
 
 
 
-/**
- * To be used as a replacer for the JSON.stringify function for errors. 
- * The problem lies in the fact that if you call JSON.stringify on an error object, you get an empty message.
- * This replacer creates a new object which has the exact keys, values that the error message has and strigifies this instead.
- *
- * 
- * @param  {string} key Key for spefici JS object field
- * @param  {object} value Value of specific JS object field
- * @return {object} object to be sent to the. JSON.stringify function 
- */
-function errorReplacer(key, value) {
-    if (value instanceof Error) {
-        var error = {};
-
-        Object.getOwnPropertyNames(value).forEach(function (key) {
-            error[key] = value[key];
-        });
-
-        return error;
-    }
-
-    return value;
-}
-
-
-
-
-
-/**
- * Constructs error message to be sent to the server
- * 
- * 
- * @param  {function} targetFunction Function that if called wrong triggers the error message
- * @param  {object} errorObject error object o be assigned to a message
- * @return {string} Error message to be sent to the server
- */
-function constructErrorMsg(targetFunction, errorObject) {
-
-    // var msg = "Function " + targetFunction.name + ": " + JSON.stringify(errorObject,errorReplacer) + " - " + getExtensionVersion();
-    var msg = "Function " + targetFunction.name + ": " + JSON.stringify(errorObject,errorReplacer) ;
-
-    console.log(msg);
-    return msg;
-
-}
-
-
-// TODO: implement the functionality for error reporting
-function captureErrorOverload(targetFunction,arguments,returnError) {
-    try {
-        return targetFunction.apply(NaN,arguments)
-    } catch(error) {
-    var errorInfo = {};
-    errorInfo['type'] = 'overloadError';
-    errorInfo['error_message'] = constructErrorMsg(targetFunction,error);
-    // chrome.runtime.sendMessage(errorInfo, function(response) {
-    window.postMessage(errorInfo, "*");
-
-
-
-    return returnError;
-
-    }
-}
 
 
 /**
@@ -229,7 +165,7 @@ function getDocIdFromWaistResources(jsResources,callback) {
                 //TODO: channge the capture error background
                 docId = captureErrorOverload(getDocIdFromWaistResource,[xmlhttp.responseText],undefined);
 
-                console.log("Found docId: "+ docId);
+                debugLog("Found docId: "+ docId);
 
                 // setSavedDocId(userId,docId);
                 callback(docId);
@@ -291,7 +227,7 @@ function getExplanationsManuallyNewInterface(userId,adId,explanationUrl,dbRecord
 
             captureErrorOverload(getDocIdFromMenuResourcesNewInterface,[objId,serialized_frtp_identifiers,story_debug_info,function(newDocId) {
             captureErrorOverload(getGraphQLExplanations,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,newDocId,getNewDocId],undefined);
-                console.log(adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken);
+                debugLog(adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken);
             }],undefined);
        
             return
@@ -370,16 +306,16 @@ function getExplanationsManually(userId,adId,explanationUrl,dbRecordId,timestamp
 
             CAPTCHA_DETECTED = 0;
         	localStorage.captchaDetected = CAPTCHA_DETECTED;
-        	console.log('GraphQL EXPLANATION');
+        	debugLog('GraphQL EXPLANATION');
             // TODO: REDO THE NEED USER ID DOC CRAWLING TO ASK THE SERVER
             if (getNewDocId===true){
-                console.log("Need to retrieve docId for user");
-                console.log(adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken);
+                debugLog("Need to retrieve docId for user");
+                debugLog(adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken);
                 jsResources = captureErrorOverload(getResourcesFromExplanation,[response],undefined);
-                console.log(jsResources);
+                debugLog(jsResources);
                 captureErrorOverload(getDocIdFromWaistResources,[jsResources,function(newDocId) {
                 captureErrorOverload(getGraphQLExplanations,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,newDocId,getNewDocId],undefined);
-                    console.log(adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken);
+                    debugLog(adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken);
                 }],undefined);
                 
                 return;
@@ -439,8 +375,8 @@ function getGraphQLExplanations(userId,adId,explanationUrl,dbRecordId,timestamp,
         if (xmlhttp.readyState === 4 && xmlhttp.status === 200){
             // TODO: RE DO THIS WHOLE LOGIC IN THE BACKGROUND SCRIPT TO CHANNGE AS LITTLE AS POSSIBLE
             var containsTargetingData = captureErrorOverload(containsTargetingDataGraphQL,[xmlhttp.response],undefined);
-            console.log("Object contains targeting data:");
-            console.log(containsTargetingData);
+            debugLog("Object contains targeting data:");
+            debugLog(containsTargetingData);
             if (containsTargetingData===undefined) {
                 window.postMessage({"type":"explanationReply","adId":adId,"dbRecordId":dbRecordId,"response":xmlhttp.response,"explanationType":"graphQLDifferentTargetingDataError","docId":docId,"getNewDocId":getNewDocId,adType:adType,
                     objId:objId,
@@ -502,18 +438,4 @@ function getGraphQLPostParameters(adId,clientToken,asyncParams,docId) {
 
 
 
-window.addEventListener("message", function(event) {
-  // We only accept messages from ourselves
-  //    console.log(event)
-  if (event.source != window) return;
-  //
-  //    if (!event.data.asyncParams)
-  //        return;
-
-  if (event.data.type && event.data.type === 'getExplanation') {
-        // console.log(event.data)
-        captureErrorOverload(getExplanationsManually, [event.data.userId,event.data.adId,event.data.explanationUrl,event.data.dbRecordId,event.data.timestamp,event.data.graphQLAsyncParams,event.data.clientToken,event.data.docId,event.data.getNewDocId,event.data.newInterface,event.data.adType,event.data.objId,event.data.serialized_frtp_identifiers,event.data.story_debug_info], undefined);
-
-  }
-});
 

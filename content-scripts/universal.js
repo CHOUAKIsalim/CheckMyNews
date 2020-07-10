@@ -105,9 +105,38 @@ function universalCommunicationWithInjections(event) {
     }
 
     if (event.data.type && (event.data.type == 'statusAdBlocker')) {
+        if(event.data.value === true) {
+            if(timeNotUsingAdBlock === undefined || timeUsingAdBlock > timeNotUsingAdBlock) {
+                let currentTime = (new Date()).getTime();
+                timeNotUsingAdBlock = currentTime;
+                dataToSend = {
+                    'user_id': getUserId(),
+                    'timestamp': currentTime,
+                    'event' : 'usingAdBlocker'
+                };
+                dataToSend[MSG_TYPE] = 'adblock-detection';
+                chrome.runtime.sendMessage(dataToSend);
+
+            }
+        }
+        else {
+            if(timeUsingAdBlock === undefined || timeUsingAdBlock < timeNotUsingAdBlock) {
+                let currentTime = (new Date()).getTime();
+                timeUsingAdBlock = currentTime;
+                dataToSend = {
+                    'user_id': getUserId(),
+                    'timestamp': currentTime,
+                    'event' : 'notUsingAdBlocker'
+                };
+                dataToSend[MSG_TYPE] = 'adblock-detection';
+                chrome.runtime.sendMessage(dataToSend);
+
+            }
+
+        }
+
         console.log("Content script recieved STATUS ADBLOCKER");
         console.log('AdBlocker detected:' + event.data.value);
-       
         var data = event.data;
         chrome.runtime.sendMessage(data);
         return;
@@ -131,3 +160,36 @@ function universalCommunicationWithInjections(event) {
 
 
 
+function injectUniversalScripts() {
+
+    var s = document.createElement("script");
+    s.src = chrome.extension.getURL("injections/errorHandling.js");
+    (document.head||document.documentElement).appendChild(s);
+
+
+    var s1 = document.createElement("script");
+    s1.src = chrome.extension.getURL("injections/adBlockDetection.js");
+    (document.head || document.documentElement).appendChild(s1);
+
+
+    var s2 = document.createElement("script");
+    s2.src = chrome.extension.getURL("injections/preferenceCrawl.js");
+    (document.head||document.documentElement).appendChild(s2);
+
+
+    var s3 = document.createElement("script");
+    s3.src = chrome.extension.getURL("injections/adActivityCrawl.js");
+    (document.head||document.documentElement).appendChild(s3);
+
+
+    var s4 = document.createElement("script");
+    s4.src = chrome.extension.getURL("injections/explanationCrawl.js");
+    (document.head||document.documentElement).appendChild(s4);
+
+
+    var s5 = document.createElement("script");
+    s5.src = chrome.extension.getURL("injections/universal.js");
+    (document.head||document.documentElement).appendChild(s5);
+
+
+}

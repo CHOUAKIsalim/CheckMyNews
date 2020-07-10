@@ -247,77 +247,6 @@ function addMenuListeners(ad) {
 
 
 
-
-function checkPostVisibleDuration() {
-
-    let currTs = (new Date()).getTime();
-    for (let i in POST_QUEUE) {
-        // if (POST_QUEUE[i] == {}) { console.log('checkPostVisibleDuration exit with empty item'); continue; }
-        let post=document.getElementById(POST_QUEUE[i]['html_post_id']);
-
-        ;        //let post = document.getElementById(POST_QUEUE[i]['div[id*="'+ HTML_POST_ID +'"]']);
-        // let post = document.querySelector('div[id*="'+ HTML_POST_ID +'"]');
-        if (post == undefined) { POST_QUEUE[i] = {}; console.log('checkPostVisibleDuration exit with empty post'); continue; } //If ad was not found
-
-        var visible_state = getVisibleHeight(post);
-        let l = POST_QUEUE[i]['visibleDuration'].length;
-        if (visible_state == undefined) {  //update ts_end when ad become invisible
-            if (l > 0 && POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
-                POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
-                console.log('Sending data ...storeAdVisibilityEvent');
-                storePostVisibilityEvent(POST_QUEUE[i].html_post_id, POST_QUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
-            }
-        }
-        else { //set ts_start when ad visilbe
-            visible_fraction = (visible_state[0] / visible_state[1]);
-            if (visible_fraction < 0.3 && visible_state[0] < 350) { //The ad has small part visible (under threshold), treated as invisible
-                if (l > 0 && POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
-                    POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
-                    console.log('Sending data ...storeAdVisibilityEvent');
-                    storePostVisibilityEvent(POST_QUEUE[i].html_post_id, POST_QUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
-                }
-            }
-            else if ((l == 0) || (l > 0 && POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] != -1)) {
-                POST_QUEUE[i]['visibleDuration'].push({ 'ts_start': currTs, 'ts_end': -1 })
-            }
-            //setTimeout(checkAdInVisibleDuration(i),500);
-        }
-    }
-    setTimeout(checkPostVisibleDuration, INTERVAL);
-}
-
-
-function interruptPostVisibility() {
-    let currTs = (new Date()).getTime();
-    for (let i in POST_QUEUE) {
-        if (POST_QUEUE[i] == {}) { console.log('checkAdVisibleDuration exit with empty item'); continue; }
-        let ad = document.getElementById(POST_QUEUE[i]['html_post_id']);
-        if (ad == undefined) { POST_QUEUE[i] = {}; console.log('checkAdVisibleDuration exit with empty ad'); continue; } //If ad was not found
-
-        var visible_state = getVisibleHeight(ad);
-        let l = POST_QUEUE[i]['visibleDuration'].length;
-
-        if (visible_state != undefined) {  //Ad is still visible
-            visible_fraction = (visible_state[0] / visible_state[1]);
-            if (visible_fraction >= 0.3 || visible_state[0] > 350) { //The ad is still visible but interrupted by some event
-                if (l > 0 && POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
-                    POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
-                    console.log('Sending data ...storeAdVisibilityEvent');
-                    interruptPostVisibility(POST_QUEUE[i], POST_QUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
-                }
-            }
-        }
-        else {
-            //Check if some invisible ads but not upddate
-            if (l > 0 && POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
-                console.log('Problem: inconsistent in interruptPostVisibility()');
-                console.log(POST_QUEUE[i]);
-            }
-        }
-    }
-}
-
-
 /**
  * Grab all post visible in user view
  */
@@ -339,7 +268,7 @@ function grabPostsOldInterface(){
 
                 if(!allAdsId.includes(this.id) && elmPosition !== undefined) {
                     console.log(this);
-                    POST_QUEUE[nextNum] = { 'html_post_id': this.id, 'timestamp': (new Date).getTime(), 'user_id': getUsertiId(),'visibleDuration':[] };
+                    POST_QUEUE[nextNum] = { 'html_post_id': this.id, 'timestamp': (new Date).getTime(), 'user_id': getUserId(),'visibleDuration':[] };
                     console.log(POST_QUEUE[nextNum]);
                     nextNum++;
                 }

@@ -83,7 +83,9 @@ function markAd(frontAd){
  */
 function processFeedAdNewInterface(frontAd) {
 
-
+ //   frontAd.className += " " + COLLECTED;
+    console.log(frontAd);
+    var user_id = getUserId();
     var adanalystAdId = markAd(frontAd);
     var html_ad_id = adanalystAdId;
     var raw_ad = frontAd.innerHTML;
@@ -93,14 +95,12 @@ function processFeedAdNewInterface(frontAd) {
     var offsetY = pos.y;
     var type = TYPES.frontAd;
 
-    //    fb_advertiser_id = 
-    var user_id = getUserIdNewInterface(document);
 
     //check position ad visible state of ad at time when ad collected
     try{
         var ad_elem = document.getElementById(html_ad_id);
-        var  domPos  =  getElementCoordinate ( ad_elem )
-        var  relPos  =  toRelativeCoordinate ( domPos )
+        var  domPos  =  getElementCoordinate ( ad_elem );
+        var  relPos  =  toRelativeCoordinate ( domPos );
         var isInView = (relPos == undefined) ? false : true;
         var visible_fraction = []
         if (relPos != undefined) {

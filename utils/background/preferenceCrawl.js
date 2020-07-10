@@ -76,18 +76,6 @@ function notifyFirstFacebookTab(tabs,callback) {
 
 }
 
-function getUserIdStr(elem) {
-    var idTag = elem.match(USER_ID_TAG);
-    if (!idTag) {
-        return null
-    }
-    return idTag[0].match(NUMBER_TAG)[0]
-}
-
-function getUserId() {
-    return getUserIdStr(document.head.innerHTML)
-}
-
 
 function getUserPreferenceCrawlAttempts(userId,type) {
     initializeUserPreferenceCrawlAttempts(userId,type);

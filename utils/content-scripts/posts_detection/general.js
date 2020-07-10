@@ -43,7 +43,7 @@ function processNewsPost(frontAd) {
 
     }
 
-    var user_id = getUsertiId();
+    var user_id = getUserId();
 
     //check position ad visible state of ad at time when ad collected
     try {

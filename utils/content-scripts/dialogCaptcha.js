@@ -19,10 +19,10 @@ function createDialog(dialogHtml) {
     var elm1 = $(whitebgHtml);
     var elm2 = $(dialogHtml);
     $('body').append(elm1,elm2);
-    
+
     var whitebg = document.getElementById("white-background");
     var dlg = document.getElementById("dlgbox");
-    
+
     var imgURL = chrome.extension.getURL('solving_captcha.gif');
     var img = document.getElementById('dlgCaptchaImg')
     img.src = imgURL;
@@ -33,7 +33,7 @@ function createDialog(dialogHtml) {
 
     var winWidth = window.innerWidth;
     var winHeight = window.innerHeight;
-    
+
     dlg.style.left = (winWidth / 2) - 530 / 2 + "px";
     dlg.style.top = "50px";
 
@@ -50,7 +50,7 @@ function createDialog(dialogHtml) {
         msg[MSG_TYPE] = 'hide_popup'
         msg['chk_option'] = (chk.checked) ? "1" : "0"
         chrome.runtime.sendMessage(msg);
-        
+
     });
 
     var whiteBackground = document.querySelector('#white-background');

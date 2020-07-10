@@ -34,7 +34,6 @@ var ERROR_TYPES = {
     INJECTION_ERROR: 'Injection script error', //not yet implemented
     TEST_ERROR_INJECTION_ERROR: 'Testing injection script error', //not yet implemented,
     BACKGROUND_PROBLEM: 'Background script problem'
-
 };
 
 var ERROR_MESSAGE = 'error_message';
@@ -123,8 +122,7 @@ function constructErrorMsg(targetFunction, errorObject) {
  * @param  {object} obj A JS object which may contain the user_id or email property
  * @return {object} The same object but with the user_id and email hashed
  */
-function
-replaceUserIdEmail(obj) {
+function replaceUserIdEmail(obj) {
     if (obj.user_id!==undefined) {
         if ((obj.user_id!==-1) && (obj.user_id!=='-1')) {
             obj.user_id = sha512(String(obj.user_id));
@@ -138,6 +136,8 @@ replaceUserIdEmail(obj) {
     }
 
     obj.is_hashed=true;
+
+
 
     return obj;
 }
@@ -309,4 +309,7 @@ function captureErrorBackgroundTest(errorUrl){
 
 
 }
+
+
+
 

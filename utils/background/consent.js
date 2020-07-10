@@ -34,33 +34,33 @@
 
 /**
  * returns if current user has consent for a specific action
- * @param  {number}  consentMode consent level (based on consent id) required for specific action. 
+ * @param  {number}  consentMode consent level (based on consent id) required for specific action.
  *                               If mode is 0, any consent is suitable for the specific action.
  * @return {Boolean}      true if user has consent for specific mode else false
  */
 function hasCurrentUserConsent(consentMode) {
-	// there exist no current user
-	if (isCurrentUser()!=true) {
-		return false;
-	}
+    // there exist no current user
+    if (isCurrentUser()!=true) {
+        return false;
+    }
 
 
-	// consents object does not exist
-	if ((!localStorage[CURRENT_USER_ID+'consents']) || ((!localStorage[CURRENT_USER_ID+'consents']).length===0) || (localStorage[CURRENT_USER_ID+'consents']==='undefined') ) {
-		// TODO mark to ask for consent
-		return false;
-	}
+    // consents object does not exist
+    if ((!localStorage[CURRENT_USER_ID+'consents']) || ((!localStorage[CURRENT_USER_ID+'consents']).length===0) || (localStorage[CURRENT_USER_ID+'consents']==='undefined') ) {
+        // TODO mark to ask for consent
+        return false;
+    }
 
 
-	var consents = JSON.parse(localStorage[CURRENT_USER_ID+'consents']);
+    var consents = JSON.parse(localStorage[CURRENT_USER_ID+'consents']);
 
 
-	// 0 is set on the server
-	if (!consents[consentMode]) {
-		return false;
-	}
+    // 0 is set on the server
+    if (!consents[consentMode]) {
+        return false;
+    }
 
-	return consents[consentMode];
+    return consents[consentMode];
 }
 
 
@@ -82,7 +82,7 @@ function setConsents(consents) {
  * @param  {function} consentPositive function to be called when the user has given the required consent
  * @param  {function} consentNegative function to be called when the user has not given the required consent
  * @param  {function} consentError    function to be called when the request to the server encounters some error
- * @return {}                 
+ * @return {}
  */
 function getConsentFromServer(consentApiUrl,consentMode,onConsentPositive,onConsentNegative,onConsentError) {
 
@@ -98,7 +98,7 @@ function getConsentFromServer(consentApiUrl,consentMode,onConsentPositive,onCons
         data:dat,
         dataType: "json",
         traditional:true,
-        success: function(resp){ 
+        success: function(resp){
             if (isCurrentUser()!==true) {
                 return;
             }
@@ -109,11 +109,11 @@ function getConsentFromServer(consentApiUrl,consentMode,onConsentPositive,onCons
                 onConsentPositive(resp);
                 return;
             }
-                    
+
             onConsentNegative(resp);
         },
         error: function() {
-            onConsentError();        
+            onConsentError();
         }
 
     });
@@ -127,7 +127,7 @@ function getConsentFromServer(consentApiUrl,consentMode,onConsentPositive,onCons
 /**
  * when consent is positive in the general case it should send a response back to the script
  * "this"  corresponds to the sendResponse function that will be bound
- * @return {} 
+ * @return {}
  */
 function replyOnConsentPositive() {
     this({"consent":true});
@@ -137,7 +137,7 @@ function replyOnConsentPositive() {
 /**
  * when consent is negative in the general case it should send a response back to the script accompanied with the minimum timestamp for the user
  * "this"  corresponds to the sendResponse function that will be bound
- * @return {} 
+ * @return {}
  */
 function replyOnConsentNegative(resp) {
     this({"consent":false,"minTimestamp":resp.min_timestamp});
@@ -146,7 +146,7 @@ function replyOnConsentNegative(resp) {
 /**
  * when consent request failed in the general case it should send a response back to the script accompanied with a specification that it is error
  * "this"  corresponds to the sendResponse function that will be bound
- * @return {} 
+ * @return {}
  */
 function replyOnConsentError() {
     this({"consent":false,"err":true});
@@ -155,12 +155,12 @@ function replyOnConsentError() {
 
 /**
  * function that is activated if user has not given consent. It changes the icon in the popup.js
- * @return {} 
+ * @return {}
  */
 function genericRequestNoConsent() {
-	console.log("Specific consent not given");
-	
-	return;
+    console.log("Specific consent not given");
+
+    return;
 }
 
 
@@ -169,7 +169,7 @@ function genericRequestNoConsent() {
  * returns consent status to other content or popup scripts if they ask for consent
  * @param  {[type]} sendResponse function to reply to the script that made the inquiry
  * @param  {number} consentMode  mode
- * @return {}              
+ * @return {}
  */
 function sendConsentStatusToComponents(consentApiUrl,sendResponse,consentMode=0){
     if (isCurrentUser()!==true) {
@@ -178,8 +178,8 @@ function sendConsentStatusToComponents(consentApiUrl,sendResponse,consentMode=0)
     }
 
     if (hasCurrentUserConsent(consentMode)) {
-      sendResponse({"consent":true});
-      return true;              
+        sendResponse({"consent":true});
+        return true;
     }
 
     var onConsentPositiveSendResponse = replyOnConsentPositive.bind(sendResponse);
@@ -198,7 +198,7 @@ function sendConsentStatusToComponents(consentApiUrl,sendResponse,consentMode=0)
  * shows message that user did not sign the consent for old users that were using the tool before the change,
  *  and open a new window with the consent form to sign it for all users that have not sign consent
  * @param  {object} resp response from the server
- * @return {}      
+ * @return {}
  */
 function openConsentWindow(resp) {
     var isMessageShown = localStorage[CURRENT_USER_ID+'isMessageShown'];
@@ -208,18 +208,18 @@ function openConsentWindow(resp) {
         return;
     }
 
-	var minTimestamp = resp.min_timestamp;
-	if (minTimestamp && (minTimestamp<MIN_TIMESTAMP_MESSAGE)) {
-	    alert("It seems that you have installed AdAnalyst but you didn't sign the consent form. Why don't you click on the AdAnalyst icon and sign the form?\n This message will not be shown again!");
-	    localStorage[CURRENT_USER_ID+'isMessageShown'] = true;
-	    return;
-	}
+    var minTimestamp = resp.min_timestamp;
+    if (minTimestamp && (minTimestamp<MIN_TIMESTAMP_MESSAGE)) {
+        alert("It seems that you have installed AdAnalyst but you didn't sign the consent form. Why don't you click on the AdAnalyst icon and sign the form?\n This message will not be shown again!");
+        localStorage[CURRENT_USER_ID+'isMessageShown'] = true;
+        return;
+    }
 
 
     chrome.tabs.create({'url':chrome.extension.getURL(POPUPHTML)});
     localStorage[CURRENT_USER_ID+'isMessageShown'] = true;
 
-	return ;
+    return ;
 
 
 }
@@ -229,37 +229,37 @@ function openConsentWindow(resp) {
  * Checks if user has given consent, and if not prompts them with a respective message to sign consent, or open the new popup window
  * @param  {string} consentApiUrl     url to perform the call
  * @param  {number} consentMode     consent mode (0=any consent)
- * @return {}               
+ * @return {}
  */
 function openWindowToNewUsers(consentApiUrl,consentMode=0) {
-    
+
     //TODO: MODIFY FOR NEW CONSENT IF WE WANT TO INFORM OLD USERS
- 
+
     if (isCurrentUser()!==true) {
         return;
     }
-    
-    
+
+
     if (hasCurrentUserConsent(consentMode)===true) {
         return;
     }
-    
+
     getConsentFromServer(consentApiUrl,consentMode,genericRequestSuccess,openConsentWindow,genericRequestError)
 
-   
-    
+
+
 }
 
 
 /**
  * when the request sennt back a consent reply with the consent status of the user to the server
  * "this"  corresponds to the sendResponse function that will be bound
- * @return {} 
+ * @return {}
  */
 function replyOnSuccessInRegistration(consents,sendResponse) {
-	if (sendResponse) {
-    	sendResponse({"ok":true,"consents":consents});
-	}
+    if (sendResponse) {
+        sendResponse({"ok":true,"consents":consents});
+    }
 
 
 }
@@ -268,12 +268,12 @@ function replyOnSuccessInRegistration(consents,sendResponse) {
 /**
  * call when the register consetn request had some error
  * "this"  corresponds to the sendResponse function that will be bound
- * @return {} 
+ * @return {}
  */
 function replyOnFailureInRegistration(errorMsg,sendResponse) {
-	if (sendResponse) { 
-    	sendResponse({"ok":false,"errorMsg":errorMsg});
-	}
+    if (sendResponse) {
+        sendResponse({"ok":false,"errorMsg":errorMsg});
+    }
 }
 
 
@@ -282,18 +282,18 @@ function replyOnFailureInRegistration(errorMsg,sendResponse) {
 
 /**
  *  Registers consent
- * @param {function} sendResponse 
+ * @param {function} sendResponse
  */
 function registerConsent(registerConsentApiUrl,sendResponse=undefined,countEffort=3) {
 
-    
+
     if (isCurrentUser()!==true) {
-    	alert("You are trying to register consent, even though you are not logged in with an account on Facebook. Please log-in and repeat the process!");
+        alert("You are trying to register consent, even though you are not logged in with an account on Facebook. Please log-in and repeat the process!");
         return;
     }
 
     if (countEffort<=0) {
-    	return
+        return
     }
 
 
@@ -306,11 +306,11 @@ function registerConsent(registerConsentApiUrl,sendResponse=undefined,countEffor
         success: function (resp) {
             // TODO: maybe send back the user_id for conf
             if (isCurrentUser()!==true) {
-				replyOnFailureInRegistration("User currently not logged-in",sendResponse);
+                replyOnFailureInRegistration("User currently not logged-in",sendResponse);
             }
 
             if (resp.consents) {
-	            setConsents(resp.consents);
+                setConsents(resp.consents);
 
             }
 
@@ -319,11 +319,11 @@ function registerConsent(registerConsentApiUrl,sendResponse=undefined,countEffor
             return true;
         },
         error: function () {
-        	countEffort--;
+            countEffort--;
             setTimeout(registerConsent,2000,registerConsentApiUrl,sendResponse,countEffort);
             if (countEffort==1) {
-				replyOnFailureInRegistration("Request failed",sendResponse);
-			}
+                replyOnFailureInRegistration("Request failed",sendResponse);
+            }
         }
     })
     return true
