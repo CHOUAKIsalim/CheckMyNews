@@ -49,7 +49,13 @@ function addEventListenersNewInterface(ad) {
     var dateForAdvertiserCheckWithHover;
 
     // Getting the html object of the ad
+    alert("in add event listeners New Interface : " + ad.html_ad_id);
+    if(ad.html_ad_id === undefined) {
+        console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        console.log(ad)
+    }
     let frontAd = document.getElementById(ad.html_ad_id);
+    alert(frontAd);
 
     // Listener for réactions : like, love, haha, wow, sad, angry
     let likeButton = frontAd.getElementsByClassName(likeButtonClassNewInterface)[0];

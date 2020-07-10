@@ -106,9 +106,11 @@ function processNewsPostNewInterface(frontAd) {
     var html_ad_id = undefined;
     if(frontAd.id) {
         html_ad_id = frontAd.id;
+        alert("inside if : " + html_ad_id)
     }
     else {
         html_ad_id = markAd(frontAd);
+        alert("inside else : " + html_ad_id);
     }
     let info = getAdvertiserId(frontAd);
 
