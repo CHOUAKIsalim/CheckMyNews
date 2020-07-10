@@ -831,8 +831,13 @@ function getAdvertiserId(frontAd) {
                 link = links[i];
                 var advertiserId = '-1';
                 let facebookPage = link.href.substring(0, link.href.indexOf('?'));
-                let advertiserImage = link.getElementsByTagName('img')[0].src;
-                return [advertiserId,facebookPage,advertiserImage];
+
+                let advertiserImage = link.getElementsByTagName('img');
+                if(advertiserImage.length > 0 ) {
+                    advertiserImage = advertiserImage[0].src;
+                    return [advertiserId,facebookPage,advertiserImage];
+                }
+                return "";
             }
         }
         if(!link) {
