@@ -53,7 +53,7 @@ function grabNewsPostsNewInterface() {
                     // console.log(postData);
                     console.log('News post collected')
                     postData['landing_pages'].push(_news_domain)
-                    captureErrorContentScript(notifyOverloadForMoreAdInfo, [allDomPosts[i], postData], undefined);
+                    captureErrorContentScript(notifyOverloadForMoreAdInfo,  postData, undefined);
 
                 }
                 else {
@@ -74,7 +74,7 @@ function grabNewsPostsNewInterface() {
                                 postData['landing_pages'].push(shortcut_domain);
                             else
                                 postData['landing_pages'].push(landing_domain);
-                            captureErrorContentScript(notifyOverloadForMoreAdInfo, [allDomPosts[i], postData], undefined);
+                            captureErrorContentScript(notifyOverloadForMoreAdInfo, postData, undefined);
                             break;
                         }
                     }
@@ -106,11 +106,11 @@ function processNewsPostNewInterface(frontAd) {
     var html_ad_id = undefined;
     if(frontAd.id) {
         html_ad_id = frontAd.id;
-        alert("inside if : " + html_ad_id)
+        //alert("inside if : " + html_ad_id)
     }
     else {
         html_ad_id = markAd(frontAd);
-        alert("inside else : " + html_ad_id);
+        //alert("inside else : " + html_ad_id);
     }
     let info = getAdvertiserId(frontAd);
 
