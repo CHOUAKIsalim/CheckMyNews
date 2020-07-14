@@ -3,16 +3,24 @@ var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
 var POST_COLLECTED = "post_collected";
 
 
-/** Get domain form URL
- *
- * @param {string} URL to process
- * @return {string} domain
+
+/**
+ * This function anonymises a collected post by removing comments and private text
+ * @param raw_ad
+ * @constructor
+ * @return {string}
  */
-function url_domain(data) {
-    var a = document.createElement('a');
-    a.href = data;
-    return a.hostname.replace('www.', '');
+
+function AnonymizePostNewInterface(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad
+    let comments = element.getElementsByClassName("l9j0dhe7 ecm0bbzt hv4rvrfc qt6c0cv9 dati1w0a lzcic4wl btwxx1t3 j83agx80")
+    for(let i=0; i < comments.length; i++) {
+        comments[i].parentNode.removeChild(comments[i]);
+    }
+    return element.innerHTML;
 }
+
 
 /**
  * Grab News Posts from user view
@@ -22,11 +30,10 @@ function grabNewsPostsNewInterface() {
     if (window.location.href.indexOf('ads/preferences') == -1) {
 
         var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
-
         var allDomPosts = document.getElementsByClassName(POST_CLASS_NEW_INTERFACE);
         for (let i = 0; i < allDomPosts.length; i++) {
-            if (!allAdsId.includes(allDomPosts[i].id)) {
 
+            if (!allAdsId.includes(allDomPosts[i].parentElement.id)) {
                 let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
                 if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) != -1) {
                     continue;
@@ -37,9 +44,6 @@ function grabNewsPostsNewInterface() {
                     console.log('processNewsPost does not work')
                     continue; }
 
-                // console.log('===================Post=================');
-                console.log(allDomPosts[i].textContent)
-                console.log(postData);
 
                 //      if (postData['visible']) {
                 postData[MSG_TYPE] = FRONTADINFO;
@@ -67,8 +71,6 @@ function grabNewsPostsNewInterface() {
                             //Store collected domains of news post in order to test
                             COLLECTED_NEWS_DOMAINS.push(landing_domain)
                             allDomPosts[i].className += " " + POST_COLLECTED;
-                            // console.log(allDomPosts[i].textContent)
-                            // console.log(postData);
                             console.log('News post collected')
                             if (shortcut_domain !== '')
                                 postData['landing_pages'].push(shortcut_domain);
@@ -78,7 +80,6 @@ function grabNewsPostsNewInterface() {
                             break;
                         }
                     }
-                    //   }
                 }
 
             }
@@ -118,8 +119,9 @@ function processNewsPostNewInterface(frontAd) {
     var advertiser_facebook_id = info ? info[0] : "";
     var advertiser_facebook_page = info ? info[1] : "";
     var advertiser_facebook_profile_pic = info ? info[2] : "";
-
     var raw_ad = frontAd.innerHTML;
+    raw_ad = AnonymizePostNewInterface(raw_ad);
+    // if(tmp === raw_ad) alert("temchi");
     //var raw_ad = frontAd.outerHTML;
     var timestamp = (new Date).getTime();
     var pos = getPos(frontAd);

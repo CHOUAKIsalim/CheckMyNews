@@ -2,21 +2,6 @@
 var LANDING_DOMAIN_CLASS = '_6lz _6mb _1t62 ellipsis';
 var HTML_POST_ID ="hyperfeed_story_id";
 
-/**
- * Checking whehter a domain belong to news or not
- */
-function isNewsDomain(landing_domain) {
-    if (landing_domain === '' || landing_domain === undefined)
-        return false;
-    for (let i = 0; i < NEWS_DOMAINS.length; i++) {
-        //if (NEWS_DOMAINS[i].indexOf(landing_domain) != -1) {
-        if (NEWS_DOMAINS[i] === landing_domain) {
-            console.log(NEWS_DOMAINS[i] + " " + landing_domain);
-            return true;
-        }
-    }
-    return false;
-}
 
 /**
  * Grab News Posts from user view
@@ -90,7 +75,22 @@ function grabNewsPostsOldInterface() {
     }
 }
 
+/**
+ * This function anonymises a collected post by removing comments and private text
+ * @param raw_ad
+ * @constructor
+ * @return {string}
+ */
 
+function AnonymizePostOldInterface(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad
+    let comments = element.getElementsByClassName("_7791");
+    for(let i=0; i < comments.length; i++) {
+        comments[i].parentNode.removeChild(comments[i]);
+    }
+    return element.innerHTML;
+}
 /**
  * Extract landing domain from post
  * @param {object} postObj post object collected from news feed
@@ -113,8 +113,10 @@ function processNewsPostOldInterface(frontAd) {
     var advertiser_facebook_page = info ? info[1] : "";
     var advertiser_facebook_profile_pic = info ? info[2] : "";
 
+
     var raw_ad = frontAd.innerHTML;
-    //var raw_ad = frontAd.outerHTML;
+    tmp = raw_ad
+    raw_ad = AnonymizePostOldInterface(raw_ad);
     var timestamp = (new Date).getTime();
     var pos = getPos(frontAd);
     var offsetX = pos.x;

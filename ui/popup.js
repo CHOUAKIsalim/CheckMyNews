@@ -177,7 +177,7 @@ function sendConsent() {
   return;
 }
 
-var CONSENTPAGE = 'new_consent.html'; //popup page to show once if a user has installed the tool but have not given consent
+var CONSENTPAGE = 'ui/new_consent.html'; //popup page to show once if a user has installed the tool but have not given consent
 
 function openPrivacyPolicy() {
             chrome.tabs.create({'url':chrome.extension.getURL(CONSENTPAGE)});
@@ -276,7 +276,7 @@ $(document).ready(function() {
     badge.className = 'badge badge-pill badge-danger';
     badge.innerHTML = localStorage.getItem('survey_number').toString();
     document.getElementById("survey_all").appendChild(badge);
-    document.getElementById("survey_red_text").innerHTML = "Hi, you are participating in our social media monitor study, please click on start survey to fill out the survey:<br>Filling each survey will give you an access token you can use to claim a reward on Prolific<br> Thank you !"
+    document.getElementById("survey_red_text").innerHTML = "Hi, you are participating in our social media monitor study, please click on start survey to fill out the survey:<br>After filling the four surveys, you will get a token you can use to claim your reward on Prolific<br> Thank you !"
   }
   else {
     document.getElementById("formForReminder").style.visibility = "hidden";
