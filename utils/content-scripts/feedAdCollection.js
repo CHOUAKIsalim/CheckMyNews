@@ -720,8 +720,6 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
 
     frontAds = uniqueArray(frontAds);
     frontAds = filterCollectedAds(frontAds);
-    console.log("heeeeeeeeeeeeeeeeeeeeeeeeeere");
-    console.log(frontAds);
     return frontAds;
 }
 

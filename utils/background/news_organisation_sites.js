@@ -132,8 +132,6 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab){
                 NEWS_ARTICLES[tabId]['status'] = 'closed';
 
                 sendTabArticle({...NEWS_ARTICLES[tabId]})
-                console.log("Just below");
-                console.log(NEWS_ARTICLES[tabId]);
                 delete NEWS_ARTICLES[tabId];
             }
         }
@@ -161,8 +159,6 @@ chrome.tabs.onRemoved.addListener(function(tabId, changeInfo){
         NEWS_ARTICLES[tabId]['status'] = 'closed';
 
         sendTabArticle({...NEWS_ARTICLES[tabId]})
-        console.log("Just below");
-        console.log(NEWS_ARTICLES[tabId]);
         delete NEWS_ARTICLES[tabId];
     }
 });

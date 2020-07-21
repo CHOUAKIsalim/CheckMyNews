@@ -584,8 +584,9 @@ window.addEventListener("message", function(event) {
         adData.story_debug_info = event.data.story_debug_info;
         adData.images = event.data.images;
         adData.video = event.data.video;
-
-        // console.log(adData)
+        if(adData.type === TYPES.newsPost) {
+            adData.raw_ad = anonymizePostNewInterface(adData.raw_ad, adData.advertiser_facebook_id);
+        }
         chrome.runtime.sendMessage(adData, function(response) {
             adData['saved'] = response['saved'];
             adData['dbId'] = response['dbId'];

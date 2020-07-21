@@ -1,7 +1,9 @@
 
 var LANDING_DOMAIN_CLASS = '_6lz _6mb _1t62 ellipsis';
 var HTML_POST_ID ="hyperfeed_story_id";
-
+var POST_TEXT_CLASS_OLD_INTERFACE = "_5pbx userContent _3576";
+var POST_COMMENTS_CLASS = "_7791";
+var TYPE_OF_POST_CLASS = "uiStreamPrivacy inlineBlock fbStreamPrivacy fbPrivacyAudienceIndicator _5pcq";
 
 /**
  * Grab News Posts from user view
@@ -75,22 +77,60 @@ function grabNewsPostsOldInterface() {
     }
 }
 
-/**
- * This function anonymises a collected post by removing comments and private text
- * @param raw_ad
- * @constructor
- * @return {string}
- */
-
-function AnonymizePostOldInterface(raw_ad) {
+function removeCommentsFromPost(raw_ad) {
     let element = document.createElement( 'div' );
-    element.innerHTML = raw_ad
-    let comments = element.getElementsByClassName("_7791");
+    element.innerHTML = raw_ad;
+    let comments = element.getElementsByClassName(POST_COMMENTS_CLASS);
     for(let i=0; i < comments.length; i++) {
         comments[i].parentNode.removeChild(comments[i]);
     }
     return element.innerHTML;
 }
+
+function removeTextFromPost(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad;
+    let texts = element.getElementsByClassName(POST_TEXT_CLASS_OLD_INTERFACE);
+    for(let i=0; i < texts.length; i++) {
+        texts[i].parentNode.removeChild(texts[i]);
+    }
+    return element.innerHTML;
+}
+
+function isPublicPost(raw_ad) {
+    let element = document.createElement('div');
+    element.innerHTML = raw_ad;
+    let typeLink = element.getElementsByClassName(TYPE_OF_POST_CLASS);
+
+    if(typeLink.length > 0 ) {
+        typeLink = typeLink[0];
+        if(typeLink.getAttribute("aria-label")) {
+            if(PUBLIC_LABELS.includes(typeLink.getAttribute("aria-label").toLowerCase())) {
+                return true;
+            }
+        }
+    }
+
+    return false
+}
+
+
+/**
+ * This function anonymises a collected post by removing comments and private text
+ * @param raw_ad
+ * @param advertiser_facebook_page
+ * @constructor
+ * @return {string}
+ */
+
+function anonymizePostOldInterface(raw_ad, advertiser_facebook_page) {
+    raw_ad = removeCommentsFromPost(raw_ad);
+    if(!isNewsOrganisationFacebookPage(advertiser_facebook_page) && !isPublicPost(raw_ad)){
+        raw_ad = removeTextFromPost(raw_ad);
+    }
+    return raw_ad;
+}
+
 /**
  * Extract landing domain from post
  * @param {object} postObj post object collected from news feed
@@ -108,15 +148,14 @@ function processNewsPostOldInterface(frontAd) {
     var html_ad_id = frontAd.id;
     ADSA = frontAd
     let info = getAdvertiserId(frontAd);
-
     var advertiser_facebook_id = info ? info[0] : "";
     var advertiser_facebook_page = info ? info[1] : "";
     var advertiser_facebook_profile_pic = info ? info[2] : "";
 
-
     var raw_ad = frontAd.innerHTML;
-    tmp = raw_ad
-    raw_ad = AnonymizePostOldInterface(raw_ad);
+
+    raw_ad = anonymizePostOldInterface(raw_ad, advertiser_facebook_id);
+
     var timestamp = (new Date).getTime();
     var pos = getPos(frontAd);
     var offsetX = pos.x;

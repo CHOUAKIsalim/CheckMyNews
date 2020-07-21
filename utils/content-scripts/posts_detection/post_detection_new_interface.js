@@ -1,24 +1,66 @@
 var LANDING_DOMAIN_NEW_INTERFACE_CLASS = "oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1et5uql a8c37x1j hop8lmos enqfppq2 e9vueds3 j5wam9gi knj5qynh m9osqain ni8dbmo4 stjgntxs ltmttdrg g0qnabr5";
 var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
 var POST_COLLECTED = "post_collected";
+var COMMENTS_CLASS_NEW_INTERFACE = "l9j0dhe7 ecm0bbzt hv4rvrfc qt6c0cv9 dati1w0a lzcic4wl btwxx1t3 j83agx80";
+var POST_TEXT_CLASS_NEW_INTERFACE = "ecm0bbzt hv4rvrfc ihqw7lf3 dati1w0a";
 
+var TYPE_OF_POST_CLASS_NEW_INTERFACE = "hu5pjgll m6k467ps sp_LGojA4ldSxW sx_0385ef";
+
+function removeCommentsFromPostNewInterface(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad
+    let comments = element.getElementsByClassName(COMMENTS_CLASS_NEW_INTERFACE)
+    for(let i=0; i < comments.length; i++) {
+        comments[i].parentNode.removeChild(comments[i]);
+    }
+    return element.innerHTML;
+
+}
+
+
+function removeTextFromPostNewInterface(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad;
+    let texts = element.getElementsByClassName(POST_TEXT_CLASS_NEW_INTERFACE);
+    for(let i=0; i < texts.length; i++) {
+        texts[i].parentNode.removeChild(texts[i]);
+    }
+    return element.innerHTML;
+}
+
+function isPublicPostNewInterface(raw_ad) {
+    let element = document.createElement('div');
+    element.innerHTML = raw_ad;
+    let typeLink = element.getElementsByClassName(TYPE_OF_POST_CLASS_NEW_INTERFACE);
+
+    if(typeLink.length > 0 ) {
+        typeLink = typeLink[0];
+        if(typeLink.getAttribute("aria-label")) {
+            if(PUBLIC_LABELS.includes(typeLink.getAttribute("aria-label").toLowerCase())) {
+                return true;
+            }
+        }
+    }
+
+    return false
+}
 
 
 /**
  * This function anonymises a collected post by removing comments and private text
  * @param raw_ad
+ * @param advertiser_facebook_page
  * @constructor
  * @return {string}
  */
 
-function AnonymizePostNewInterface(raw_ad) {
-    let element = document.createElement( 'div' );
-    element.innerHTML = raw_ad
-    let comments = element.getElementsByClassName("l9j0dhe7 ecm0bbzt hv4rvrfc qt6c0cv9 dati1w0a lzcic4wl btwxx1t3 j83agx80")
-    for(let i=0; i < comments.length; i++) {
-        comments[i].parentNode.removeChild(comments[i]);
+function anonymizePostNewInterface(raw_ad, advertiser_facebook_page) {
+    raw_ad = removeCommentsFromPostNewInterface(raw_ad);
+    if(!isNewsOrganisationFacebookPage(advertiser_facebook_page) && !isPublicPostNewInterface(raw_ad)){
+        raw_ad = removeTextFromPostNewInterface(raw_ad);
     }
-    return element.innerHTML;
+    return raw_ad;
+
 }
 
 
@@ -43,7 +85,6 @@ function grabNewsPostsNewInterface() {
                 if (isEqual(postData, {}) == true || postData['landing_pages'].length == 0) {
                     console.log('processNewsPost does not work')
                     continue; }
-
 
                 //      if (postData['visible']) {
                 postData[MSG_TYPE] = FRONTADINFO;
@@ -103,41 +144,26 @@ function getLandingDomainNewIterface(postObj) {
 
 
 function processNewsPostNewInterface(frontAd) {
-
     var html_ad_id = undefined;
     if(frontAd.id) {
         html_ad_id = frontAd.id;
-        //alert("inside if : " + html_ad_id)
     }
     else {
         html_ad_id = markAd(frontAd);
-        //alert("inside else : " + html_ad_id);
     }
-    adanalyst_ad_id = html_ad_id;
-    let info = getAdvertiserId(frontAd);
 
-    var advertiser_facebook_id = info ? info[0] : "";
-    var advertiser_facebook_page = info ? info[1] : "";
-    var advertiser_facebook_profile_pic = info ? info[2] : "";
+    var user_id = getUserId();
+
     var raw_ad = frontAd.innerHTML;
-    raw_ad = AnonymizePostNewInterface(raw_ad);
-    // if(tmp === raw_ad) alert("temchi");
-    //var raw_ad = frontAd.outerHTML;
+
+
     var timestamp = (new Date).getTime();
     var pos = getPos(frontAd);
     var offsetX = pos.x;
     var offsetY = pos.y;
     var type = TYPES.newsPost;
+
     var [landing_pages, images] = getLandingPagesFrontAds(frontAd.getElementsByTagName(LINK_TAG), frontAd);
-    var video = isVideo(frontAd)
-    var video_id = ''
-    if (video) {
-        video_id = getVideoId(frontAd);
-        images = getBackgroundUrlImages(frontAd);
-
-    }
-
-    var user_id = getUserId();
 
     //check position ad visible state of ad at time when ad collected
     try {
@@ -155,18 +181,7 @@ function processNewsPostNewInterface(frontAd) {
         console.log('Error while compute ad position');
         console.log(e);
     }
-
-    // console.log('+++++++++++++')
-    // console.log(getDomPosition(ad_elem))
-    // console.log(getUserView())
-    // console.log(isInView)
-    //TODO:GET IMAGE URL
-    //    var image_urls = getImageUrls(frontAd.getElementsByTagName('img'));
-
-    //       fb_id =
-    //    fb_advertiser_id =
-
-    return { 'raw_ad': raw_ad, 'adanalyst_ad_id':html_ad_id , 'html_ad_id': html_ad_id, 'visible': isInView, 'visible_fraction': visible_fraction, 'visibleDuration': [], 'timestamp': timestamp, 'offsetX': offsetX, 'offsetY': offsetY, 'type': type, 'landing_pages': landing_pages, 'images': images, 'user_id': user_id, advertiser_facebook_id: advertiser_facebook_id, advertiser_facebook_page: advertiser_facebook_page, advertiser_facebook_profile_pic: advertiser_facebook_profile_pic, video: video, video_id: video_id }
+    return { 'raw_ad': raw_ad, 'adanalyst_ad_id':html_ad_id , 'html_ad_id': html_ad_id, 'visible': isInView, 'visible_fraction': visible_fraction, 'visibleDuration': [], 'timestamp': timestamp, 'offsetX': offsetX, 'offsetY': offsetY, 'type': type, 'landing_pages': landing_pages, 'images': images, 'user_id': user_id}
 
 
 }

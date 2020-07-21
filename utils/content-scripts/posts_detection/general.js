@@ -9,6 +9,8 @@ var LINK_TAG = 'a';
 
 var IMG_CLASS_NEW_INTERFACE_CLASS = "i09qtzwb n7fi1qx3 datstx6m pmk7jnqg j9ispegn kr520xx4 k4urcfbm bixrwtb6";
 
+var PUBLIC_LABELS = ['public', 'shared with public'];
+
 
 /**
  * processes post object adding in the object
@@ -249,6 +251,18 @@ function grabPosts() {
 }
 
 
+function isNewsOrganisationFacebookPage(facebook_page_id) {
+    if (facebook_page_id === '' || facebook_page_id === undefined)
+        return false;
+    for (let i = 0; i < FACEBOOK_PAGE_IDS.length; i++) {
+        if (FACEBOOK_PAGE_IDS[i].toString() === facebook_page_id) {
+            return true;
+        }
+    }
+    return false;
+
+}
+
 
 /**
  * Checking whehter a domain belong to news or not
@@ -266,6 +280,7 @@ function isNewsDomain(landing_domain) {
     return false;
 }
 
+
 /** Get domain form URL
  *
  * @param {string} URL to process
@@ -275,4 +290,9 @@ function url_domain(data) {
     var a = document.createElement('a');
     a.href = data;
     return a.hostname.replace('www.', '');
+}
+
+function isUrl(s) {
+    var regexp = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
+    return regexp.test(s);
 }
