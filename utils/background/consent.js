@@ -176,12 +176,10 @@ function sendConsentStatusToComponents(consentApiUrl,sendResponse,consentMode=0)
         sendResponse({"consent":false,notLoggedIn:true});
         return true;
     }
-
     if (hasCurrentUserConsent(consentMode)) {
         sendResponse({"consent":true});
         return true;
     }
-
     var onConsentPositiveSendResponse = replyOnConsentPositive.bind(sendResponse);
     var onConsentNegativeSendResponse = replyOnConsentNegative.bind(sendResponse);
     var onConsentErrorSendResponse = replyOnConsentError.bind(sendResponse);

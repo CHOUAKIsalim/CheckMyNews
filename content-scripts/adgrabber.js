@@ -246,7 +246,6 @@ function getExplanationUrlFrontAds(frontAd,adData) {
 
 function notifyOverloadForMoreAdInfo(adData) {
 //    sideAds[adId] = sideAd;
-
     console.log('Processing frontAd' );
 //        hide element
 //        toggleOpacity(sideAd);

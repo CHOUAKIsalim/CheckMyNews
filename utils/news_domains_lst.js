@@ -16,4 +16,4 @@ var FACEBOOK_PAGE_IDS = [70693797649, 311190048935167, 32616834014, 107858871885
 
 
 
-var DOMAIN_SHORTCUT = { 'nyti.ms': 'nytimes.com', 'cnn.it': 'cnn.com', 'cnb.cx': 'cnbc.com', 'trib.al': 'npr.org' }
+var DOMAIN_SHORTCUT = { 'nyti.ms': 'nytimes.com', 'cnn.it': 'cnn.com', 'cnb.cx': 'cnbc.com', 'trib.al': 'npr.org' };

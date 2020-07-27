@@ -30,7 +30,7 @@ const NOT_FRONT_AD = 'adsCategoryTitleLink'; //Tag that if exists then frame is 
 const POLITICAL_AD= "entry_type=political_ad_subtitle" //allows us to detect political ads
 var MORE_LINK_FRONT_LABEL = ['Story options', 'Options des actualités', "Options de l’actualité", 'Opciones de la historia', 'Meldungsoptionen', 'Story-Optionen', 'Επιλογές ανακοινώσεων', 'Επιλογές ανακoίνωσης', 'Opções da história', 'Opções do story', 'Opcije priče', 'Opzioni per la notizia', 'Opţiuni pentru articol', '动态选项', 'خيارات القصص', 'कहानी विकल्प', 'Опције приче', 'Параметры новостей', '記事オプション', '記事のオプション', 'ตัวเลือกเรื่องราว', 'Opcje zdarzeń'];
 var EXPLANATION_TEXT = ["Why am I seeing this?", "Why am I seeing this ad", "Pourquoi est-ce que je vois ça ?", "Pourquoi je vois cette pub ?", "Pourquoi est-ce que je vois cette publicité?", "¿Por qué veo esto?", "¿Por qué veo este anuncio ?", "Warum wird mir das angezeigt?", "Warum sehe ich diese Werbeanzeige?", "Γιατί το βλέπω αυτό;", "Γιατί βλέπω αυτή τη διαφήμιση;", "Por que estou vendo isso?", "Por que estou vendo esse anúncio?", "Zašto mi se ovo prikazuje?", "Zašto mi se prikazuje ovaj oglas?", "Perché visualizzo questa inserzione?", "De ce văd asta?", "De ce văd această reclamă?", "为什么我会看到这条广告？", "لماذا أرى هذا الإعلان؟", "मुझे यह विज्ञापन क्यों दिखाई दे रहा है?", "Зашто ми се приказује ова реклама?", "Почему я вижу эту рекламу?", "この広告が表示されている理由", "ทำไมฉันจึงเห็นโฆษณานี้", "Dlaczego widzę tę reklamę?"];
-
+var IMG_NEXT_TO_SPONSORED_CLASS = "hu5pjgll m6k467ps sp_LGojA4ldSxW sx_0385ef";
 
 /**
  * check if DOM element is hidden
@@ -645,6 +645,44 @@ function findFeedAdsWithLettersInBoldElements() {
     return links;
 }
 
+/**
+ * return Front ads that contain links with the "Sponsored" tag devided into b elements and not contained in a element
+ *
+ * @return {array} array of links that contain the sponsored tag
+ */
+
+function findFeedAdsWithLettersInBoldElementsNotContainedInLinksUsingImgNextToSponsored() {
+    var elems = document.getElementsByClassName(IMG_NEXT_TO_SPONSORED_CLASS);
+    var max_depth = 5;
+    var links = [];
+    for(let i=0; i<elems.length; i++){
+        var currentElement = elems[i];
+        var found = false;
+        var j=0;
+        while (found ===false && j<max_depth) {
+            currentElement = currentElement.parentElement;
+            if(currentElement === null || currentElement === undefined) {
+                j = max_depth;
+            }
+            else if (currentElement.getElementsByTagName('b').length > 0 ){
+                currentElement = currentElement.getElementsByTagName('b')[0];
+                found = true;
+            }
+            j++;
+        }
+        if(found) {
+            if(isLinkSponsoredHiddenInBoldElement(currentElement)) {
+                links.push(currentElement)
+            }
+        }
+
+    }
+
+
+
+    return links;
+
+}
 
 /**
  * return Front ads that contain links with the "Sponsored" tag devided into b elements and not contained in a element
@@ -653,7 +691,7 @@ function findFeedAdsWithLettersInBoldElements() {
  */
 
 function findFeedAdsWithLettersInBoldElementsNotContainedInLinks() {
-    var elems = $("img[width=12]");
+    var elems = $("img[width=40]");
     var max_depth = 5;
     var links = [];
     for(let i=0; i<elems.length; i++){
@@ -700,6 +738,7 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
     Array.prototype.push.apply(links,findFeedAdsWithHiddenLettersAttributeValues());
     Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElements());
     Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElementsNotContainedInLinks());
+    Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElementsNotContainedInLinksUsingImgNextToSponsored());
     links = uniqueArray(links);
     links = getGrabbed(links);
 
@@ -717,7 +756,6 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
         frontAds.push(frame);
         already_in_list.add(frame.id)
     }
-
     frontAds = uniqueArray(frontAds);
     frontAds = filterCollectedAds(frontAds);
     return frontAds;

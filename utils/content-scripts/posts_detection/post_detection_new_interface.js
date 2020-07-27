@@ -3,8 +3,9 @@ var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
 var POST_COLLECTED = "post_collected";
 var COMMENTS_CLASS_NEW_INTERFACE = "l9j0dhe7 ecm0bbzt hv4rvrfc qt6c0cv9 dati1w0a lzcic4wl btwxx1t3 j83agx80";
 var POST_TEXT_CLASS_NEW_INTERFACE = "ecm0bbzt hv4rvrfc ihqw7lf3 dati1w0a";
-
+var LIKES_CLASS_NEW_INTERFACE = "gpro0wi8 cwj9ozl2 bzsjyuwj ja2t1vim"
 var TYPE_OF_POST_CLASS_NEW_INTERFACE = "hu5pjgll m6k467ps sp_LGojA4ldSxW sx_0385ef";
+var POST_USER_NAME_NEW_INTERFACE = "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv nhd2j8a9 nc684nl6 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of lzcic4wl oo9gr5id gpro0wi8 lrazzd5p";
 
 function removeCommentsFromPostNewInterface(raw_ad) {
     let element = document.createElement( 'div' );
@@ -24,6 +25,27 @@ function removeTextFromPostNewInterface(raw_ad) {
     let texts = element.getElementsByClassName(POST_TEXT_CLASS_NEW_INTERFACE);
     for(let i=0; i < texts.length; i++) {
         texts[i].parentNode.removeChild(texts[i]);
+    }
+    return element.innerHTML;
+}
+
+function removeAdvertiserNameNewInterface(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad;
+    let texts = element.getElementsByClassName(POST_USER_NAME_NEW_INTERFACE);
+    for(let i=0; i < texts.length; i++) {
+        texts[i].innerText = texts[i].innerText.hashCode()
+    }
+    return element.innerHTML;
+}
+
+
+function removeLikesNewInterface(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad;
+    let texts = element.getElementsByClassName(LIKES_CLASS_NEW_INTERFACE);
+    for(let i=0; i < texts.length; i++) {
+        texts[i].innerText = texts[i].innerText.hashCode()
     }
     return element.innerHTML;
 }
@@ -56,8 +78,11 @@ function isPublicPostNewInterface(raw_ad) {
 
 function anonymizePostNewInterface(raw_ad, advertiser_facebook_page) {
     raw_ad = removeCommentsFromPostNewInterface(raw_ad);
+    raw_ad = removeLikesNewInterface(raw_ad);
     if(!isNewsOrganisationFacebookPage(advertiser_facebook_page) && !isPublicPostNewInterface(raw_ad)){
         raw_ad = removeTextFromPostNewInterface(raw_ad);
+        raw_ad = removeAdvertiserNameNewInterface(raw_ad);
+        // No need to remove group cuz it's same as advertiser Name
     }
     return raw_ad;
 

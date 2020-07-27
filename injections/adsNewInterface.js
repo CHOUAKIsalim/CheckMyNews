@@ -51,7 +51,7 @@ function getAdId(frontAd) {
 		}
 
 		if (k.indexOf('ad_id')!==-1) {
-    		adIds.push(JSON.parse(k.match(/sponsored_data":{[^}]*}/)[0].replace('sponsored_data":',''))["ad_id"])
+			adIds.push(JSON.parse(k.match(/sponsored_data":{[^}]*}/)[0].replace('sponsored_data":',''))["ad_id"])
 
 		}
 
@@ -386,13 +386,11 @@ function getAdExtraData(customId) {
 
 
 function processAd(customId) {
-
 	let data = getAdExtraData(customId);
 	data['newInterface']=true;
 	data['customId'] = customId;
 	data['graphQLAsyncParams'] = require("getAsyncParams")("POST");
-
-	window.postMessage(data, "*");
+ 	window.postMessage(data, "*");
 
 }
 

@@ -4,6 +4,9 @@ var HTML_POST_ID ="hyperfeed_story_id";
 var POST_TEXT_CLASS_OLD_INTERFACE = "_5pbx userContent _3576";
 var POST_COMMENTS_CLASS = "_7791";
 var TYPE_OF_POST_CLASS = "uiStreamPrivacy inlineBlock fbStreamPrivacy fbPrivacyAudienceIndicator _5pcq";
+var POST_USER_NAME = "fwb fcg";
+var GROUP_NAME ="_wpv";
+var LIKES_CLASS = "_81hb";
 
 /**
  * Grab News Posts from user view
@@ -97,6 +100,37 @@ function removeTextFromPost(raw_ad) {
     return element.innerHTML;
 }
 
+function removeAdvertiserName(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad;
+    let texts = element.getElementsByClassName(POST_USER_NAME);
+    for(let i=0; i < texts.length; i++) {
+        texts[i].innerText = texts[i].innerText.hashCode()
+    }
+    return element.innerHTML;
+}
+
+function removeGroupName(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad;
+    let texts = element.getElementsByClassName(GROUP_NAME);
+    for(let i=0; i < texts.length; i++) {
+        texts[i].innerText = texts[i].innerText.hashCode()
+    }
+    return element.innerHTML;
+}
+
+function removeLikes(raw_ad) {
+    let element = document.createElement( 'div' );
+    element.innerHTML = raw_ad;
+    let texts = element.getElementsByClassName(LIKES_CLASS);
+    for(let i=0; i < texts.length; i++) {
+        texts[i].innerText = texts[i].innerText.hashCode()
+    }
+    return element.innerHTML;
+}
+
+
 function isPublicPost(raw_ad) {
     let element = document.createElement('div');
     element.innerHTML = raw_ad;
@@ -125,8 +159,11 @@ function isPublicPost(raw_ad) {
 
 function anonymizePostOldInterface(raw_ad, advertiser_facebook_page) {
     raw_ad = removeCommentsFromPost(raw_ad);
+    raw_ad = removeLikes(raw_ad);
     if(!isNewsOrganisationFacebookPage(advertiser_facebook_page) && !isPublicPost(raw_ad)){
         raw_ad = removeTextFromPost(raw_ad);
+        raw_ad = removeAdvertiserName(raw_ad);
+        raw_ad = removeGroupName(raw_ad);
     }
     return raw_ad;
 }

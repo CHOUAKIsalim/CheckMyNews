@@ -157,7 +157,5 @@ window.addEventListener("message", function(event) {
     processAd(event.data.customId);
     return true;
   }
-
-  handleUniversalCommunication(event);
-
+   handleUniversalCommunication(event);
 });

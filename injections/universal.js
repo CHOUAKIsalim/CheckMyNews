@@ -68,7 +68,7 @@ function handleUniversalCommunication(event) {
 
   if (event.data.type && event.data.type === 'getExplanation') {
         // console.log(event.data)
-        captureErrorOverload(getExplanationsManually, [event.data.userId,event.data.adId,event.data.explanationUrl,event.data.dbRecordId,event.data.timestamp,event.data.graphQLAsyncParams,event.data.clientToken,event.data.docId,event.data.getNewDocId,event.data.newInterface,event.data.adType,event.data.objId,event.data.serialized_frtp_identifiers,event.data.story_debug_info], undefined);
+        captureErrorOverload(getExplanationsManually, [event.data.userId,event.data.adId,event.data.explanationUrl,event.data.dbRecordId,event.data.timestamp,event.data.graphQLAsyncParams,event.data.clientToken,event.data.docId,event.data.getNewDocId,event.datas,event.data.adType,event.data.objId,event.data.serialized_frtp_identifiers,event.data.story_debug_info], undefined);
 
   }
 
