@@ -58,7 +58,7 @@ function addEventListenersOldInterface(ad) {
     // Listener for réactions : like, love, haha, wow, sad, angry
     let likeButton = frontAd.getElementsByClassName(likeButtonClass)[0];
     var observer = new MutationObserver(function (mutations) {
-        if (likeButton != null) {
+        if (likeButton != null)     {
             newColor = getComputedStyle(likeButton).color;
             let type = undefined;
             if (newColor === normalLikeColor) {

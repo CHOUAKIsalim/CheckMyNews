@@ -109,8 +109,10 @@ function addToFrontAdQueue(ad) {
     }
     var nextNum = Math.max.apply(null,Object.keys(FRONTADQUEUE).map(function (x) {return parseInt(x)})) +1
     FRONTADQUEUE[nextNum] = ad;
-    addEventListeners(ad);
-    MouseTrack(ad);
+    if(ad.type !== TYPES.publicPost) {
+        addEventListeners(ad);
+        MouseTrack(ad);
+    }
     return true;
 
 }
@@ -297,7 +299,7 @@ function grabFeedAds() {
  */
 function grabFeedAdsNewInterface() {
     if (window.location.href.indexOf('ads/preferences')==-1) {
-        console.log('Grabbing front ads...')
+        console.log('Grabbing front ads...');
         var frontAds = captureErrorContentScript(getFeedAdFrames,[getParentAdDivNewInterface],[]);
         for (let i=0;i<frontAds.length;i++) {
             let adData = captureErrorContentScript(processFeedAdNewInterface,[frontAds[i]],{});

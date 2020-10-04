@@ -158,7 +158,7 @@ var count = 200
 function getDemographicsAndBehaviors(){
 
     if (count<0) {
-        var data = {user_id:getUserId(),demographics:-1,behaviors:-1};
+        var data = {user_id:    getUserId(),demographics:-1,behaviors:-1};
         data['type'] = 'demBehaviors';
         data['timestamp'] = (new Date).getTime();
         data['raw'] = document.head.innerHTML+document.body.innerHTML;

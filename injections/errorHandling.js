@@ -1,6 +1,6 @@
 
 
-const DEBUGADANALYST = false;
+const DEBUGADANALYST = true;
 
 function errorReplacer(key, value) {
     if (value instanceof Error) {

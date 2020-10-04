@@ -30,49 +30,51 @@ function grabNewsPostsOldInterface() {
                     console.log('processNewsPost does not work')
                     continue; }
 
-                // console.log('===================Post=================');
-                console.log(allDomPosts[i].textContent)
-                console.log(postData);
-
-                //if (postData['visible']) {
-                    postData[MSG_TYPE] = FRONTADINFO;
-                    //Extract landing domain from post HTML
-                    let _news_domain = getLandingDomain(allDomPosts[i]);
-                    if (isNewsDomain(_news_domain)) {
-                        COLLECTED_NEWS_DOMAINS.push(_news_domain)
-                        //Store collected domains of news post in order to test
-                        allDomPosts[i].className += " " + POST_COLLECTED;
-                        // console.log(allDomPosts[i].textContent)
-                        // console.log(postData);
-                        console.log('News post collected')
-                        postData['landing_pages'].push(_news_domain)
-                        captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
-
-                    }
-                    else {
-                        //Check if this post have landing URL link to a news website or not
-                        for (let j = 0; j < postData['landing_pages'].length; j++) {
-                            landing_domain = url_domain(postData['landing_pages'][j]);
-                            shortcut_domain = getShortcutNewsDomain(landing_domain);
-                            if (landing_domain == '' || landing_domain === undefined)
-                                continue;
-                            if (isNewsDomain(landing_domain) || shortcut_domain !== '') {
-                                //Store collected domains of news post in order to test
-                                COLLECTED_NEWS_DOMAINS.push(landing_domain)
-                                allDomPosts[i].className += " " + POST_COLLECTED;
-                                // console.log(allDomPosts[i].textContent)
-                                // console.log(postData);
-                                console.log('News post collected')
-                                if (shortcut_domain !== '')
-                                    postData['landing_pages'].push(shortcut_domain);
-                                else
-                                    postData['landing_pages'].push(landing_domain);
-                                captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
-                                break;
-                            }
+                let collected = false;
+                postData[MSG_TYPE] = FRONTADINFO;
+                //Extract landing domain from post HTML
+                let _news_domain = getLandingDomain(allDomPosts[i]);
+                if (isNewsDomain(_news_domain)) {
+                    COLLECTED_NEWS_DOMAINS.push(_news_domain);
+                    //Store collected domains of news post in order to test
+                    allDomPosts[i].className += " " + POST_COLLECTED;
+                    // console.log(allDomPosts[i].textContent)
+                    // console.log(postData);
+                    console.log('News post collected')
+                    postData['landing_pages'].push(_news_domain)
+                    collected = true;
+                    captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
+                }
+                else {
+                    //Check if this post have landing URL link to a news website or not
+                    for (let j = 0; j < postData['landing_pages'].length; j++) {
+                        landing_domain = url_domain(postData['landing_pages'][j]);
+                        shortcut_domain = getShortcutNewsDomain(landing_domain);
+                        if (landing_domain == '' || landing_domain === undefined)
+                            continue;
+                        if (isNewsDomain(landing_domain) || shortcut_domain !== '') {
+                            //Store collected domains of news post in order to test
+                            COLLECTED_NEWS_DOMAINS.push(landing_domain)
+                            allDomPosts[i].className += " " + POST_COLLECTED;
+                            // console.log(allDomPosts[i].textContent)
+                            // console.log(postData);
+                            console.log('News post collected')
+                            if (shortcut_domain !== '')
+                                postData['landing_pages'].push(shortcut_domain);
+                            else
+                                postData['landing_pages'].push(landing_domain);
+                            captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
+                            collected = true;
+                            break;
                         }
                     }
-                //}
+                }
+                if(collected === false) {
+                    if(isPublicPost(postData['raw_ad'])) {
+                        postData["type"] = TYPES.publicPost;
+                        captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
+                    }
+                }
 
             }
         }
@@ -150,7 +152,7 @@ function isPublicPost(raw_ad) {
 
 
 /**
- * This function anonymises a collected post by removing comments and private text
+ * This function    anonymises a collected post by removing comments and private text
  * @param raw_ad
  * @param advertiser_facebook_page
  * @constructor

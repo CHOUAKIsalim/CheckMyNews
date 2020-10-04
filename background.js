@@ -480,7 +480,6 @@ function getCurrentUserEmailNewInterface() {
         url:ACCOUNT_SETTINGS,
         success: function(resp) {
             try {
-
                 let quickTokenMatch = resp.match(/compat_iframe_token":"[^"]+"|(\+)/);
                 if (!quickTokenMatch || quickTokenMatch.length<1) {
                     window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)

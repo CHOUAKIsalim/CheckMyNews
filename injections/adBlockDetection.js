@@ -6,7 +6,7 @@ function getAdBlockerStatus(){
     var requestLock = undefined;
 
 
-
+E
  
     try{
         var img = document.createElement("img");
