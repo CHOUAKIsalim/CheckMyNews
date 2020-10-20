@@ -148,7 +148,6 @@ function getLandingPagesSideAds(links,sideAd) {
                     images.push(imgs[j].src)
                     continue
                 }
-                console.log(imgs[j])
             }
         }
 
@@ -220,7 +219,6 @@ function processSideAd(sideAdObj,adId) {
 //    var image_url = 
     var fb_id = adId;
     var fb_advertiser_id = sideAdObj['ad_account_id'];
-//    console.log(fb_advertiser_id);
     var user_id = getUserId();
     return {'raw_ad':raw_ad,'timestamp':timestamp,'offsetX':offsetX,'offsetY':offsetY,'type':type,'user_id':user_id,'fb_id':fb_id,'fb_advertiser_id':fb_advertiser_id,landing_pages:landing_pages,images:images}
 

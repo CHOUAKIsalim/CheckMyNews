@@ -18,4 +18,4 @@ function debug(bool){
         console = consoleHolder;
     }
 }
-debug(false);
+debug(true);

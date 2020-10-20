@@ -3,11 +3,15 @@
 var likeButtonClassNewInterface = "e71nayrh  _18vj";
 var normalLikeColorNewInterface = "rgb(101, 103, 107)";
 var commentButtonClassNewInterface = "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv n05y2jgg hbms080z p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h vul9dhcy f1sip0of lzcic4wl l9j0dhe7 abiwlrkh p8dawk7l f49446kz  _666h  _18vj _18vk"
-var shareButtonClassNewInterface = "bp9cbjyn m9osqain j83agx80 rj1gh0hx buofh1pr pfnyh3mw jq4qci2q lrazzd5p k7cz35w2 taijpn5t jiuqdcnw jb3vyjys n8tt0mok qt6c0cv9 hyh9befq l9j0dhe7 esuyzwwr";
+var shareButtonClassNewInterface = "oajrlxb2 bp9cbjyn g5ia77u1 mtkw9kbi tlpljxtp qensuy8j ppp5ayq2 goun2846 ccm00jje s44p3ltw mk2mc5f4 rt8b4zig n8ej3o3l agehan2d sk4xxmp2 rq0escxv nhd2j8a9 j83agx80 rj1gh0hx btwxx1t3 pfnyh3mw p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x tgvbjcpo hpfvmrgz jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso l9j0dhe7 i1ao9s8h esuyzwwr f1sip0of du4w35lb lzcic4wl abiwlrkh p8dawk7l buofh1pr k7cz35w2 taijpn5t ms05siws flx89l3n ogy3fsii";
 var advertiserLinkClassNewInterface = "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv nhd2j8a9 nc684nl6 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of lzcic4wl oo9gr5id gpro0wi8 lrazzd5p";
 var advertiserLogoClassNewInterface ="oajrlxb2 gs1a9yip g5ia77u1 mtkw9kbi tlpljxtp qensuy8j ppp5ayq2 goun2846 ccm00jje s44p3ltw mk2mc5f4 rt8b4zig n8ej3o3l agehan2d sk4xxmp2 rq0escxv nhd2j8a9 q9uorilb mg4g778l btwxx1t3 pfnyh3mw p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x tgvbjcpo hpfvmrgz jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso l9j0dhe7 i1ao9s8h esuyzwwr f1sip0of du4w35lb lzcic4wl abiwlrkh p8dawk7l oo9gr5id";
 var menuDivClassNewInterface = "oajrlxb2 gs1a9yip g5ia77u1 mtkw9kbi tlpljxtp qensuy8j ppp5ayq2 goun2846 ccm00jje s44p3ltw mk2mc5f4 rt8b4zig n8ej3o3l agehan2d sk4xxmp2 rq0escxv nhd2j8a9 pq6dq46d mg4g778l btwxx1t3 pfnyh3mw p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x tgvbjcpo hpfvmrgz jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso l9j0dhe7 i1ao9s8h esuyzwwr f1sip0of du4w35lb lzcic4wl abiwlrkh p8dawk7l dwo3fsh8 pzggbiyp pkj7ub1o bqnlxs5p kkg9azqs c24pa1uk ln9iyx3p fe6kdd0r ar1oviwq l10q8mi9 sq40qgkc s8quxz6p pdjglbur";
 var menuElementDivClassNewInterface = "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv nhd2j8a9 j83agx80 p7hjln8o kvgmc6g5 oi9244e8 oygrvhab h676nmdw cxgpxx05 dflh9lhu sj5x9vvc scb9dxdr i1ao9s8h esuyzwwr f1sip0of lzcic4wl l9j0dhe7 abiwlrkh p8dawk7l bp9cbjyn dwo3fsh8 btwxx1t3 pfnyh3mw du4w35lb"
+var carouselNextClassNewInterface = "hu5pjgll m6k467ps sp_D-6eZQK8GT3 sx_dae08a";
+var carouselPreviousClassNewInterface = "hu5pjgll m6k467ps sp_D-6eZQK8GT3 sx_126de3";
+var minBodyImgSize = 200;
+
 
 function onMessagingNewInterface() {
 
@@ -18,7 +22,6 @@ function onMessagingNewInterface() {
         return;
     }
     chatPage.addEventListener('DOMSubtreeModified', function (event) {
-        var curTs = Date.now();
         var chatTabs = $('div[data-pagelet="ChatTab"]');
         if (chatTabs.length == 0) {
             if (isOnMessaging) {
@@ -50,12 +53,8 @@ function addEventListenersNewInterface(ad) {
 
     // Getting the html object of the ad
     console.log("in add event listeners New Interface : " + ad.html_ad_id);
-    if(ad.html_ad_id === undefined) {
-        console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-        console.log(ad)
-    }
+
     let frontAd = document.getElementById(ad.html_ad_id);
-    console.log(frontAd);
 
     // Listener for réactions : like, love, haha, wow, sad, angry
     let likeButton = frontAd.getElementsByClassName(likeButtonClassNewInterface)[0];
@@ -188,37 +187,29 @@ function addEventListenersNewInterface(ad) {
         }
     }
 
-    /**
     // AdImage
-    adBody = frontAd.getElementsByClassName("_3x-2")[0];
-    if (adBody !== undefined) {
-        adBodyLinks = adBody.getElementsByTagName('a');
-        for (let k = 0; k < adBodyLinks.length; k++) {
-            bodyLink = adBodyLinks[k];
-            if (bodyLink.href === "#" || bodyLink.href.indexOf("https://www.facebook") !== -1 || bodyLink.href.indexOf("http://www.facebook") !== -1 || bodyLink.href.indexOf("https://facebook") !== -1 || bodyLink.href.indexOf("http://facebook") !== -1) {
-                linkImg = bodyLink.getElementsByTagName('img');
-                if (linkImg !== undefined && linkImg.length > 0) {
-                    for (let l = 0; l < linkImg.length; l++) {
-                        linkImg[l].addEventListener('click', function () {
-                            storeAdClickEvent(ad, imageClickedEventType);
-                        });
-                        linkImg[l].addEventListener('contextmenu', function () {
-                            storeAdClickEvent(ad, rightClickOnImage);
-                        })
-                    }
-                }
-            }
+    let adImgs = frontAd.getElementsByTagName("img");
+
+    for(let i=0; i < adImgs.length; i++) {
+        if(adImgs[i].height >= minBodyImgSize && adImgs[i].width >= minBodyImgSize) {
+            adImgs[i].addEventListener('click', function () {
+                storeAdClickEvent(ad, imageClickedEventType);
+            });
+            adImgs[i].addEventListener('contextmenu', function () {
+                storeAdClickEvent(ad, rightClickOnImage);
+            });
         }
 
     }
 
+
     // handle Carousel mouvement
-    nextButton = frontAd.getElementsByClassName("_5flc _5flf")[0];
+    let nextButton = frontAd.getElementsByClassName(carouselNextClassNewInterface)[0];
     if(nextButton !== undefined) {
         nextButton.addEventListener('click', function () {
             storeAdClickEvent(ad, carouselNextEvent);
             if(previousCarouselListenerAdded === 0) {
-                previousButton = frontAd.getElementsByClassName("_5flc _5fle")[0];
+                let previousButton = frontAd.getElementsByClassName(carouselPreviousClassNewInterface)[0];
                 if(previousButton !== undefined) {
                     previousButton.addEventListener('click', function () {
                         storeAdClickEvent(ad, carouselPreviousEvent);
@@ -228,7 +219,6 @@ function addEventListenersNewInterface(ad) {
             }
         })
     }
-    **/
  }
 
 function removeMenuListenerNewInterface() {
@@ -263,14 +253,13 @@ function grabPostsNewInterface(){
     }
     if(window.location.href.indexOf('ads/preferences') == -1){
         console.log('Grabbing posts');
-        var allPostsId = [];
         var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
         var allDomPosts = document.getElementsByClassName(POST_CLASS_NEW_INTERFACE);
         for (let i = 0; i < allDomPosts.length; i++) {
             var allPostId = Object.keys(POST_QUEUE).map(key => POST_QUEUE[key]['html_post_id']);
+
             if(!allPostId.includes(allDomPosts[i].id)){
                 var elmPosition = toRelativeCoordinate(getElementCoordinate($(allDomPosts[i])));
-
                 if(!allAdsId.includes(allDomPosts[i].id) && elmPosition !== undefined) {
                     markAd(allDomPosts[i]);
                     POST_QUEUE[nextNum] = { 'html_post_id': allDomPosts[i].id, 'timestamp': (new Date).getTime(), 'user_id': getUserId(),'visibleDuration':[] };

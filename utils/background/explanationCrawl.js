@@ -413,12 +413,12 @@ function processExplanationReply(msg) {
     }
 
     if (msg["explanationType"] === "captchaMessage") {
-        sendCaptchaMessage(msg.adId,msg.explanationUrl,msg.dbRecordId,msg.timestamp,msg.response,msg.graphQLAsyncParams,msg.clientToken,msg.newInterface,msg.adType,msg.objId,msg.serialized_frtp_identifiers,msg.story_debug_info);    
+        sendCaptchaMessage(msg.adId,msg.explanationUrl,msg.dbRecordId,msg.timestamp,msg.response,msg.graphQLAsyncParams,msg.clientToken,msg.newInterface,msg.adType,msg.objId,msg.serialized_frtp_identifiers,msg.story_debug_info);
         return;
     }
 
     if (msg["explanationType"] === "genericError") {
-        sendGenericErrorMessage(msg.adId,msg.explanationUrl,msg.dbRecordId,msg.timestamp,msg.response,msg.graphQLAsyncParams,msg.clientToken,msg.newInterface,msg.adType,msg.objId,msg.serialized_frtp_identifiers,msg.story_debug_info);    
+        sendGenericErrorMessage(msg.adId,msg.explanationUrl,msg.dbRecordId,msg.timestamp,msg.response,msg.graphQLAsyncParams,msg.clientToken,msg.newInterface,msg.adType,msg.objId,msg.serialized_frtp_identifiers,msg.story_debug_info);
         return;
     }
 
@@ -719,7 +719,6 @@ function processTabsForExplanations(tabs) {
             return;
         }
         var [adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,newInterface,adType,objId,serialized_frtp_identifiers,story_debug_info] = params; 
-
         chrome.tabs.sendMessage(tab.id, {
                     type: "getExplanation",
                     adId:adId,

@@ -27,11 +27,8 @@ function universalOnMessageFunction(msg,sender,sendResponse) {
 
 
         if (msg.type === 'getExplanation') {
-            console.log(msg);
             msg.userId = getUserId();
             window.postMessage(msg,'*');
-
-             
         }
 
         if (msg.type === 'isValidTab') {

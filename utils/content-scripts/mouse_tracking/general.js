@@ -300,32 +300,37 @@ function getElementCoordinate(elem) {
 function checkAdVisibleDuration() {
     let currTs = (new Date()).getTime();
     for (let i in FRONTADQUEUE) {
-        if (FRONTADQUEUE[i] == {}) { console.log('checkAdVisibleDuration exit with empty item'); continue; }
+        if (FRONTADQUEUE[i] === {}) {  //Problem in queue
+            console.log('checkAdVisibleDuration exit with empty item');
+            continue;
+        }
         let ad = document.getElementById(FRONTADQUEUE[i]['html_ad_id']);
-        if (ad == undefined) { FRONTADQUEUE[i] = {}; console.log('checkAdVisibleDuration exit with empty ad'); continue; } //If ad was not found
-
+        if (ad === undefined) { //Ad not found
+            FRONTADQUEUE[i] = {};
+            console.log('checkAdVisibleDuration exit with empty ad');
+            continue;
+        }
         var visible_state = getVisibleHeight(ad);
         let l = FRONTADQUEUE[i]['visibleDuration'].length;
-        if (visible_state == undefined) {  //update ts_end when ad become invisible
-            if (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
+        if (visible_state === undefined) {  //update ts_end when ad become invisible
+            if (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] === -1) {
                 FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
                 console.log('Sending data ...storeAdVisibilityEvent');
                 storeAdVisibilityEvent(FRONTADQUEUE[i], FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
             }
         }
         else { //set ts_start when ad visilbe
-            visible_fraction = (visible_state[0] / visible_state[1]);
+            let visible_fraction = (visible_state[0] / visible_state[1]);
             if (visible_fraction < 0.3 && visible_state[0] < 350) { //The ad has small part visible (under threshold), treated as invisible
-                if (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
+                if (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] === -1) {
                     FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
                     console.log('Sending data ...storeAdVisibilityEvent');
                     storeAdVisibilityEvent(FRONTADQUEUE[i], FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
                 }
             }
-            else if ((l == 0) || (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] != -1)) {
+            else if ((l === 0) || (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] !== -1)) {
                 FRONTADQUEUE[i]['visibleDuration'].push({ 'ts_start': currTs, 'ts_end': -1 })
             }
-        
         }
     }
     setTimeout(checkAdVisibleDuration, Ad_Visible_INTERVAL);
@@ -402,7 +407,6 @@ function interruptAdVisibility(){
             //Check if some invisible ads but not upddate
             if (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1){
                 console.log('Problem: inconsistent in interruptAdVisibility()');
-                console.log(FRONTADQUEUE[i]);
             }
         }
     }

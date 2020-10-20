@@ -148,14 +148,11 @@ function getDocIdFromWaistResource(jsResource) {
  */
 function getDocIdFromWaistResources(jsResources,callback) {
     if (jsResources.length===0) {
-        // console.log("Waist resource not found")
         throw "Waist resource not found"
     }
-    // console.log("getting doc id");
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET",jsResources[0], true);
     xmlhttp.onload = function (e) {
-        // console.log(xmlhttp);
         // EXPLANATION_REQUESTS[CURRENT_USER_ID].push((new Date()).getTime())
 
         if (xmlhttp.readyState === 4 && xmlhttp.status === 200){
@@ -252,7 +249,6 @@ function getExplanationsManuallyNewInterface(userId,adId,explanationUrl,dbRecord
  * @return {[type]}                [description]
  */
 function getExplanationsManually(userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,docId,getNewDocId,newInterface,adType,objId,serialized_frtp_identifiers,story_debug_info) {
-    
     if (newInterface===true) {
         captureErrorOverload(getExplanationsManuallyNewInterface,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,docId,getNewDocId,adType,objId,serialized_frtp_identifiers,story_debug_info],undefined);
         return

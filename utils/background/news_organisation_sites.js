@@ -53,6 +53,8 @@ function sendTabArticle(request){
 }
 
 
+
+
 /**
  * Set tab with ID as active, other tabs inactive - Update time-elapsed for these tab
  * @param {number} activeTabID to be set as active
@@ -77,7 +79,7 @@ function addToNewsQueue(tabData){
     if (Object.keys(NEWS_ARTICLES).includes(tabData.id.toString())){
         let key = tabData.id;
         if(NEWS_ARTICLES[key].url !== tabData.url){//Changed url
-            let l = NEWS_ARTICLES[key].length;
+            let l = NEWS_ARTICLES[key].time_elapsed.length;
             tsNow = (new Date()).getTime();
             if (l > 0 && NEWS_ARTICLES[key].time_elapsed[l-1]['end_ts'] === -1){
                 NEWS_ARTICLES[key].time_elapsed[l - 1]['end_ts'] = tsNow;
@@ -147,6 +149,39 @@ chrome.tabs.onActivated.addListener(function (info){
     }
 
 });
+
+
+window.setInterval(checkBrowserFocus, 1000);
+var changedFocus = false;
+
+function checkBrowserFocus(){
+
+    chrome.windows.getCurrent(function(browser){
+
+        if(browser.focused === false && changedFocus === false) {
+            setActiveTab(-1);
+            changedFocus =true;
+        }
+        else if (browser.focused === true && changedFocus === true){
+            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                var currTab = tabs[0];
+                if (currTab) {
+                    setActiveTab(currTab.id);
+                    if(Object.keys(NEWS_ARTICLES).includes(currTab.id.toString())){
+                        let tsNow = (new Date()).getTime();
+                        NEWS_ARTICLES[currTab.id].time_elapsed.push({ 'start_ts': tsNow, 'end_ts': -1 });
+                        NEWS_ARTICLES[currTab.id].active = true;
+                    }
+                    changedFocus = false;
+                }
+            });
+        }
+
+    })
+
+}
+
+
 
 chrome.tabs.onRemoved.addListener(function(tabId, changeInfo){
     let tsNow = (new Date()).getTime();

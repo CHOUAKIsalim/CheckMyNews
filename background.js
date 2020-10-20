@@ -53,7 +53,8 @@ var URLS_SERVER = {
     'adBlockerStatus' : HOST_SERVER + 'adblocked_status',
     'newInterfaceDetected' : HOST_SERVER + 'new_interface_detected',
     'amazonBuying' : HOST_SERVER + 'amazon_buying',
-    'registerStillAlive' : HOST_SERVER + 'register_still_alive'
+    'registerStillAlive' : HOST_SERVER + 'register_still_alive',
+    'storeExtensionNameAndVersion': HOST_SERVER + 'store_extension_name_and_version'
 };
 
 
@@ -761,35 +762,27 @@ chrome.windows.onRemoved.addListener(function(windows){
  * @return {undefined}         [description]
  */
 function registerAdSuccess(a,request,sendResponse){
+
     if (!a[STATUS] || (a[STATUS]==FAILURE)) {
         if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
             captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
         }
-
         console.log('Failure');
         console.log(a)
         sendResponse({"saved":false});
-        return true};
-
-
-
-
-    console.log('Success');
-
-    let resp = {saved:true,dbId:a[ADID]}
-//                  console.log(a[MSG_TYPE])
-//                  console.log(a[FBID])
-    let isCrawled = captureErrorBackground(isCrawledOrQueue,[a[FBID],CURRENT_USER_ID],URLS_SERVER.registerError,false);
-
-    console.log(isCrawled);
-    console.log(a[FBID])
-//                  if ((a[TYPE] === TYPES.sideAd) && ((a[FBID] != -1)) && !isCrawledOrQueue(a[FBID],CURRENT_USER_ID) )  {
-    if ((a[FBID] != -1) && !isCrawled )  {
-        console.log('Adding to explanations queue...')
-        captureErrorBackground(addToQueueExplanations,[CURRENT_USER_ID,request.fb_id,request.explanationUrl,a[ADID],request.graphQLAsyncParams,request.clientToken],URLS_SERVER.registerError,undefined);
-
+        return true
     }
 
+    console.log('Success');
+    let resp = {saved:true,dbId:a[ADID]}
+    let isCrawled = captureErrorBackground(isCrawledOrQueue,[a[FBID],CURRENT_USER_ID],URLS_SERVER.registerError,false);
+
+    if ((a[FBID] !== -1) && !isCrawled )  {
+        if(request["type"] === TYPES.frontAd || request["type"] === TYPES.sideAd) {
+            console.log('Adding to explanations queue...');
+            captureErrorBackground(addToQueueExplanations,[CURRENT_USER_ID,request.fb_id,request.explanationUrl,a[ADID],request.graphQLAsyncParams,request.clientToken,!!request.newInterface,request.adType,request.objId,request.serialized_frtp_identifiers,request.story_debug_info],URLS_SERVER.registerError,undefined);
+        }
+    }
     sendResponse(resp);
     return true;
 }
@@ -808,7 +801,6 @@ function getBase64FromImageUrl(url,req_id,request,sendResponse,count=3) {
     console.log('For ',request.fb_id,' ', count);
 
     if (count<=0) {
-//        FLAG FINISHED
         MEDIA_REQUESTS[req_id][url] = MEDIA_CONTENT_FAILURE;
         return true
     }
@@ -816,9 +808,7 @@ function getBase64FromImageUrl(url,req_id,request,sendResponse,count=3) {
 
     try {
         var img = new Image();
-
         img.setAttribute('crossOrigin', 'anonymous');
-
         img.onload = function () {
             var canvas = document.createElement("canvas");
             canvas.width =this.width;
@@ -828,8 +818,6 @@ function getBase64FromImageUrl(url,req_id,request,sendResponse,count=3) {
             ctx.drawImage(this, 0, 0);
 
             var dataURL = canvas.toDataURL("image/png");
-//        console.log(dataURL)
-//        console.log(MEDIA_REQUESTS)
             MEDIA_REQUESTS[req_id][url] = dataURL
             console.log('For ',request.fb_id,' ', mediaRequestsDone(req_id));
             if (mediaRequestsDone(req_id)){
@@ -837,50 +825,32 @@ function getBase64FromImageUrl(url,req_id,request,sendResponse,count=3) {
                 delete MEDIA_REQUESTS[req_id];
                 console.log('Sending request for frontAd');
                 console.log(Object.keys(request))
-
-
-
-
                 console.log('ALL ready to send ');
                 console.log(request)
-//        console.log(JSON.stringify(request))
 
                 $.ajax({
                     type: REQUEST_TYPE,
                     url: URLS_SERVER.registerAd,
-//              dataType: "json",
-//             traditional:true,
                     contentType: "application/json",
                     data: JSON.stringify(replaceUserIdEmail(request)),
                     success: function (a) {
                         captureErrorBackground(registerAdSuccess,[a,request,sendResponse],URLS_SERVER.registerError,undefined);
-
                     },
                 }).fail(function(a){
                     console.log('Failure');
                     console.log(a)
                     sendResponse({"saved":false});
-                    return true;});
+                    return true;
+                });
             }
-
-
-//        alert(dataURL.replace(/^data:image\/(png|jpg);base64,/, ""));
         };
-
         img.src = url;
-
-
-//FLAG FINSHED
     }
     catch (e) {
         console.log("Couldn't grab "+ url);
         console.log(e);
         console.log("Trying again...");
         captureErrorBackground(getBase64FromImageUrl,[url,req_id,request,sendResponse,count-1],URLS_SERVER.registerError,false);
-
-
-
-
     }
     return true
 
@@ -1110,7 +1080,6 @@ function sendFrontAd(request,sendResponse) {
     MEDIA_REQUESTS[reqId] = {};
     for (let i =0 ; i<imgsToCrawl.length; i++) {
         MEDIA_REQUESTS[reqId][imgsToCrawl[i]] = '';
-//              console.log(MEDIA_REQUESTS[reqId])
         getBase64FromImageUrl(imgsToCrawl[i],reqId,request,sendResponse)
     }
 
@@ -1205,18 +1174,6 @@ chrome.runtime.onMessage.addListener(
         console.log(sender.tab ?
             "from a content script:" + sender.tab.url :
             "from the extension");
-//      if (request[MSG_TYPE] === SIDEADINFO) {
-//          var adId = request.adId;
-//
-//      if (!(sender.tab.id in FLAG)) {
-//          FLAG[sender.tab.id] = {};
-//      }
-//
-//      FLAG[sender.tab.id][adId] = true;
-//      sendResponse({"ad_status":OK});
-//      return
-//
-//      }
 
         if ((!sender.tab) || (sender.tab && (sender.url) && (typeof sender.url === "string") && (sender.url.indexOf('new_consent.html')>-1)) ){
             if (request.setConsent) {
@@ -1320,12 +1277,13 @@ chrome.runtime.onMessage.addListener(
                 return true;
 
             }
-            if (request[MSG_TYPE] == FRONTADINFO) {
+            if (request[MSG_TYPE] === FRONTADINFO) {
                 CURRENT_USER_ID = request['user_id'];
                 console.log(CURRENT_USER_ID);
                 sendFrontAd(request,sendResponse);
                 return true;
             }
+
             if (request[MSG_TYPE] == MOUSE_CLICK_DATA){
                 let dataToSend = request;
                 delete dataToSend.MSG_TYPE;
@@ -1600,6 +1558,13 @@ chrome.runtime.onMessage.addListener(
                 return true
             }
             //if message is an error message sregister in the database
+
+
+            if (request[MSG_TYPE] === "explanationReply") {
+                processExplanationReply(request);
+                return true;
+            }
+
             if (isMessageTypeError(request[MSG_TYPE])) {
                 console.log("Sending error to server")
                 sendErrorMessage(request, URLS_SERVER.registerError);

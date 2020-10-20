@@ -79,8 +79,9 @@ function getAdvertiserImageAndLink(frontAd) {
     		continue
     	}
     	let images = links[i].getElementsByTagName('img');
-        if ((images.length==1) && ((window.getComputedStyle(images[0]).width==="40px" && window.getComputedStyle(images[0]).height==="40px") || (window.getComputedStyle(images[0]).width==="32px" && window.getComputedStyle(images[0]).height==="32px"))) {
-        	newLinks.push(links[i])
+//        if ((images.length === 1) && ((window.getComputedStyle(images[0]).width==="40px" && window.getComputedStyle(images[0]).height==="40px") || (window.getComputedStyle(images[0]).width==="32px" && window.getComputedStyle(images[0]).height==="32px"))) {
+		if ((images.length === 1) && ((window.getComputedStyle(images[0]).width === "40px" || window.getComputedStyle(images[0]).width === "32px") && (window.getComputedStyle(images[0]).height === "40px" || window.getComputedStyle(images[0]).height === "32px"))) {
+			newLinks.push(links[i])
             
         }
     }
@@ -89,9 +90,10 @@ function getAdvertiserImageAndLink(frontAd) {
 
      for  (let i=0;i<links.length;i++) {
     	let images = links[i].getElementsByTagName('image');
-        if ((images.length==1) && ((window.getComputedStyle(images[0]).width==="40px" && window.getComputedStyle(images[0]).height==="40px") || (window.getComputedStyle(images[0]).width==="32px" && window.getComputedStyle(images[0]).height==="32px"))) {
-        	newLinks.push(links[i])
-            
+//        if ((images.length === 1) && ((window.getComputedStyle(images[0]).width==="40px" && window.getComputedStyle(images[0]).height==="40px") || (window.getComputedStyle(images[0]).width==="32px" && window.getComputedStyle(images[0]).height==="32px"))) {
+
+		if ((images.length === 1) && ((window.getComputedStyle(images[0]).width === "40px" || window.getComputedStyle(images[0]).width === "32px") && (window.getComputedStyle(images[0]).height === "40px" || window.getComputedStyle(images[0]).height === "32px"))) {
+				newLinks.push(links[i])
         }
     }
 
@@ -100,7 +102,7 @@ function getAdvertiserImageAndLink(frontAd) {
     if (newLinks.length==0) {
     	// TODO:SEND ERROR MESSAGE TO THE SaERVER
     	debugLog("No advertiser link in the ad");
-    	return 
+    	return
 
     }
 
@@ -128,32 +130,32 @@ function getAdvertiserImageAndLink(frontAd) {
  * @return {string}         advertiser id
  */
 function getReactAdvertiserInfo(frontAd) {
-
-
-
-   
-
-
 //    let advertiserId = link.getAttribute(DATA_HOVERCARD).replace(ADVERTISER_FB_ID_PATTERN,"")
-   	let [link, facebookPage,advertiserImage] = getAdvertiserImageAndLink(frontAd);
 
-    let reactKey = getReactKey(link);
+	try {
+		let [link, facebookPage,advertiserImage] = getAdvertiserImageAndLink(frontAd);
 
-    if (reactKey===undefined) {
-    	// TODO nnotify server
-    	debugLog("Cannot get the key")
-    	return ["-3",facebookPage,advertiserImage]
-    }
+		let reactKey = getReactKey(link);
 
-    let advertiserId= "-4"
-    try {
-    	advertiserId = link[reactKey]['memoizedProps']['children']['props']['children']['props']['entity']['id'];
-    } catch (e) {
-    	// TODO notifyserver
-    }
+		if (reactKey===undefined) {
+			// TODO nnotify server
+			debugLog("Cannot get the key")
+			return ["-3",facebookPage,advertiserImage]
+		}
 
-    return [advertiserId,facebookPage,advertiserImage]
-    
+		let advertiserId= "-4"
+		try {
+			advertiserId = link[reactKey]['memoizedProps']['children']['props']['children']['props']['entity']['id'];
+		} catch (e) {
+			// TODO notifyserver
+		}
+
+		return [advertiserId,facebookPage,advertiserImage]
+
+	}
+	catch (e) {
+		debugLog(e)
+	}
 }
 
 
@@ -356,41 +358,48 @@ function findExtraFRTPIdentifiers(frontAd) {
 
 
 function getAdExtraData(customId) {
-	let elements = document.querySelectorAll('[adan="'+customId+'"]');
-	if (elements.length!=1) {
-		// TODO: notifys
-		debugLog("no elements")
-		return undefined;
+	try {
+		let elements = document.querySelectorAll('[adan="'+customId+'"]');
+		if (elements.length!=1) {
+			// TODO: notifys
+			debugLog("no elements")
+			return undefined;
+		}
+
+		let frontAd = elements[0];
+		let [advertiserId,facebookPage,advertiserImage] = getReactAdvertiserInfo(frontAd);
+		let [adId,clientToken] = getAdId(frontAd);
+		let [objId,serialized_frtp_identifiers,story_debug_info]= findExtraFRTPIdentifiers(frontAd);
+
+		let images = getImagesFrontAdsNewInterface(frontAd.getElementsByTagName('a'),frontAd);
+		let video = frontAd.getElementsByTagName('video')>0;
+		let video_id = ''
+		if (video) {
+			video_id = '';
+			images = [getVideoImage(frontAd)];
+
+		}
+
+
+		return {advertiser_facebook_id:advertiserId,advertiser_facebook_page:facebookPage,advertiser_facebook_profile_pic:advertiserImage,
+			clientToken: clientToken,adId:adId,objId:objId,serialized_frtp_identifiers:serialized_frtp_identifiers,story_debug_info:story_debug_info,
+			images:images,video:video}
+	}
+	catch (e) {
+		debugLog(e)
 	}
 
-	let frontAd = elements[0];
-	let [advertiserId,facebookPage,advertiserImage] = getReactAdvertiserInfo(frontAd);
-	let [adId,clientToken] = getAdId(frontAd);
-	let [objId,serialized_frtp_identifiers,story_debug_info]= findExtraFRTPIdentifiers(frontAd);
-
-	let images = getImagesFrontAdsNewInterface(frontAd.getElementsByTagName('a'),frontAd);
-    let video = frontAd.getElementsByTagName('video')>0;
-    let video_id = ''
-    if (video) {
-        video_id = '';
-        images = [getVideoImage(frontAd)];
-        
-    }
-
-
-	return {advertiser_facebook_id:advertiserId,advertiser_facebook_page:facebookPage,advertiser_facebook_profile_pic:advertiserImage,
-			 clientToken: clientToken,adId:adId,objId:objId,serialized_frtp_identifiers:serialized_frtp_identifiers,story_debug_info:story_debug_info,
-			 images:images,video:video}
 }
 
 
 
 function processAd(customId) {
 	let data = getAdExtraData(customId);
-	data['newInterface']=true;
-	data['customId'] = customId;
-	data['graphQLAsyncParams'] = require("getAsyncParams")("POST");
- 	window.postMessage(data, "*");
-
+	if(data) {
+		data['newInterface']=true;
+		data['customId'] = customId;
+		data['graphQLAsyncParams'] = require("getAsyncParams")("POST");
+		window.postMessage(data, "*");
+	}
 }
 

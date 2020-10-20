@@ -4,10 +4,6 @@ var ADBLOCKERDETECTIONINTERVAL =  10 * 60000;
 // 
 function getAdBlockerStatus(){
     var requestLock = undefined;
-
-
-E
- 
     try{
         var img = document.createElement("img");
         document.body.appendChild(img);

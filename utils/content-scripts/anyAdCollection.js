@@ -30,6 +30,7 @@ const TYPES = {"frontAd" : "frontAd", "sideAd" : "sideAd", "newsPost": "newsPost
 const GRAB_ME = 'grab_me' //if added as a class this ad will be captured by adanalyst
 const COLLECTED = 'ad_collected'; //inserted to an ad to signify it was collected
 var SPONSORED = ['Sponsored', 'Sponsorisé', 'Commandité', 'Publicidad', 'Gesponsert', 'Χορηγούμενη', 'Patrocinado', 'Plaćeni oglas', 'Sponsorizzata ', 'Sponsorizzato', 'Sponsorizat', '赞助内容', 'مُموَّل', 'प्रायोजित', 'Спонзорисано', 'Реклама', '広告', 'ได้รับการสนับสนุน', 'Sponsorowane']; //English French Spanish German Greek Portuguese(Brazil) Croatian Italian c Romanian Chinse Hindi Serbian Rusian Japannese Thai Polish
+var PAID_PARTNERSHIP  = ['paid partnership'];
 
 
 /**

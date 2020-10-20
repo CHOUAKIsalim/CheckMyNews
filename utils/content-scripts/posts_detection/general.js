@@ -9,7 +9,10 @@ var LINK_TAG = 'a';
 
 var IMG_CLASS_NEW_INTERFACE_CLASS = "i09qtzwb n7fi1qx3 datstx6m pmk7jnqg j9ispegn kr520xx4 k4urcfbm bixrwtb6";
 
-var PUBLIC_LABELS = ['public', 'shared with public'];
+var PUBLIC_LABELS = ['public', 'shared with public', 'partagé avec public', 'partagé avec público', 'mit öffentlich geteilt', 'это видят: доступно всем', 'compartilhado com público', 'conteúdo partilhado com: público', 'podijeljeno s publikom javno', 'contenuto condiviso con: tutti', 'distribuit pentru: public', 'プライバシー設定: 公開', 'grono odbiorców: publiczne']; //English, French, Spanish, Deutsch, Russian, Portuguese(Brazil), Croatian, Italian, Romanian, Japannese, Polski
+
+var NON_PUBLIC_LABELS = ['members of', 'friends', 'custom', 'membres de', 'amis de', 'personnalisé']; //English, French
+
 
 
 /**
@@ -62,7 +65,6 @@ function getLandingPagesFrontAds(links, frontAd) {
 
 
         landingPages.extend(urls);
-
     }
 
 
@@ -105,7 +107,19 @@ function getLandingPagesFrontAds(links, frontAd) {
         }
     }
 
+    landingPages = cleanLandingPages(landingPages);
     return [landingPages.unique(), images.unique()];
+}
+
+function cleanLandingPages(landingPages) {
+    var res = [];
+    for(let i=0; i<landingPages.length; i++ ) {
+        var domain = landingPages[i].replace('http://','').replace('https://','').replace('www.','').split(/[/?#]/)[0];
+        if(domain !== 'w3.org') {
+            res.push(landingPages[i]);
+        }
+    }
+    return res;
 }
 
 

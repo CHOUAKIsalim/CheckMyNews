@@ -30,8 +30,6 @@ function getAdActivityList(url, lastAd) {
       var hasMoreItems = respData[PAYLOAD][HISTORYCLICKED][HASMORE];
       var lastItem = respData[PAYLOAD][HISTORYCLICKED][LASTITEMSERVED];
 
-      // console.log("List of Ad Activity...");
-      // console.log(adClickedData);
       var data = {
         adClickedData: adClickedData,
         type: "adActivityList",

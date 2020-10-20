@@ -1,21 +1,22 @@
 var LANDING_DOMAIN_NEW_INTERFACE_CLASS = "oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1et5uql a8c37x1j hop8lmos enqfppq2 e9vueds3 j5wam9gi knj5qynh m9osqain ni8dbmo4 stjgntxs ltmttdrg g0qnabr5";
 var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
 var POST_COLLECTED = "post_collected";
-var COMMENTS_CLASS_NEW_INTERFACE = "l9j0dhe7 ecm0bbzt hv4rvrfc qt6c0cv9 dati1w0a lzcic4wl btwxx1t3 j83agx80";
+var COMMENTS_CLASS_NEW_INTERFACE = "l9j0dhe7 ecm0bbzt hv4rvrfc qt6c0cv9 dati1w0a j83agx80 btwxx1t3 lzcic4wl";
 var POST_TEXT_CLASS_NEW_INTERFACE = "ecm0bbzt hv4rvrfc ihqw7lf3 dati1w0a";
-var LIKES_CLASS_NEW_INTERFACE = "gpro0wi8 cwj9ozl2 bzsjyuwj ja2t1vim"
+var LIKES_CLASS_NEW_INTERFACE = "gpro0wi8 cwj9ozl2 bzsjyuwj ja2t1vim";
 var TYPE_OF_POST_CLASS_NEW_INTERFACE = "hu5pjgll m6k467ps sp_EMEH57Vy40m sx_6af3a2";
 var POST_USER_NAME_NEW_INTERFACE = "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv nhd2j8a9 nc684nl6 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of lzcic4wl oo9gr5id gpro0wi8 lrazzd5p";
 
 function removeCommentsFromPostNewInterface(raw_ad) {
     let element = document.createElement( 'div' );
-    element.innerHTML = raw_ad
-    let comments = element.getElementsByClassName(COMMENTS_CLASS_NEW_INTERFACE)
-    for(let i=0; i < comments.length; i++) {
-        comments[i].parentNode.removeChild(comments[i]);
+    element.innerHTML = raw_ad;
+    let comments = element.getElementsByClassName(COMMENTS_CLASS_NEW_INTERFACE);
+    while (comments.length > 0 ) {
+        let list = comments[0].closest("ul");
+        list.parentNode.removeChild(list);
+        comments = element.getElementsByClassName(COMMENTS_CLASS_NEW_INTERFACE);
     }
     return element.innerHTML;
-
 }
 
 
@@ -51,6 +52,7 @@ function removeLikesNewInterface(raw_ad) {
 }
 
 function isPublicPostNewInterface(raw_ad) {
+    let result = false;
     let element = document.createElement('div');
     element.innerHTML = raw_ad;
     let typeLink = element.getElementsByClassName(TYPE_OF_POST_CLASS_NEW_INTERFACE);
@@ -59,14 +61,48 @@ function isPublicPostNewInterface(raw_ad) {
         typeLink = typeLink[0];
         if(typeLink.getAttribute("aria-label")) {
             if(PUBLIC_LABELS.includes(typeLink.getAttribute("aria-label").toLowerCase())) {
-                return true;
+                result = true;
+            }
+        }
+    }
+    else{
+        let allIcons = element.getElementsByTagName("i");
+        for(let i = 0; i < allIcons.length; i++) {
+            if(allIcons[i].getAttribute("aria-label")) {
+                if(PUBLIC_LABELS.includes(allIcons[i].getAttribute("aria-label").toLowerCase())) {
+                      result = true;
+                      break;
+                }
             }
         }
     }
 
-    return false
+    if(result === true)  {
+        var allIcons = element.getElementsByTagName("i");
+        for(let i=0; i<allIcons.length; i++) {
+            if(allIcons[i].getAttribute("aria-label")) {
+                if(containsNotPublicLabel(allIcons[i].getAttribute("aria-label").toLowerCase())) {
+                    result = false;
+                }
+            }
+        }
+    }
+    return result;
 }
 
+
+/**
+ * Check if text contains a string which indicates that the post is not public
+ * @param text
+ */
+function containsNotPublicLabel(text) {
+    for(let i=0; i<NON_PUBLIC_LABELS.length; i++) {
+        if(text.indexOf(NON_PUBLIC_LABELS[i]) !== -1) {
+            return true;
+        }
+    }
+    return false;
+}
 
 /**
  * This function anonymises a collected post by removing comments and private text
@@ -99,30 +135,25 @@ function grabNewsPostsNewInterface() {
         var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
         var allDomPosts = document.getElementsByClassName(POST_CLASS_NEW_INTERFACE);
         for (let i = 0; i < allDomPosts.length; i++) {
-
             if (!allAdsId.includes(allDomPosts[i].parentElement.id)) {
                 let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
-                if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) != -1) {
+                if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) !== -1) {
                     continue;
                 }
 
                 let postData = processNewsPostNewInterface(allDomPosts[i]);
-                if (isEqual(postData, {}) == true || postData['landing_pages'].length == 0) {
-                    console.log('processNewsPost does not work')
-                    continue; }
-
+                if (isEqual(postData, {}) === true) {
+                    console.log('processNewsPost does not work');
+                    continue;
+                }
                 let collected = false;
                 postData[MSG_TYPE] = FRONTADINFO;
-                //Extract landing domain from post HTML
-                let _news_domain = getLandingDomain(allDomPosts[i]);
-                if (isNewsDomain(_news_domain)) {
-                    COLLECTED_NEWS_DOMAINS.push(_news_domain)
+                if (postData["landing_domain"]) {
+                    COLLECTED_NEWS_DOMAINS.push(postData["landing_domain"]);
                     //Store collected domains of news post in order to test
                     allDomPosts[i].className += " " + POST_COLLECTED;
-                    // console.log(allDomPosts[i].textContent)
-                    // console.log(postData);
-                    console.log('News post collected')
-                    postData['landing_pages'].push(_news_domain)
+                    console.log('News post collected');
+                    postData['landing_pages'].push(postData["landing_domain"]);
                     collected = true;
                     captureErrorContentScript(notifyOverloadForMoreAdInfo,  [postData], undefined);
                     break;
@@ -132,13 +163,13 @@ function grabNewsPostsNewInterface() {
                     for (let j = 0; j < postData['landing_pages'].length; j++) {
                         landing_domain = url_domain(postData['landing_pages'][j]);
                         shortcut_domain = getShortcutNewsDomain(landing_domain);
-                        if (landing_domain == '' || landing_domain === undefined)
+                        if (landing_domain === '' || landing_domain === undefined)
                             continue;
                         if (isNewsDomain(landing_domain) || shortcut_domain !== '') {
                             //Store collected domains of news post in order to test
-                            COLLECTED_NEWS_DOMAINS.push(landing_domain)
+                            COLLECTED_NEWS_DOMAINS.push(landing_domain);
                             allDomPosts[i].className += " " + POST_COLLECTED;
-                            console.log('News post collected')
+                            console.log('News post collected');
                             if (shortcut_domain !== '')
                                 postData['landing_pages'].push(shortcut_domain);
                             else
@@ -176,6 +207,15 @@ function getLandingDomainNewIterface(postObj) {
 }
 
 
+
+function getDisplayedDomains(html) {
+    for(let i=0; i<NEWS_DOMAINS.length; i++) {
+        if(html.includes(NEWS_DOMAINS[i].toLowerCase()) && !FACEBOOK_DOMAINS.includes(NEWS_DOMAINS[i])) {
+            return NEWS_DOMAINS[i];
+        }
+    }
+    return ''
+}
 function processNewsPostNewInterface(frontAd) {
     var html_ad_id = undefined;
     if(frontAd.id) {
@@ -197,6 +237,8 @@ function processNewsPostNewInterface(frontAd) {
     var type = TYPES.newsPost;
 
     var [landing_pages, images] = getLandingPagesFrontAds(frontAd.getElementsByTagName(LINK_TAG), frontAd);
+    landing_pages = landing_pages.unique();
+    var landing_domain = getDisplayedDomains(frontAd.outerHTML.toLowerCase());
 
     //check position ad visible state of ad at time when ad collected
     try {
@@ -214,7 +256,7 @@ function processNewsPostNewInterface(frontAd) {
         console.log('Error while compute ad position');
         console.log(e);
     }
-    return { 'raw_ad': raw_ad, 'adanalyst_ad_id':html_ad_id , 'html_ad_id': html_ad_id, 'visible': isInView, 'visible_fraction': visible_fraction, 'visibleDuration': [], 'timestamp': timestamp, 'offsetX': offsetX, 'offsetY': offsetY, 'type': type, 'landing_pages': landing_pages, 'images': images, 'user_id': user_id}
+    return { 'raw_ad': raw_ad, 'adanalyst_ad_id':html_ad_id , 'html_ad_id': html_ad_id, 'visible': isInView, 'visible_fraction': visible_fraction, 'visibleDuration': [], 'timestamp': timestamp, 'offsetX': offsetX, 'offsetY': offsetY, 'type': type, 'landing_pages': landing_pages, 'landing_domain': landing_domain,'images': images, 'user_id': user_id}
 
 
 }

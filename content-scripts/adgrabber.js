@@ -109,7 +109,7 @@ function addToFrontAdQueue(ad) {
     }
     var nextNum = Math.max.apply(null,Object.keys(FRONTADQUEUE).map(function (x) {return parseInt(x)})) +1
     FRONTADQUEUE[nextNum] = ad;
-    if(ad.type !== TYPES.publicPost) {
+    if(ad.type === TYPES.frontAd) {
         addEventListeners(ad);
         MouseTrack(ad);
     }
@@ -149,7 +149,7 @@ function toggleOpacity(elem) {
     if (elem.style.opacity=="0") {
         elem.style.opacity = 1;
         return;
-    }f
+    }
     elem.style.opacity=0;
 }
 
@@ -181,7 +181,6 @@ function clickOnMenusAd(adId,sideAd,adData) {
                 counter++;
                 menu.click();
                 menu.click()
-//                    console.log('Trying to grab ads again...');
                 ads = getAds(sideAd[DOM_AD]);
                 window.setTimeout(checkFlag, 100,sideAd); /* this checks the flag every 100 milliseconds*/
                 return
@@ -200,14 +199,9 @@ function clickOnMenusAd(adId,sideAd,adData) {
 
             var adToClick= ads[adId];
             chrome.runtime.sendMessage(adData, function(response) {
-                console.log(response.saved);
-                console.log(response)
-
                 if (response.saved!==true) {
                     console.log('Problem with SideAd');
                     sideAd[DOM_AD].classList.remove(COLLECTED);
-
-
                     return
                 }
 
@@ -230,10 +224,6 @@ function clickOnMenusAd(adId,sideAd,adData) {
 function getExplanationUrlFrontAds(frontAd,adData) {
 //    sideAds[adId] = sideAd;
 
-    console.log('Processing frontAd' );
-//        hide element
-//        toggleOpacity(sideAd);
-//        get menu
     var buttonId = getButtonId(frontAd)
 
 //        var params = require('getAsyncParams')();
@@ -247,20 +237,8 @@ function getExplanationUrlFrontAds(frontAd,adData) {
 
 
 function notifyOverloadForMoreAdInfo(adData) {
-//    sideAds[adId] = sideAd;
-    console.log('Processing frontAd' );
-//        hide element
-//        toggleOpacity(sideAd);
-//        get menu
-//        adData.requestParams = params;
-//
-//                    data = {grabAdvertisers:true}
-//                    connsole
-//
-//
     window.postMessage({grabNewInterface:true,customId:adData.adanalyst_ad_id},"*")
     addToFrontAdQueue(adData);
-    // NOT DONE
     return true;
 
 }
@@ -306,6 +284,7 @@ function grabFeedAdsNewInterface() {
             if (isEqual(adData,{})==true) {
                 continue;
             }
+            // We also collect non visible Ads
             //      if (adData['visible']) {
             frontAds[i].className += " " + COLLECTED;
             adData[MSG_TYPE] = FRONTADINFO;
@@ -325,7 +304,6 @@ function grabFeedAdsNewInterface() {
  */
 function getSideAdExplanationUrlAndNotifyBackgroundScript(adData,paramsFinal,adId,asyncParametersDialog){
     var xmlhttp = new XMLHttpRequest();
-    console.log(1)
     xmlhttp.open("POST",'https://www.facebook.com/ajax/a.php?', true);
 
 
@@ -336,9 +314,7 @@ function getSideAdExplanationUrlAndNotifyBackgroundScript(adData,paramsFinal,adI
         console.log('performing a php request');
         // Do whatever with response
         if (xmlhttp.readyState === 4 && xmlhttp.status === 200){
-            // LALA = xmlhttp.response;
             var results = captureErrorContentScript(grabParamsFromSideAdAjaxify,[xmlhttp.response],NaN);
-
             if (!results) {
                 console.log("Couldn't grab...");
                 console.log(resp);
@@ -348,7 +324,6 @@ function getSideAdExplanationUrlAndNotifyBackgroundScript(adData,paramsFinal,adI
             adData.explanationUrl = EXPLANATIONSURL + results.requestParams + '&' + $.param(asyncParametersDialog);
             adData.clientToken = results.clientToken;
             chrome.runtime.sendMessage(adData);
-            // console.log(adData);
             return true;
         }
         //TODO: SEND SOME ERROR ABOUT SIDEADS
@@ -373,7 +348,6 @@ function sendSideAdWithExplanationnUrl(adData,sideAds,adId) {
 
 
     adData[MSG_TYPE] = SIDEADINFO;
-    // console.log(adData)
     var sideAd = sideAds[adId];
     var menus =  get_dropdown_ad_menus(sideAd[DOM_AD]);
     var link = menus[0].getAttribute('ajaxify')
@@ -383,10 +357,8 @@ function sendSideAdWithExplanationnUrl(adData,sideAds,adId) {
     paramsFinal['nctr[_mod]']='pagelet_ego_pane';
     var asyncParametersDialog = ASYNCPARAMSGET;
     // var asyncParametersGraphQL = SECOND_ASYNCPARAMS;
-    // console.log(adData)
 
     adData.graphQLAsyncParams = SECOND_ASYNCPARAMS;
-    // console.log(adData)
     console.log('parameters ready');
     captureErrorContentScript(updateAsyncParams,[],undefined);
     console.log('updating asynnc paramse')
@@ -469,38 +441,18 @@ function grabAllAds(){
 
 
 function permissionToGrab() {
-    console.log('start');
-    msg = {}
-    msg[MSG_TYPE]='consent'
+    msg = {};
+    msg[MSG_TYPE]='consent';
     chrome.runtime.sendMessage(msg,function(response) {
         if (response.consent){
             console.log('Consent exists, start collecting data');
             captureErrorContentScript(grabAllAds, [], {});
-            captureErrorContentScript(grabNewsPosts, [], {});
             captureErrorContentScript(checkAdVisibleDuration, [], {});
+            captureErrorContentScript(grabNewsPosts, [], {});
+            // TO CHECK TWO FOLLOWING AFTER OANA ANSWER
             captureErrorContentScript(grabPosts, [], {});
             captureErrorContentScript(checkPostVisibleDuration, [],{});
             captureErrorContentScript(onFbMessaging, [], {});
-
-            // $(window).scrollEnd(function () {
-            //     console.log('Scrolling end... ');
-            //     captureErrorContentScript(grabAllAds,[],{});
-            //     captureErrorContentScript(grabNewsPosts, [], {});
-            //     captureErrorContentScript(checkAdVisibleDuration, [], {});
-            //     captureErrorContentScript(grabPosts, [], {});
-            //     captureErrorContentScript(checkPostVisibleDuration, [],{});
-            // }, 500);
-
-            // window.addEventListener('scroll', function (e) {
-            //     var speed = checkScrollSpeed();
-            //     if ((speed > 0 && speed <= 10) || (speed >= -1 && speed < 0)) {
-            //         captureErrorContentScript(grabAllAds, [], {});
-            //         captureErrorContentScript(grabNewsPosts, [], {});
-            //         captureErrorContentScript(checkAdVisibleDuration, [], {});
-            //         captureErrorContentScript(grabPosts, [], {});
-            //         captureErrorContentScript(checkPostVisibleDuration, [], {});
-            //     }
-            // });
             return true
         }
         else {
@@ -515,7 +467,6 @@ function update_sponsored_text(){
     let msg = {};
     msg[MSG_TYPE] = GET_SPONSORED_TEXTS;
     chrome.runtime.sendMessage(msg, function(response) {
-        console.log(response);
         if (response['Status'] === "Error" ){
             setTimeout(captureErrorContentScript,1500, update_sponsored_text,[],{});
             return;
@@ -609,7 +560,6 @@ window.addEventListener("message", function(event) {
 
         adData.graphQLAsyncParams = event.data.graphQLAsyncParams;
         adData.clientToken = event.data.clientToken;
-        console.log(adData);
         chrome.runtime.sendMessage(adData, function(response) {
             adData['saved'] = response['saved'];
             adData['dbId'] = response['dbId'];
@@ -619,7 +569,6 @@ window.addEventListener("message", function(event) {
         });
         return;
     }
-
     universalCommunicationWithInjections(event);
 
 });
@@ -636,8 +585,6 @@ function onMessageFunction(msg,sender,sendResponse) {
         }
 
     }
-
-
     /**     global messages */
     universalOnMessageFunction(msg,sender,sendResponse);
 }

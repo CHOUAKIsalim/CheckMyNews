@@ -84,7 +84,6 @@ function markAd(frontAd){
 function processFeedAdNewInterface(frontAd) {
 
  //   frontAd.className += " " + COLLECTED;
-    console.log(frontAd);
     var user_id = getUserId();
     var adanalystAdId = markAd(frontAd);
     var html_ad_id = adanalystAdId;

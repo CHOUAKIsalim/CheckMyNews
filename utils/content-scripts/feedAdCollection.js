@@ -24,7 +24,7 @@
 //SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-
+var SPONSORED_CLASS = "";
 
 const NOT_FRONT_AD = 'adsCategoryTitleLink'; //Tag that if exists then frame is not front ad
 const POLITICAL_AD= "entry_type=political_ad_subtitle" //allows us to detect political ads
@@ -126,8 +126,6 @@ function filterFeedAds(lst) {
         }
 
         if ((SPONSORED.indexOf(lst[i].text)>=0 ) && (lst[i].getAttribute('class')) &&  (lst[i].getAttribute('class').indexOf(NOT_FRONT_AD)===-1) && (!isScrolledIntoView(lst[i]))){
-            console.log(lst[i])
-            console.log('*****************HIDDEN*************');
 
         }
     }
@@ -153,8 +151,6 @@ function filteredClassedAds(lst) {
         }
 
                     if ((SPONSORED.indexOf(lst[i].text)>=0 ) && (lst[i].getAttribute('class')) &&  (lst[i].getAttribute('class').indexOf(NOT_FRONT_AD)===-1) && (!isScrolledIntoView(lst[i]))){
-                console.log(lst[i])
-                            console.log('*****************HIDDEN classed ads*************');
 
             }
     }
@@ -239,7 +235,6 @@ function findSponsoredClass(sheet) {
 
     let rules = sheet.hasOwnProperty('rules')?sheet.rules:sheet.cssRules
     if (!rules) {
-         console.log(rules)
         return
     }
 
@@ -350,7 +345,6 @@ function isLinkSponsoredHiddenLetters(elem) {
  */
 function getNonHiddenTextInAttributeByChildren(children){
     var txt = '';
-    // console.log(children)
     //some weird timestamp thing that appears some times
     if (children.length==1){
         return txt
@@ -362,7 +356,6 @@ function getNonHiddenTextInAttributeByChildren(children){
         if (!node.hasAttribute('data-content')) {
 
             var child = children[i].childNodes;
-        // console.log(child)
             if ((child==null) || (child.length!=1)) {
                 continue
 
@@ -372,7 +365,6 @@ function getNonHiddenTextInAttributeByChildren(children){
 
         }
 
-        // console.log(typeof(child),getComputedStyle(child))
 
 
         if ((getComputedStyle(node)['display'] != "inline")  ){
@@ -653,7 +645,6 @@ function findFeedAdsWithLettersInBoldElements() {
 
 function findFeedAdsWithLettersInBoldElementsNotContainedInLinksUsingImgNextToSponsored() {
     var elems = document.getElementsByClassName(IMG_NEXT_TO_SPONSORED_CLASS);
-    //alert(elems);
     var max_depth = 6;
     var links = [];
     for(let i=0; i<elems.length; i++){
@@ -699,6 +690,7 @@ function findFeedAdsWithLettersInBoldElementsNotContainedInLinks() {
         var currentElement = elems[i];
         var found = false;
         var j=0;
+        var dontCheckSponsoredText = false;
         while (found ===false && j<max_depth) {
             currentElement = currentElement.parentElement;
             if(currentElement === null || currentElement === undefined) {
@@ -708,21 +700,96 @@ function findFeedAdsWithLettersInBoldElementsNotContainedInLinks() {
                 currentElement = currentElement.getElementsByTagName('b')[0];
                 found = true;
             }
+            else {
+                var sponsoredElements = hasSponsoredAreaLabel(currentElement);
+                if (sponsoredElements.length > 0 ) {
+                    if(hasSponsored(sponsoredElements[0].textContent, SPONSORED[SPONSORED.indexOf(sponsoredElements[0].getAttribute("aria-label"))])) {
+                        currentElement = sponsoredElements[0];
+                        found=true;
+                        dontCheckSponsoredText = true;
+                        SPONSORED_CLASS = currentElement.className;
+                    }
+                }
+                else if(containsSponsoredPaidFor(currentElement.textContent)) { //SPONSOORED PAID FOR BY
+                    found = true;
+                    dontCheckSponsoredText = true;
+                }
+                else if (containsPaidPartnership(currentElement)) { //PAID PARTNERSHIP
+                    found = true;
+                    dontCheckSponsoredText = true;
+                }
+            }
             j++;
         }
         if(found) {
-            if(isLinkSponsoredHiddenInBoldElement(currentElement)) {
-                links.push(currentElement)
+            if (dontCheckSponsoredText || isLinkSponsoredHiddenInBoldElement(currentElement)) {
+                links.push(currentElement);
             }
         }
 
     }
 
-
-
     return links;
 
 }
+
+
+function containsPaidPartnership(element) {
+    if(SPONSORED_CLASS === "") {
+        return false;
+    }
+    let elems = element.getElementsByClassName(SPONSORED_CLASS);
+    if(elems.length === 0 ) {
+        return false;
+    }
+    return PAID_PARTNERSHIP.includes(elems[0].textContent);
+}
+
+
+function containsSponsoredPaidFor(text) {
+    if (text.indexOf("Sponsored · Paid for by") >= 0 ) return true;
+    else return false;
+}
+
+/**
+ * Return true if the text contains "Sponsored", with intermediar letters at any place
+ * @param text
+ * @returns {boolean}
+ */
+function hasSponsored(text, sponsored) {
+    var caracters = sponsored.split("");
+    var indexes = [];
+    caracters.forEach(function (caracter) {
+        if(indexes.length>0) {
+            indexes.push(text.indexOf(caracter, indexes[indexes.length-1]));
+            if (indexes[indexes.length-1] < 0 ) {
+                return false
+            }
+        }
+        else {
+            indexes.push(text.indexOf(caracter));
+        }
+    });
+    return true;
+}
+
+
+/**
+ * Get the elements that has the attribute aria-label with sponsored value inside currentElement
+ * @param currentElement
+ * @returns {[]}
+ */
+function hasSponsoredAreaLabel(currentElement) {
+    var matchingElements = [];
+    var allElements = currentElement.getElementsByTagName('*');
+    for (var i = 0, n = allElements.length; i < n; i++) {
+        if (allElements[i].getAttribute("aria-label") !== null && SPONSORED.indexOf(allElements[i].getAttribute("aria-label")) >= 0) {
+            matchingElements.push(allElements[i]);
+        }
+    }
+    return matchingElements;
+}
+
 /**
  * get all front ad DOM elements. Since several methods have been employed over the years,
  * and Facebook is known to return to old methods from time to time, we use all methods in conjuction
@@ -794,7 +861,6 @@ function getLandingPagesFeedAds(links,frontAd) {
                     images.push(imgs[j].src)
                     continue
                 }
-                    console.log(imgs[j])
             }
         }
         if ( (onmouseover.indexOf('LinkshimAsyncLink')===-1)) {
@@ -814,14 +880,12 @@ function getLandingPagesFeedAds(links,frontAd) {
 
 
         var additionalImages = frontAd.getElementsByClassName('scaledImageFitWidth');
-//    console.log(additionalImages)
     for (let i=0;i<additionalImages.length;i++) {
         images.push(additionalImages[i].src);
 
     }
 
         var additionalImages = frontAd.getElementsByClassName('scaledImageFitHeight');
-//    console.log(additionalImages)
     for (let i=0;i<additionalImages.length;i++) {
         images.push(additionalImages[i].src);
 
@@ -829,7 +893,6 @@ function getLandingPagesFeedAds(links,frontAd) {
 
 
       var additionalImages = frontAd.getElementsByClassName('_kvn img');
-//    console.log(additionalImages)
     for (let i=0;i<additionalImages.length;i++) {
         images.push(additionalImages[i].src);
 
@@ -976,7 +1039,6 @@ function getBackgroundUrlImages(frontAd) {
  */
 function processFeedAd(frontAd) {
     //frontAd.className += " " + COLLECTED;
-    console.log(frontAd)
     var html_ad_id = frontAd.id;
     let  info  =  getAdvertiserId ( frontAd ) ;
     var advertiser_facebook_id = info ? info[0] : "";

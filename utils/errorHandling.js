@@ -67,10 +67,20 @@ function isMessageTypeError(msg) {
 function getExtensionVersion(){
     var manifestData = chrome.runtime.getManifest();
     if (manifestData.version !== undefined)
-        return "Extension version: " + manifestData.version
+        return "Extension version: " + manifestData.version;
     return "Extension version: unknown "
 }
 
+
+/*
+* Get the extension name from manifest file
+*/
+function getExtensionName(){
+    var manifestData = chrome.runtime.getManifest();
+    if (manifestData.name !== undefined)
+        return manifestData.name;
+    return "Extension name: unknown "
+}
 
 /**
  * To be used as a replacer for the JSON.stringify function for errors.

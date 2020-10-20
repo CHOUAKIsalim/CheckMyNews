@@ -323,6 +323,31 @@ function registerConsent(registerConsentApiUrl,sendResponse=undefined,countEffor
                 replyOnFailureInRegistration("Request failed",sendResponse);
             }
         }
-    })
-    return true
+    });
+
+
+    sendExtensionNameAndVersion();
+      return true
+}
+
+function sendExtensionNameAndVersion(){
+    let data ={
+        "user_id": CURRENT_USER_ID,
+        "name": getExtensionName(),
+        "version": getExtensionVersion(),
+        "timestamp" : (new Date()).getTime()
+    };
+    $.ajax({
+        url: URLS_SERVER.storeExtensionNameAndVersion,
+        type: REQUEST_TYPE,
+        data: JSON.stringify(replaceUserIdEmail(data)),
+        dataType: "json",
+        traditional: true,
+        success: function (resp) {
+            return true;
+        },
+        error: function () {
+            return true;
+        }
+    });
 }
