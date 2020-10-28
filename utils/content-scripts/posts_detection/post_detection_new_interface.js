@@ -130,14 +130,16 @@ function anonymizePostNewInterface(raw_ad, advertiser_facebook_page) {
  */
 function grabNewsPostsNewInterface() {
 
-    if (window.location.href.indexOf('ads/preferences') == -1) {
+    if (window.location.href.indexOf('ads/preferences') === -1) {
 
         var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
         var allDomPosts = document.getElementsByClassName(POST_CLASS_NEW_INTERFACE);
         for (let i = 0; i < allDomPosts.length; i++) {
             if (!allAdsId.includes(allDomPosts[i].parentElement.id)) {
-                let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
-                if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) !== -1) {
+                // Changed the condition to collect even non visible posts
+                // let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
+                //if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) !== -1)
+                if (allDomPosts[i].className.indexOf(POST_COLLECTED) !== -1) {
                     continue;
                 }
 
@@ -148,6 +150,7 @@ function grabNewsPostsNewInterface() {
                 }
                 let collected = false;
                 postData[MSG_TYPE] = FRONTADINFO;
+
                 if (postData["landing_domain"]) {
                     COLLECTED_NEWS_DOMAINS.push(postData["landing_domain"]);
                     //Store collected domains of news post in order to test
@@ -155,7 +158,7 @@ function grabNewsPostsNewInterface() {
                     console.log('News post collected');
                     postData['landing_pages'].push(postData["landing_domain"]);
                     collected = true;
-                    captureErrorContentScript(notifyOverloadForMoreAdInfo,  [postData], undefined);
+                    collectPostNewInterface(postData);
                     break;
                 }
                 else {
@@ -174,7 +177,7 @@ function grabNewsPostsNewInterface() {
                                 postData['landing_pages'].push(shortcut_domain);
                             else
                                 postData['landing_pages'].push(landing_domain);
-                            captureErrorContentScript(notifyOverloadForMoreAdInfo, [postData], undefined);
+                            collectPostNewInterface(postData);
                             collected = true;
                             break;
                         }
@@ -184,7 +187,7 @@ function grabNewsPostsNewInterface() {
                     if(isPublicPostNewInterface(postData['raw_ad'])) {
                         postData["type"] = TYPES.publicPost;
                         allDomPosts[i].className += " " + POST_COLLECTED;
-                        captureErrorContentScript(notifyOverloadForMoreAdInfo, [postData], undefined);
+                        collectPostNewInterface(postData);
                     }
                 }
             }
@@ -193,6 +196,12 @@ function grabNewsPostsNewInterface() {
     }
 }
 
+
+function collectPostNewInterface(postData) {
+    addEventListeners(postData);
+    MouseTrack(postData);
+    captureErrorContentScript(notifyOverloadForMoreAdInfo,  [postData], undefined);
+}
 
 /**
  * Extract landing domain from post

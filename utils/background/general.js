@@ -30,6 +30,7 @@
 
 var CURRENT_USER_ID = -1; //SAVING CURRENT USER ID OF USER THQT IS LOGGED IN
 var CURRENT_EMAIL = ''; //SAVING CURRENT EMAIL OF USER THAT IS LOGGED IN
+//var CURRENT_PHONE = ''; //SAVING CURRENT PHONE OF USER THAT IS LOGGED IN
 const REQUEST_TYPE = 'POST'; //ALL REQUESTS TO SERVER ARE POST REQUESTS
 const POPUPHTML = 'ui/popup.html?welcome=true'; //popup page to show once if a user has installed the tool but have not given consent
 const MIN_TIMESTAMP_MESSAGE=1523875976; //users before this timestamp that still have the tool installed but have not given consent are being prompted a message
@@ -52,6 +53,8 @@ function isEmail(value) {
 
   return typeof input.checkValidity === 'function' ? input.checkValidity() : /\S+@\S+\.\S+/.test(value);
 }
+
+
 
 
 /**

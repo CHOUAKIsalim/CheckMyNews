@@ -23,7 +23,6 @@
 //TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 //SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
 var USER_ID_TAG = /"USER_ID":"[0-9][0-9]+"/;
 var NUMBER_TAG = /[0-9]+/;
 
@@ -63,8 +62,6 @@ function injectPreferenceGrabberScripts() {
 
 }
 
-
-
 function getUserIdStr(elem) {
     var idTag = elem.match(USER_ID_TAG);
     if (!idTag) {
@@ -100,7 +97,6 @@ function getScriptWithData(txt) {
     }
     return -1
 }
-
 
 function parseList(txt,pos=1) {
     if (pos>txt.length) {
@@ -156,7 +152,6 @@ function getBeh() {
 
 var count = 200
 function getDemographicsAndBehaviors(){
-
     if (count<0) {
         var data = {user_id:    getUserId(),demographics:-1,behaviors:-1};
         data['type'] = 'demBehaviors';
@@ -226,7 +221,6 @@ window.addEventListener("message", function(event) {
 
 
 function onMessageFunction(msg,sender,sendResponse) {
-
     /**     global messages */
     universalOnMessageFunction(msg,sender,sendResponse);
 }
@@ -238,18 +232,14 @@ function onMessageFunction(msg,sender,sendResponse) {
 
 if (BrowserDetection()=== BROWSERS.CHROME) {
     chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
-
         onMessageFunction(msg,sender,sendResponse)
-
     });
 }
 
 
 if (BrowserDetection()=== BROWSERS.FIREFOX) {
     browser.runtime.onMessage.addListener(function(msg, sender, sendResponse) {
-
         onMessageFunction(msg,sender,sendResponse)
-
     });
 }
 

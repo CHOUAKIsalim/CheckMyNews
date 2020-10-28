@@ -78,13 +78,12 @@ var checkScrollSpeed = (function(){
 chrome.storage.sync.set({"last_time": new Date().getTime()});
 
 
-function storeAdClickEvent(ad, type, trial = 0) {
+function storeAdClickEvent(ad, type, trial = 0, time = Date.now()) {
 
     lastEventType = type;
     let eventData = {
-        'ts' : Date.now(),
+        'ts' : time,
         'dbId' : ad.dbId,
-        'fb_id': ad.fb_id,
         'user_id': getUserId(),
         'type' : type
     };
@@ -97,7 +96,7 @@ function storeAdClickEvent(ad, type, trial = 0) {
     } else {
         if (trial < 3){
             console.log("dbId is undefined.. try again");
-            setTimeout(storeAdClickEvent(ad, type, trial+1),2000);
+            setTimeout(function () {storeAdClickEvent(ad, type,trial+1, time)},2000);
         }
     }
 
@@ -110,7 +109,6 @@ function storeAdVisibilityEvent(ad, start_ts, end_ts, trial = 0){
 
     let eventData = {
         'dbId':ad.dbId,
-        'fb_id':ad.fb_id,
         'user_id':getUserId(),
         'started_ts': start_ts,
         'end_ts': end_ts
@@ -125,7 +123,7 @@ function storeAdVisibilityEvent(ad, start_ts, end_ts, trial = 0){
     } else {
         if (trial < 3) {
             console.log("dbId is undefined.. try again");
-            setTimeout(storeAdVisibilityEvent(ad, start_ts, end_ts,trial + 1),2000);
+            setTimeout( function () {storeAdVisibilityEvent(ad, start_ts, end_ts,trial + 1)},2000);
         }
     }
 }
@@ -149,7 +147,6 @@ function storePostVisibilityEvent(post_id,start_ts,end_ts,) {
 function storeAdMouseMove(ad, mouseData, trial = 0){
     let eventData = {
         'dbId': ad.dbId,
-        'fb_id': ad.fb_id,
         'user_id': getUserId(),
         'timeElapsed': mouseData.timeElapsed,
         'frames':JSON.stringify(mouseData.frames),
@@ -167,14 +164,13 @@ function storeAdMouseMove(ad, mouseData, trial = 0){
     } else {
         if (trial < 3) {
             console.log("dbId is undefined.. try again");
-            setTimeout(storeAdMouseMove(ad, mouseData, trial + 1),2000);
+            setTimeout(function () {storeAdMouseMove(ad, mouseData, trial + 1)},2000);
         }
     }
 }
 
 
 function MouseTrack(ad) {
-    ad["mousePositions"] = [];
     var ad_extract = document.getElementById(ad.html_ad_id);
     ad_extract.addEventListener('mouseenter', function () {
         mus.record();
@@ -209,7 +205,6 @@ function MouseTrack(ad) {
             //}
         }
 
-        ad["mousePositions"].push(mouseData);
         storeAdMouseMove(ad,mouseData);
         // console.log(mouseData);
         // console.log('Mouse recording from ' + mus.startedAt + ' - ' + mus.finishedAt );
@@ -285,7 +280,7 @@ function getElementCoordinate(elem) {
 
     var elemTop = $(elem).offset().top;
     var elemLeft = $(elem).offset().left;
-    var  elemBottom  =  elemTop  +  $ ( elem ) . height ( ) ;
+    var  elemBottom  =  elemTop  +  $ ( elem ).height ( ) ;
     var elemRight = elemLeft + $(elem).width();
 
     return [elemTop, elemLeft, elemBottom, elemRight]

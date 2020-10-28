@@ -24,6 +24,7 @@
 //SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 var MSG_TYPE = 'message_type';
+var CURRENT_USER_ID = "";
 
 $("#notLoggedInView").hide();
 
@@ -39,8 +40,6 @@ var THIRTY_SECONDS = 6 * FIVE_SECONDS;
 var ANONYMIZATION_DATE = 1524175200;
 
 var VIEWS = [
-  'home', 
-  'view_all_posts',
   "survey_all",
   "contact_us",
   "rewards"
@@ -57,6 +56,7 @@ function __(i18n_key) {
   }
   return browser.i18n.getMessage(i18n_key);
 }
+
 function getParameterByName(name, url) {
   if (!url) url = window.location.href;
   name = name.replace(/[\[\]]/g, "\\$&");
@@ -96,11 +96,9 @@ function getConsent() {
     if (response.consent) {
       $("#consentForm").hide();
       $("#notLoggedInView").hide();
-
-      //            $('#consentButton').remove()
       $("#normalView").show();
+      setHostName(response.currentUser);
       setTimeout(getConsent, FIVE_SECONDS);
-
       return;
     }
 
@@ -108,15 +106,12 @@ function getConsent() {
       $("#notLoggedInView").show();
       $("#normalView").hide();
       $("#consentForm").hide();
-
       setTimeout(getConsent, FIVE_SECONDS);
-
       return;
       //        $('#consentButton').hide()
     }
     if (response.err) {
       $("#consentForm").hide();
-
       setTimeout(getConsent, FIVE_SECONDS);
 
       return;
@@ -130,20 +125,15 @@ function getConsent() {
     $("#consentForm").show();
     setTimeout(getConsent, FIVE_SECONDS);
   });
-  //    if (localStorage.consent=='true') {
-  //            $('#consentForm').hide()
-  //            $('#consentButton').remove()ß
-  //            $('#normalView').show()
-  //    }
 }
 
-function setHostName() {
+function setHostName(currentUserId) {
   for (var i = 0; i < VIEWS.length; i++) {
     var elem = $("#" + VIEWS[i]);
     if (VIEWS[i] === 'home')
       elem.attr("href", HOST_SERVER);
     else
-      elem.attr("href", HOST_SERVER + VIEWS[i]);
+      elem.attr("href", HOST_SERVER + VIEWS[i]+"?user="+currentUserId);
   }
 }
 
@@ -180,9 +170,7 @@ function sendConsent() {
 var CONSENTPAGE = 'ui/new_consent.html'; //popup page to show once if a user has installed the tool but have not given consent
 
 function openPrivacyPolicy() {
-            chrome.tabs.create({'url':chrome.extension.getURL(CONSENTPAGE)});
-
-
+  chrome.tabs.create({'url':chrome.extension.getURL(CONSENTPAGE)});
 }
 
 
@@ -204,7 +192,7 @@ function i18nUpdates() {
 }
 $(document).ready(function() {
   i18nUpdates();
-  setHostName();
+
   var welcomePopup = getParameterByName("welcome");
 
   if (welcomePopup) {
@@ -213,24 +201,16 @@ $(document).ready(function() {
   }
 
   //TODO: ASK IF THE USER HAS CONSENT
-  console.log("clicked");
   $("#normalView").hide();
   $("#warning").hide();
 
   getConsent();
-// Removing CollectPrefs Checkbox
-// getCollectPrefs();
+
   $("#consentButton").click(function() {
     console.log("clicked");
 
     sendConsent();
 
-    //        if (localStorage.consent=='true'){
-    //            $('#consentForm').hide()
-    //            $('#consentButton').remove()
-    //            $('#normalView').show()
-    ////            TODO: SHOW THE OTHER FORM
-    //        }
   });
 
   $("#noConsentButton").click(function() {
@@ -256,19 +236,11 @@ $(document).ready(function() {
     window.close()
   });
 
-
-  //Removing collect preferences checkbox
-
-//  $("#collectPrefs").click(function() {
-//    localStorage.collectPrefs = document.getElementById("collectPrefs").checked;
-//  });
-
   checkAdBlockerStatus();
   askAdBlockerStatus();
   setInterval(checkAdBlockerStatus, 1000);
+
   document.getElementById("privacyPolicy").addEventListener("click", openPrivacyPolicy);
-
-
   // Add Badge
 
   if(localStorage.getItem('survey_number') > 0 ) {
@@ -285,61 +257,3 @@ $(document).ready(function() {
   }
 });
 
-// window.fbAsyncInit = function() {
-//    FB.init({
-//      appId      : '769242713247780',
-//      cookie     : true,
-//      xfbml      : true,
-//      version    : 'v2.8'
-//    });
-////    FB.AppEvents.logPageView();
-//     $(document).trigger('fbload');
-//  };
-//
-////  (function(d, s, id){
-////     var js, fjs = d.getElementsByTagName(s)[0];
-////     if (d.getElementById(id)) {return;}
-////     js = d.createElement(s); js.id = id;
-////     js.src = "//connect.facebook.net/en_US/sdk.js";
-////     fjs.parentNode.insertBefore(js, fjs);
-////   }(document, 'script', 'facebook-jssdk'));
-//
-////document.addEventListener('DOMContentLoaded', function() {
-////    FB.getLoginStatus(function(response) {
-////    statusChangeCallback(response);
-////    console.log(response)
-////});
-////
-////    function checkLoginState() {
-////  FB.getLoginStatus(function(response) {
-////    statusChangeCallback(response);
-////  });
-////
-////}
-////
-////})
-//
-//
-//
-//$(document).on(
-//    'fbload',  //  <---- HERE'S OUR CUSTOM EVENT BEING LISTENED FOR
-//    function(){
-//        //some code that requires the FB object
-//        //such as...
-//        FB.getLoginStatus(function(res){
-//            console.log(res)
-//            if( res.status == "connected" ){
-//                FB.api('/me', function(fbUser) {
-//                    console.log("Open the pod bay doors, " + fbUser.name + ".");
-//                });
-//            }
-//        });
-//
-//
-//            function checkLoginState() {
-//  FB.getLoginStatus(function(response) {
-//    statusChangeCallback(response);
-//  });
-//    }
-//    }
-//);

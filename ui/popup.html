@@ -5,14 +5,14 @@
     <meta charset="utf-8" />
 
     <title>Social Media Monitor</title>
-    <meta name="description" content="Social Media Monitor" />
-    <meta name="author" content="Social Media Monitor" />
+    <meta content="Social Media Monitor" name="description" />
+    <meta content="Social Media Monitor" name="author" />
     <script src="../third-party/jquery-3.1.1.min.js"></script>
 
-    <link rel="stylesheet" href="../third-party/bootstrap.min.css" />
+    <link href="../third-party/bootstrap.min.css" rel="stylesheet" />
 
     <script src="../third-party/bootstrap.min.js"></script>
-    <script type="text/javascript" src="../utils/globalParams.js"></script>
+    <script src="../utils/globalParams.js" type="text/javascript"></script>
 
     <style>
       body {
@@ -26,32 +26,32 @@
       }
 
       .float-right {
-    float: right !important;
-
-    . row > & {
+        float: right !important;
+      }
+    .row > {
         margin-left: auto !important;
     }
-}
+
     </style>
   </head>
 
   <body>
-    <script type="text/javascript" src="popup.js"></script>
+    <script src="popup.js" type="text/javascript"></script>
 
     <div class="container">
-          <h2><img src="../media/enabled.png" alt="logo" height="50" /> Social Media Monitor</h2>
-      <span style="color: red" id="survey_red_text"> </span>
+          <h2><img alt="logo" height="50" src="../media/enabled.png" /> Social Media Monitor</h2>
+      <span id="survey_red_text" style="color: red"> </span>
       <div id="formForReminder">
         <div class="row">
           <div class="col-md-12" style="margin:10px;">
-            <button type="button" class="btn btn-primary" id="remindMeTomorrow"> Remind me tomorrow </button>
-            <button type="button" class="btn btn-primary " id="remindMeInTwelve"> Remind me in 12 hours</button>
+            <button class="btn btn-primary" id="remindMeTomorrow" type="button"> Remind me tomorrow </button>
+            <button class="btn btn-primary " id="remindMeInTwelve" type="button"> Remind me in 12 hours</button>
           </div>
         </div>
       </div>
-      </br>
+      <br/>
       <div id="normalView">
-        <div id="warning" class="alert alert-warning">
+        <div class="alert alert-warning" id="warning">
           It seems an Ad Blocker running. Please turn off all Ad Blocker to make
           Social Media Monitor work better.
         </div>
@@ -100,27 +100,30 @@
         </div>   
         -->
 
-        <button id="privacyPolicy"  class="btn btn-link float-right"> Privacy Policy </button>
+        <button class="btn btn-link float-right"  id="privacyPolicy"> Privacy Policy </button>
 
       </div>
 
-      <div id="notLoggedInView" hidden>
+      <div hidden id="notLoggedInView">
         <div class="alert alert-danger" id="not_logged_yet">
           <strong>Note!</strong> If you have not logged in Facebook, Social Media Monitor
           is not working. <br />If you are already logged in please wait for a
           few moments...
         </div>
       </div>
+
+
+
       <div id="consentForm" style="margin:0;padding:0">
         <div
-          id="consentInfo"
           class="jumbotron"
+          id="consentInfo"
           style="height:400px; min-width:500px;overflow-y:auto;margin:5px; padding:15px; text-align:justify;"
         >
           <div
-            id="consentAlert"
-            hidden
             class="alert alert-primary"
+            hidden
+            id="consentAlert"
             role="alert"
           >
             <h4 class="alert-heading">
@@ -133,111 +136,111 @@
 
             <h3>PRIVACY POLICY </h3>
 
-            <small> Inria is very attentive and vigilant regarding personal data protection (DCP) issues. It has also appointed a Data Protection Officer (DPO) for ensuring that Inria complies with the <a href=" https://eur-lex.europa.eu/eli/reg/2016/679/oj" target="__blank">European General Data Protection Regulation (GDPR)</a>.</small>
+          <small> The LIG is very attentive and vigilant regarding personal data protection (DCP) issues. Univ. Grenoble Alpes has also appointed a Data Protection Officer (DPO) for ensuring that labs such as LIG comply with the <a href=" https://eur-lex.europa.eu/eli/reg/2016/679/oj" target="__blank">European General Data Protection Regulation (GDPR)</a>.</small>
 
-            <br />
+          <br />
 
-            <h4>These data are as follows: </h4>
+          <h4>These data are as follows: </h4>
 
-            <small>We collect information the user shared with ad platforms such as Facebook, as well as information that platform such as Facebook inferred about the user based on his actions.  We collect this information from Ad Preferences Pages such as <a href="https://www.facebook.com/ads/preferences/" target="__blank">https://www.facebook.com/ads/preferences/</a> and the user’s Facebook timeline. </small>
-            <br />
+          <small>We collect information the user shared with ad platforms such as Facebook, as well as information that platform such as Facebook inferred about the user based on his actions.  We collect this information from Ad Preferences Pages such as <a href="https://www.facebook.com/ads/preferences/" target="__blank">https://www.facebook.com/ads/preferences/</a> and the user’s Facebook timeline.. </small>
+          <br />
 
-            <small>Specifically:</small>
-              <ul>
-                <li><small>We collect the ads a user receives while she browses Facebook, the ads the user clicked on and the accompanied explanations that Facebook provides.</small> </li>
-                <li><small>We collect personal information (such as email, phone number, Facebook ID) about the user, if the user shared this information with ad platforms such as Facebook. The personal information is pseudonymized on the client side before it is send to our server for storage. </small> </li>
-                <li><small>We might collect the birth place and information about where the user lived, if the user shared this information with ad platforms such as Facebook or if the ad platform inferred this information indirectly.</small>  </li>
-                <li><small>We might collect professional information about the user, if the user shared this information with ad platforms such as Facebook or if the ad platform inferred this information indirectly.</small> </li>
-                <li><small>We might collect financial and economic information about the user, if the user shared this information with ad platforms such as Facebook or if the ad platform inferred this information indirectly.</small> </li>
-                <li><small>We might collect localization information about the user, if the user shared this information with ad platforms such as Facebook or if the ad platform inferred this information indirectly.</small> </li>
-                <li><small>We collect information about the connection (such as IP address, browser type, operating system).</small> </li>
-                <li><small>We collect information related to the Internet.</small></li>
-                <li><small>We collect the user's emails to target them with surveys in our experiments.</small></li>
-                <li><small>We collect the time spent by users on the ads in the Facebook feed.</small></li>
-                <li><small>We collect the time spent by users on the normal posts in the Facebook feed.</small></li>
-                <li><small>We collect the mouse positions when the user is on a particular Facebook Ad.</small></li>
+          <small>Specifically:</small>
+          <ul>
+            <li><small>We collect the ads a user receives while she browses Facebook, the ads the user clicked on and the accompanied explanations that Facebook provides as well as the posts that link to a news organizations and the posts that are public.</small></li>
+            <li><small>We collect several ad and post engagement proxies. We collect the time the ad/post was present on the screen of the user.  For comparison, we collect how much time each post in a user’s Facebook timeline was visible on the screen without collecting anything else regarding the post. When the user enters the area of an ad, we collect the (x,y) position of the mouse and the type of movement (scroll, move, click). We collect the actions of users on ads/posts: reactions (e.g., I Like, I love, Haha); comments (e.g., click on the comment button, writing a comment);  click on share;  actions on the content of the ad (e.g., click on the image of the ad, click on next image when there is a carrousel, access to the landing page); actions on the advertisers (e.g., verification of the advertiser when hovering over the name and the logo, access to the Facebook page of the advertiser); other actions (e.g., save the post, mask the post, signal the post, click on the “Why am I seeing this ad?”, click on Embed, activation of notifications).</small></li>
+
+
+            <li><small>We monitor a precise set of news sites, and we collect the news articles a user is reading and the time the user spend on checking the news articles.</small></li>
+
+
+            <li><small>We collect personal information (such as email, phone number, Facebook ID) about the user, if the user shared this information with ad platforms such as Facebook. We use this information to target the user with ads and send surveys. The email, phone number and Facebook ID will be deleted at the end of the study.</small></li>
+
+
+            <li><small>We might collect the birth place and information about where the user lived, if the user shared this information with ad platforms such as Facebook or if the ad platform inferred this information indirectly.</small></li>
+
+
+            <li><small>We might collect professional information about the user, if the user shared this information with ad platforms such as Facebook or if the ad platform inferred this information indirectly.</small></li>
+
+
+            <li><small>We might collect financial and economic information about the user, if the user shared this information with ad platforms such as Facebook or if the ad platform inferred this information indirectly.</small></li>
+
+
+
+            <li><small>We might collect localization information about the user, if the user shared this information with ad platforms such as Facebook or if the ad platform inferred this information indirectly.</small></li>
+
+
+            <li><small>We collect information about the connection (such as IP address, browser type, operating system).</small></li>
+
+
+            <li><small>We collect information related to the Internet.</small></li>
+
+
+            <li><small>We collect information that helps us monitor the health of our application such as whether the user installed an ad blocker and when the users is connecting to Facebook.</small></li>
+
+
+            <li><small>In addition, the participants in this study will be asked to fill out 5 surveys, we will store their answers in our database.</small></li>
+
+          </ul>
+
+          <small>	Ads, their explanations, posts and the attributes appearing in the Ad Preferences Pages that we collect, might reveal information relating to a user’s racial or ethnic origin, political opinions, religious or philosophical beliefs, trade union membership, health, criminal convictions, sex life or sexual orientation, or certain types of genetic or biometric data that is known as ‘special category’ data. This data is inferred by Facebook and similar platforms and it might not be accurate. In addition our surveys ask participants for their socio-economic profile and personality traits.</small>
+
+          <h4>These data will be processed in the following manner:</h4>
+
+          <small>The data collected will be stored on a dedicated secured server and provided to academic researchers upon justified request, who will be granted an access to the files via an authentication process (login/password) once their request is validated.</small> <br /> <br />
+
+          <small>In accordance with Article 13 of the Regulation (EU) 2016/679 of the European Parliament and of the council of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and the free movement of such data, please find below some information about this data collection:</small>
+
+          <ul>
+            <li><small>The representative of the data controller is the director of the LIG lab (Mr. Noel De Palma). </small></li>
+            <li><small>It is understood that the personal data collected during the project are confidential and that only the members of the research team, listed below, will have access to these data:</small>
+              <ul class="ulInside">
+                <li><small>Mrs. Oana Goga scientific manager of the Project (LIG, CNRS)</small></li>
+                <li><small>Researchers and students of the concerned teams</small></li>
               </ul>
+            </li>
+            <li><small>Each processing of personal data within UGA must be reported to the UGA DPO;</small></li>
+            <li><small>Your data will be kept for ten years;</small></li>
+            <li><small>Transfer of your data: LIG's partners are liable to have access to the results of the project and therefore to some of your data. This access is based on signed contracts which mention the obligations which are incumbent upon them for protecting the security and confidentiality of the data.</small>
+              <br />
+              <small>We keep your personal data within the European Union. However, your data may be transferred to UGA partners in other countries, some of which may have less protective legislation for protecting personal data than that which exists within the European Union. In the event of a transfer of this type, we will ensure that the processing is carried out in accordance with this privacy policy and that it is governed by the European Commission's standard contractual clauses which guarantee an adequate level of protection of people's privacy and fundamental rights.</small>
+            </li>
+            <li><small>In accordance with the French “Data Protection Act” of 6 January 1978, as amended, you are entitled to access and correct information about you;</small></li>
+            <li><small>You can access any data concerning you or request that it be erased during the aforementioned storage time;</small></li>
+            <li><small>You also have a right of opposition, a right of rectification, a right to portability and a right to limit the processing of your data (see cnil.fr for more information about your rights) during the aforementioned storage time;</small></li>
+            <li><small>If you wish to exercise these rights or should you have any questions about the processing of your data in this system, you can contact the UGA DPO:</small>
+              <ul class="ulInside">
+                <li><small>You can contact the DPO by email: dpo@grenet.fr</small></li>
+              </ul>
+            </li>
+            <li><small>If you consider, after having contacted us, that your privacy and personal data rights have been infringed or that the study does not comply with data protection rules, you may send a complaint to the <a href="https://www.cnil.fr/" target="__blank">CNIL</a>;</small></li>
+            <li><small>This data collection is done on a voluntary basis. Under no circumstances are you required either by regulations, or contractually or by other means to provide your data;</small></li>
+            <li><small>This processing does not entail any profiling or automated decision-making about you, based on your data and the processing of such data.</small></li>
+          </ul>
+          <small>If you agree with this privacy policy by ticking the box below, your consent and its date will be stored for fifteen (15) years on our servers.</small><br />
+
+          <small>We might use the data we collect about the user to target the user with our ads.  We perform these experiments to audit how ad platforms work and how to build better transparency mechanisms.</small>
 
 
-            <small> Ads, their explanations, and the attributes appearing in the Ad Preferences Pages that we collect, might reveal information relating to a user’s racial or ethnic origin, political opinions, religious or philosophical beliefs, trade union membership, health, criminal convictions, sex life or sexual orientation, or certain types of genetic or biometric data that is known as ‘special category’ data. This data is inferred by Facebook and similar platforms and it might not be accurate. </small>
+          <h4> CONTACT PERSONS </h4>
 
-            <h4>These data will be processed in the following manner:</h4>
+          <small>Surname: Goga</small><br />
+          <small>First name: Oana</small><br />
+          <small>Title: Charge de recherche CNRS</small><br />
+          <small>Telephone no: +33 4 57 42 15 53</small><br />
+          <small>e-mail: oana.goga@cnrs.fr</small><br /> <br />
 
-            <small>The data collected will be stored on a dedicated secured server and provided to academic researchers upon justified request, who will be granted an access to the files via an authentication process (login/password) once their request is validated.</small> <br /> <br />
-
-            <small>In accordance with Article 13 of the Regulation (EU) 2016/679 of the European Parliament and of the council of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and the free movement of such data, please find below some information about this data collection:</small>
-
-                <ul>
-                <li><small>The representative of the data controller is the Director of the Inria Grenoble Rhône-Alpes Research Centre: Mr. Patrick Gros</small></li>
-                <li><small>It is understood that the personal data collected during the project are confidential and that only the members of the research team, listed below, will have access to these data:</small>        
-                  <ul class="ulInside">
-                    <li><small>Mr. Patrick Loiseau, co-scientific manager of the Project (POLARIS project team)</small></li>
-                    <li><small>Mrs. Oana Goga, co-scientific manager of the Project (CNRS)</small></li>
-                    <li><small>Researchers and students of the concerned teams</small></li>
-                  </ul>
-                </li>
-                <li><small>Each processing of personal data within Inria must be reported to the Inria DPO;</small></li>
-                <li><small>Your data will be kept for ten years;</small></li>
-                <li><small>Transfer of your data: Inria's partners are liable to have access to the results of the project and therefore to some of your data. This access is based on signed contracts which mention the obligations which are incumbent upon them for protecting the security and confidentiality of the data.</small> 
-                <br /> 
-                <small>We keep your personal data within the European Union. However, your data may be transferred to Inria partners in other countries, some of which may have less protective legislation for protecting personal data than that which exists within the European Union. In the event of a transfer of this type, we will ensure that the processing is carried out in accordance with this privacy policy and that it is governed by the European Commission's standard contractual clauses which guarantee an adequate level of protection of people's privacy and fundamental rights.</small>
-                </li>
-                <li><small>In accordance with the French “Data Protection Act” of 6 January 1978, as amended, you are entitled to access and correct information about you;</small></li>
-                <li><small>You can access any data concerning you or request that it be erased during the aforementioned storage time;</small></li>
-                <li><small>You also have a right of opposition, a right of rectification, a right to portability and a right to limit the processing of your data (see cnil.fr for more information about your rights) during the aforementioned storage time;</small></li>
-                <li><small>If you wish to exercise these rights or should you have any questions about the processing of your data in this system, you can contact the Inria DPO:</small>
-                  <ul class="ulInside">
-                    <li><small>You can contact the DPO by email: dpo@inria.fr </small></li>
-                    <li><small>or by post by writing to: </small> <br /> 
-                      <small>The Data Protection Officer</small>  <br />
-                      <small>Inria, </small>  <br />
-                      <small>2004 route des Lucioles,</small>  <br />
-                      <small>BP 93,</small>  <br />
-                      <small>06902 Sophia-Antipolis Cedex </small>  <br />
-                    </li>
-
-                  </ul>
-                </li>
-                <li><small>If you consider, after having contacted us, that your privacy and personal data rights have been infringed or that the study does not comply with data protection rules, you may send a complaint to the <a href="https://www.cnil.fr/" target="__blank">CNIL</a>;</small></li>
-                <li><small>This data collection is done on a voluntary basis. Under no circumstances are you required either by regulations, or contractually or by other means to provide your data;</small></li>
-                <li><small>This processing does not entail any profiling or automated decision-making about you, based on your data and the processing of such data.</small></li>
-                </ul>
-
-            <small>If you agree with this privacy policy by ticking the box below, your consent and its date will be stored for fifteen (15) years on our servers. </small><br />
-
-            <small>We might use the data we collect about the user to target the user with our ads.  We perform these experiments to audit how ad platforms work and how to build better transparency mechanisms.</small>
-
-
-            <h4> CONTACT PERSONS </h4>
-            <small>Surname: Loiseau</small><br />
-            <small>First name: Patrick</small><br />
-            <small>Title: Charge de recherche Inria</small><br />
-            <small>Telephone no: +33 4 57 42 16 05</small><br />
-            <small>e-mail: patrick.loiseau@inria.fr</small><br /><br />
-
-            <small>Surname: Goga</small><br />
-            <small>First name: Oana</small><br />
-            <small>Title: Charge de recherche CNRS</small><br />
-            <small>Telephone no: +33 4 57 42 15 53</small><br />
-            <small>e-mail: oana.goga@cnrs.fr</small><br /> <br />
-
-             I confirm that I am 18 or older and I accept this privacy policy. 
+          I confirm that I am 18 or older and I accept this privacy policy.
 
             <div class="row">
               <div class="col-md-12 text-center" style="margin:10px;">
-                  <button type="button" class="btn btn-primary" id="noConsentButton"> I do not consent </button>
-                  <button type="button" class="btn btn-primary " id="consentButton">I consent</button>
+                  <button class="btn btn-primary" id="noConsentButton" type="button"> I do not consent </button>
+                  <button class="btn btn-primary " id="consentButton" type="button">I consent</button>
               </div>
             </div>
       </div>
 
-      <!--        <a href="https://www.facebook.com/v2.9/dialog/oauth?client_id=769242713247780&redirect_uri=https://www.facebook.com/connect/login_success.html&response_type=code%20token" target="_blank"> Fb login</a>-->
-      <!--
-        <fb:login-button 
-  scope="public_profile,email"
-  onlogin="checkLoginState();">
-</fb:login-button>
--->
+    </div>
     </div>
   </body>
 </html>

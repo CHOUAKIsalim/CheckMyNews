@@ -536,7 +536,6 @@ function sendExplanationDB(adId,dbRecordId,explanation,count=10) {
         console.log("Explanation not saved");
         return false;
     }
-                
     $.ajax({
         type: REQUEST_TYPE,
         url: URLS_SERVER.registerExplanation,

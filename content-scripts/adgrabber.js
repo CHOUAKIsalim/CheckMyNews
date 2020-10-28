@@ -103,18 +103,12 @@ function injectAdGrabberScripts() {
 function addToFrontAdQueue(ad) {
     if (Object.keys(FRONTADQUEUE).length<=0) {
         FRONTADQUEUE[0] = ad;
-        addEventListeners(ad);
-        MouseTrack(ad);
-        return true
     }
-    var nextNum = Math.max.apply(null,Object.keys(FRONTADQUEUE).map(function (x) {return parseInt(x)})) +1
-    FRONTADQUEUE[nextNum] = ad;
-    if(ad.type === TYPES.frontAd) {
-        addEventListeners(ad);
-        MouseTrack(ad);
+    else {
+        var nextNum = Math.max.apply(null,Object.keys(FRONTADQUEUE).map(function (x) {return parseInt(x)})) +1
+        FRONTADQUEUE[nextNum] = ad;
     }
     return true;
-
 }
 
 
@@ -156,7 +150,6 @@ function toggleOpacity(elem) {
 
 
 function clickOnMenusAd(adId,sideAd,adData) {
-//    sideAds[adId] = sideAd;
 
     console.log('Processing ' + adId);
 
@@ -222,13 +215,9 @@ function clickOnMenusAd(adId,sideAd,adData) {
 
 
 function getExplanationUrlFrontAds(frontAd,adData) {
-//    sideAds[adId] = sideAd;
 
     var buttonId = getButtonId(frontAd)
-
-//        var params = require('getAsyncParams')();
     adData.buttonId = buttonId;
-//        adData.requestParams = params;
     addToFrontAdQueue(adData);
     hoverOverButton(frontAd);
     return true;
@@ -237,7 +226,7 @@ function getExplanationUrlFrontAds(frontAd,adData) {
 
 
 function notifyOverloadForMoreAdInfo(adData) {
-    window.postMessage({grabNewInterface:true,customId:adData.adanalyst_ad_id},"*")
+    window.postMessage({grabNewInterface:true,customId:adData.adanalyst_ad_id, type:adData.type},"*")
     addToFrontAdQueue(adData);
     return true;
 
@@ -259,11 +248,12 @@ function grabFeedAds() {
             if (isEqual(adData, {}) == true) {
                 continue;
             }
-            //    if (adData['visible']) {
+            addEventListeners(adData);
+            MouseTrack(adData);
+
             frontAds[i].className += " " + COLLECTED;
             adData[MSG_TYPE] = FRONTADINFO;
             captureErrorContentScript(getExplanationUrlFrontAds, [frontAds[i], adData], undefined);
-            //   }
         }
     }
 }
@@ -284,15 +274,13 @@ function grabFeedAdsNewInterface() {
             if (isEqual(adData,{})==true) {
                 continue;
             }
-            // We also collect non visible Ads
-            //      if (adData['visible']) {
+            addEventListeners(adData);
+            MouseTrack(adData);
             frontAds[i].className += " " + COLLECTED;
             adData[MSG_TYPE] = FRONTADINFO;
             captureErrorContentScript(notifyOverloadForMoreAdInfo,[adData],undefined);
-            //      }
         }
     }
-
 }
 
 /**
@@ -536,14 +524,16 @@ window.addEventListener("message", function(event) {
         adData.story_debug_info = event.data.story_debug_info;
         adData.images = event.data.images;
         adData.video = event.data.video;
-        if(adData.type === TYPES.newsPost) {
+        if(adData.type === TYPES.newsPost || adData.type === TYPES.publicPost) {
             adData.raw_ad = anonymizePostNewInterface(adData.raw_ad, adData.advertiser_facebook_id);
         }
         chrome.runtime.sendMessage(adData, function(response) {
-            adData['saved'] = response['saved'];
-            adData['dbId'] = response['dbId'];
-            if(response['saved'] === true){
-                adData['raw_ad'] = '';
+            if(response) {
+                adData['saved'] = response['saved'];
+                adData['dbId'] = response['dbId'];
+                if(response['saved'] === true){
+                    adData['raw_ad'] = '';
+                }
             }
         });
         return;

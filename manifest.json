@@ -1,6 +1,6 @@
 {
-  "name": "Social Media Monitor",
-  "version": "0.0.0.10",
+  "name": "Social Media Monitor Study 1",
+  "version": "0.0.1.0",
   "manifest_version": 2,
   "description": "__MSG_extensionDesc__",
   "default_locale": "en",
@@ -39,11 +39,11 @@
         "graphics/loading.js",
         "utils/globalParams.js",
         "utils/content-scripts/universalMethods.js",
+        "content-scripts/universal.js",
         "utils/errorHandling.js",
         "utils/content-scripts/browserDetection.js",
         "utils/interfaceVersionDetection.js",
-        "utils/userIdentification.js",
-        "content-scripts/universal.js"
+        "utils/userIdentification.js"
       ],
       "matches": ["http://www.facebook.com/*", "https://www.facebook.com/*"],
       "all_frames": true
@@ -79,20 +79,7 @@
         "https://www.facebook.com/ads/preferences*"
       ],
       "all_frames": true
-    },
-    {
-      "run_at" : "document_end",
-      "js" : [
-        "third-party/jquery-3.1.1.min.js",
-        "content-scripts/amazon.js"
-      ],
-      "matches" : [
-        "https://www.amazon.fr/*",
-        "http://www.amazon.fr/*",
-        "https://www.amazon.com/*",
-        "http://www.amazon.com/*"
-      ]
-    }
+      }
   ],
   "permissions": [
     "http://www.facebook.com/*",

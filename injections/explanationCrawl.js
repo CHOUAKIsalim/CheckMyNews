@@ -75,8 +75,7 @@ function getResourcesFromExplanation(explanationDialogText) {
 }
 
 function getResourcesFromExplanationNewInterface(explanationDialogText) {
-
-    const resourceMapPos = explanationDialogText.indexOf('resource_map');
+    const resourceMapPos = explanationDialogText.indexOf('rsrcMap');
     if (resourceMapPos===-1) {
         return [];
     }
@@ -190,7 +189,6 @@ function getDocIdFromWaistResources(jsResources,callback) {
 
 
 function getDocIdFromMenuResourcesNewInterface(objId,serialized_frtp_identifiers,story_debug_info,callback) {
-
     let params = require('getAsyncParams')('POST');
     params.doc_id = require("CometFeedStoryMenuQuery$Parameters").params.id;
     params.av = params.__user;
@@ -221,9 +219,8 @@ function getExplanationsManuallyNewInterface(userId,adId,explanationUrl,dbRecord
                 captureErrorOverload(getGraphQLExplanations,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,adsPrefWAISTDialogQuery.params.id,getNewDocId],undefined);
                 return;
             }
-
             captureErrorOverload(getDocIdFromMenuResourcesNewInterface,[objId,serialized_frtp_identifiers,story_debug_info,function(newDocId) {
-            captureErrorOverload(getGraphQLExplanations,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,newDocId,getNewDocId],undefined);
+                captureErrorOverload(getGraphQLExplanations,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,newDocId,getNewDocId],undefined);
                 debugLog(adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken);
             }],undefined);
        
@@ -256,7 +253,7 @@ function getExplanationsManually(userId,adId,explanationUrl,dbRecordId,timestamp
 
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET",explanationUrl, true);
-     xmlhttp.onload = function (e) {
+    xmlhttp.onload = function (e) {
         // EXPLANATION_REQUESTS[CURRENT_USER_ID].push((new Date()).getTime())
 
         if (xmlhttp.readyState === 4 && xmlhttp.status === 200){

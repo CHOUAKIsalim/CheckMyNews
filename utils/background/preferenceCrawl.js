@@ -27,141 +27,148 @@
 //
 
 
-
-
 /**
  * notify the first open Facebook Tab to perform some task
  * @param  {list}   tabs     list of all the browser tabs
  * @param  {Function} callback function to be called towards the first open tab (needs to accept tab.id as parameter)
- * @return {}            
+ * @return {}
  */
 
 
 // var consent= false;
 if (!localStorage.collectPrefs) {
-  localStorage.collectPrefs = true;
+    localStorage.collectPrefs = true;
 }
 
 var PREFERENCES_URL = 'https://www.facebook.com/ds/preferences/' // ad preferences url
-var PREFERENCES_URL_WITH_TOKEN_TEMPLATE =  "https://www.facebook.com/ds/preferences/?cquick=jsc_c_d&cquick_token={0}&ctarget=https%3A%2F%2Fwww.facebook.com"
+var PREFERENCES_URL_NEW_INTERFACE = 'https://www.facebook.com/adpreferences/data' // ad preferences url
+
+var PREFERENCES_URL_WITH_TOKEN_TEMPLATE = "https://www.facebook.com/ds/preferences/?cquick=jsc_c_d&cquick_token={0}&ctarget=https%3A%2F%2Fwww.facebook.com"
 
 
-function notifyFirstFacebookTab(tabs,callback) {
-    if (tabs.length===0) {
+function notifyFirstFacebookTab(tabs, callback) {
+
+
+    if (tabs.length === 0) {
         console.log("No Facebook tab open");
         return
     }
 
     var tab = tabs[0];
-    
-    chrome.tabs.sendMessage(tab.id, {type:"isValidTab"},function(response) {
 
-    if (response===undefined) {
+    chrome.tabs.sendMessage(tab.id, {type: "isValidTab"}, function (response) {
 
-        notifyFirstFacebookTab(tabs.slice(1,tabs.length),callback)
-        return
-    }
+        if (response === undefined) {
 
-    if (response.validTabResponse!=='yes') {
-        notifyFirstFacebookTab(tabs.slice(1,tabs.length),callback)
-        return
-    }
+            notifyFirstFacebookTab(tabs.slice(1, tabs.length), callback)
+            return
+        }
+
+        if (response.validTabResponse !== 'yes') {
+            notifyFirstFacebookTab(tabs.slice(1, tabs.length), callback)
+            return
+        }
 
 
-    callback(tab.id); 
+        callback(tab.id);
 
     });
 
 
-
 }
 
 
-function getUserPreferenceCrawlAttempts(userId,type) {
-    initializeUserPreferenceCrawlAttempts(userId,type);
+function getUserPreferenceCrawlAttempts(userId, type) {
 
-    return JSON.parse(localStorage.preferenceCrawlAttempts)[userId+type];
+
+    initializeUserPreferenceCrawlAttempts(userId, type);
+
+    return JSON.parse(localStorage.preferenceCrawlAttempts)[userId + type];
 }
 
 
-function getLastUserPreferenceCrawlSuccessfullAttempt(userId,type) {
-    initializeUserPreferenceCrawlAttempts(userId,type);
+function getLastUserPreferenceCrawlSuccessfullAttempt(userId, type) {
 
-    return JSON.parse(localStorage.lastSuccessfulPreferenceCrawl)[userId+type];
+
+    initializeUserPreferenceCrawlAttempts(userId, type);
+
+    return JSON.parse(localStorage.lastSuccessfulPreferenceCrawl)[userId + type];
 }
 
 
-function setUserPreferenceCrawlAttempt(userId,type) {
-    initializeUserPreferenceCrawlAttempts(userId,type);
+function setUserPreferenceCrawlAttempt(userId, type) {
+
+
+    initializeUserPreferenceCrawlAttempts(userId, type);
 
     const allPreferenceCrawlAttempts = JSON.parse(localStorage.preferenceCrawlAttempts);
-    allPreferenceCrawlAttempts[userId+type].push((new Date()).getTime());
-    allPreferenceCrawlAttempts[userId+type].sort()
-    localStorage.preferenceCrawlAttempts = JSON.stringify(allPreferenceCrawlAttempts); 
+    allPreferenceCrawlAttempts[userId + type].push((new Date()).getTime());
+    allPreferenceCrawlAttempts[userId + type].sort()
+    localStorage.preferenceCrawlAttempts = JSON.stringify(allPreferenceCrawlAttempts);
 }
 
 
-function setLastUserPreferenceCrawlSuccessfullAttempt(userId,type) {
-    initializeUserPreferenceCrawlAttempts(userId,type);
+function setLastUserPreferenceCrawlSuccessfullAttempt(userId, type) {
+
+
+    initializeUserPreferenceCrawlAttempts(userId, type);
 
     const lastSuccessfulPreferenceCrawl = JSON.parse(localStorage.lastSuccessfulPreferenceCrawl);
-    lastSuccessfulPreferenceCrawl[userId+type] = (new Date()).getTime();
-    localStorage.lastSuccessfulPreferenceCrawl = JSON.stringify(lastSuccessfulPreferenceCrawl); 
+    lastSuccessfulPreferenceCrawl[userId + type] = (new Date()).getTime();
+    localStorage.lastSuccessfulPreferenceCrawl = JSON.stringify(lastSuccessfulPreferenceCrawl);
 
 }
 
 
+function canUserPreferenceCrawl(userId, type) {
 
 
+    const lastSuccessfulAttempt = getLastUserPreferenceCrawlSuccessfullAttempt(userId, type);
+    const now = (new Date()).getTime();
 
-
-function canUserPreferenceCrawl(userId,type) {
-	const lastSuccessfulAttempt = getLastUserPreferenceCrawlSuccessfullAttempt(userId,type);
-	const now = (new Date()).getTime();
-
-	// user has crawled preference the last halfday so no need to crawl more
-    if ((Math.abs(now-lastSuccessfulAttempt)< DAY_MILISECONDS/2)) {
-    	console.log(type + " collected the last halfday")
-    	return false;
+    // user has crawled preference the last halfday so no need to crawl more
+    if ((Math.abs(now - lastSuccessfulAttempt) < DAY_MILISECONDS / 2)) {
+        console.log(type + " collected the last halfday")
+        return false;
     }
 
 
-    const attemptsTheLastHalfDay = getUserPreferenceCrawlAttempts(userId,type);
+    const attemptsTheLastHalfDay = getUserPreferenceCrawlAttempts(userId, type);
 
     // user has not crawled and has not attempted the last halfday
-    if (attemptsTheLastHalfDay.length==0) {
-    	console.log("user has not crawled"+ type + " and has not attempted the last halfday")
-
-    	return true;
+    if (attemptsTheLastHalfDay.length == 0) {
+        console.log("user has not crawled" + type + " and has not attempted the last halfday")
+        return true;
     }
 
 
     // user has not crawled and has  attempted the last halfday three or more times
-    if (attemptsTheLastHalfDay.length>=3) {
-    	console.log("user has not crawled"+type+" and the last halfday three or more times")
-
-    	return false;
+    if (attemptsTheLastHalfDay.length >= 3) {
+        console.log("user has not crawled" + type + " and the last halfday three or more times")
+        return false;
     }
+
 
     // user has not crawled and has  attempted the last halfday less than three times
     // true if last attempt was more than an hour ago
-    return Math.abs(now-attemptsTheLastHalfDay[attemptsTheLastHalfDay.length-1])>=DAY_MILISECONDS/24;
+    return Math.abs(now - attemptsTheLastHalfDay[attemptsTheLastHalfDay.length - 1]) >= DAY_MILISECONDS / 24;
 
-	
 
 }
 
 
-function filterOldAPreferenceCrawlAttempts(userId,type) {
-	const now = (new Date()).getTime();
+function filterOldAPreferenceCrawlAttempts(userId, type) {
 
-	var allPreferenceCrawlAttempts = JSON.parse(localStorage.preferenceCrawlAttempts)
 
-	var newAttemptsTypeUser = allPreferenceCrawlAttempts[userId+type].filter(function(time) {
-		return Math.abs(now-time)<DAY_MILISECONDS/2
-	});
+    const now = (new Date()).getTime();
 
-	allPreferenceCrawlAttempts[userId+type]= newAttemptsTypeUser;
+    var allPreferenceCrawlAttempts = JSON.parse(localStorage.preferenceCrawlAttempts)
+
+    var newAttemptsTypeUser = allPreferenceCrawlAttempts[userId + type].filter(function (time) {
+        return Math.abs(now - time) < DAY_MILISECONDS / 2
+    });
+
+    allPreferenceCrawlAttempts[userId + type] = newAttemptsTypeUser;
 
 
     localStorage.preferenceCrawlAttempts = JSON.stringify(allPreferenceCrawlAttempts);
@@ -170,36 +177,37 @@ function filterOldAPreferenceCrawlAttempts(userId,type) {
 
 }
 
-function initializeUserPreferenceCrawlAttempts(userId,type){
-   if (!localStorage.preferenceCrawlAttempts) {
+function initializeUserPreferenceCrawlAttempts(userId, type) {
+
+
+    if (!localStorage.preferenceCrawlAttempts) {
 
         localStorage.preferenceCrawlAttempts = JSON.stringify({});
     }
 
-    var allPreferenceCrawlAttempts= JSON.parse(localStorage.preferenceCrawlAttempts);
+    var allPreferenceCrawlAttempts = JSON.parse(localStorage.preferenceCrawlAttempts);
 
-    if (!allPreferenceCrawlAttempts.hasOwnProperty(userId+type)) {
-        allPreferenceCrawlAttempts[userId+type] =[];
+    if (!allPreferenceCrawlAttempts.hasOwnProperty(userId + type)) {
+        allPreferenceCrawlAttempts[userId + type] = [];
         localStorage.preferenceCrawlAttempts = JSON.stringify(allPreferenceCrawlAttempts);
 
 
     }
 
 
+    filterOldAPreferenceCrawlAttempts(userId, type)
 
-   filterOldAPreferenceCrawlAttempts(userId,type)
 
-
-   if (!localStorage.lastSuccessfulPreferenceCrawl) {
+    if (!localStorage.lastSuccessfulPreferenceCrawl) {
 
         localStorage.lastSuccessfulPreferenceCrawl = JSON.stringify({});
     }
 
 
-    var lastSuccessfulPreferenceCrawl =  JSON.parse(localStorage.lastSuccessfulPreferenceCrawl);
+    var lastSuccessfulPreferenceCrawl = JSON.parse(localStorage.lastSuccessfulPreferenceCrawl);
 
-     if (!lastSuccessfulPreferenceCrawl.hasOwnProperty(userId+type)) {
-        lastSuccessfulPreferenceCrawl[userId+type] =0;
+    if (!lastSuccessfulPreferenceCrawl.hasOwnProperty(userId + type)) {
+        lastSuccessfulPreferenceCrawl[userId + type] = 0;
         localStorage.lastSuccessfulPreferenceCrawl = JSON.stringify(lastSuccessfulPreferenceCrawl);
 
     }
@@ -209,39 +217,41 @@ function initializeUserPreferenceCrawlAttempts(userId,type){
 function getInterests(tabId) {
 
 
-	    chrome.tabs.query({}, function(tabs){
+    chrome.tabs.query({}, function (tabs) {
 
-	    	 notifyFirstFacebookTab(tabs,function(tabId) {
-	    	 	chrome.tabs.sendMessage(tabId, {type: "getInterests"}); 
-          		setUserPreferenceCrawlAttempt(CURRENT_USER_ID,'interests');
- 
-	    	 })
+        notifyFirstFacebookTab(tabs, function (tabId) {
+            chrome.tabs.sendMessage(tabId, {type: "getInterests"});
+            setUserPreferenceCrawlAttempt(CURRENT_USER_ID, 'interests');
+
+        })
 
 
-	    }) 
-    
-    
+    })
+
+
 }
 
 function getAdvertisers(tabId) {
 
-	    chrome.tabs.query({}, function(tabs){
 
-	    	 notifyFirstFacebookTab(tabs,function(tabId) {
-	    	 	chrome.tabs.sendMessage(tabId, {type: "getAdvertisers"}); 
-          		setUserPreferenceCrawlAttempt(CURRENT_USER_ID,'advertisers');
- 
-	    	 })
+    chrome.tabs.query({}, function (tabs) {
+
+        notifyFirstFacebookTab(tabs, function (tabId) {
+            chrome.tabs.sendMessage(tabId, {type: "getAdvertisers"});
+            setUserPreferenceCrawlAttempt(CURRENT_USER_ID, 'advertisers');
+
+        })
 
 
-	    }) 
-    
-    
+    })
+
+
 }
 
 
+String.prototype.nthIndexOf = function (pattern, n) {
 
-String.prototype.nthIndexOf = function(pattern, n) {
+
     var i = -1;
 
     while (n-- && i++ < this.length) {
@@ -252,50 +262,52 @@ String.prototype.nthIndexOf = function(pattern, n) {
     return i;
 }
 
-function getScriptWithData(doc,txt) {
+function getScriptWithData(doc, txt) {
+
+
     var scripts = doc.getElementsByTagName('script')
-for (var i = 0; i < scripts.length; i++) {
-  if (scripts[i].innerHTML.indexOf(txt)!=-1) {
-    return scripts[i];
-  }
-}
+    for (var i = 0; i < scripts.length; i++) {
+        if (scripts[i].innerHTML.indexOf(txt) != -1) {
+            return scripts[i];
+        }
+    }
     return -1
 }
 
 
-
-
-function getAllScripstWithData(doc,txt) {
+function getAllScripstWithData(doc, txt) {
     var scripts = doc.getElementsByTagName('script')
     var all_scripts = [];
-for (var i = 0; i < scripts.length; i++) {
-  if (scripts[i].innerHTML.indexOf(txt)!=-1) {
-    all_scripts.push(scripts[i]) ;
-  }
-}
+    for (var i = 0; i < scripts.length; i++) {
+        if (scripts[i].innerHTML.indexOf(txt) != -1) {
+            all_scripts.push(scripts[i]);
+        }
+    }
     return all_scripts
 }
 
 
-function parseList(txt,pos=1) {
-    if (pos>txt.length) {
+function parseList(txt, pos = 1) {
+
+
+    if (pos > txt.length) {
         return -1
     }
     try {
-        return JSON.parse(txt.slice(0,pos))
+        return JSON.parse(txt.slice(0, pos))
     } catch (e) {
-        return parseList(txt,pos+1)
-        }
+        return parseList(txt, pos + 1)
+    }
 }
-
 
 
 function isPreferencePageBlocked(doc) {
 
-    var helpcenters = ["https://www.facebook.com/help/365194763546571","https://www.facebook.com/help/177066345680802"]
+
+    var helpcenters = ["https://www.facebook.com/help/365194763546571", "https://www.facebook.com/help/177066345680802"]
     var links = doc.getElementsByTagName('a');
-    for (let i=0;i<links.length;i++) {
-        if (getIndexFromList(links[i].href,helpcenters)!==-1) {
+    for (let i = 0; i < links.length; i++) {
+        if (getIndexFromList(links[i].href, helpcenters) !== -1) {
             return true;
         }
     }
@@ -304,151 +316,134 @@ function isPreferencePageBlocked(doc) {
 }
 
 function getDem(doc) {
+
     var txt = 'demographicStatus":'
-    var script = getScriptWithData(doc,txt);
-    if (script ==-1 ) 
-        {return -1}
+    var script = getScriptWithData(doc, txt);
+    if (script == -1) {
+        return -1
+    }
     var pos = script.innerHTML.indexOf(txt);
     console.log(pos)
-    return parseList(script.innerHTML.slice(pos+txt.length))
-    
+    return parseList(script.innerHTML.slice(pos + txt.length))
+
 }
 
 
 function getBeh(doc) {
-    var txt_0 ='behaviors":'
+
+
+    var txt_0 = 'behaviors":'
     var txt_1 = 'behaviors":[{"fbid'
     var txt_2 = 'demographicStatus":'
-    var script = getScriptWithData(doc,txt_2);
-    if (script ==-1 ) 
-        {return -1}
-    var pos = script.innerHTML.nthIndexOf(txt_1,1);
+    var script = getScriptWithData(doc, txt_2);
+    if (script == -1) {
+        return -1
+    }
+    var pos = script.innerHTML.nthIndexOf(txt_1, 1);
     console.log(pos)
-    return parseList(script.innerHTML.slice(pos+txt_0.length))
-    
+    return parseList(script.innerHTML.slice(pos + txt_0.length))
+
 }
 
 
 //var count = 200
-function getDemographicsAndBehaviors(prefUrl,count){
-    
-    
-    $.get(prefUrl,function(resp) {
-       try {
+function getDemographicsAndBehaviors(prefUrl, count) {
 
-        
+    $.get(prefUrl, function (resp) {
+        try {
             var parser = new DOMParser();
-            var htmlDoc = parser.parseFromString(resp,"text/html");
+            var htmlDoc = parser.parseFromString(resp, "text/html");
             console.log(htmlDoc);
-            
-    if (count<0) {
-        var data = {user_id:CURRENT_USER_ID,demographics:-1,behaviors:-1};
-        data['type'] = 'demBehaviors';
-        data['timestamp'] = (new Date).getTime();
-        data['raw'] = resp;
-        console.log(data)
-        
-//        chrome.runtime.sendMessage(data)
-        return
+
+            if (count < 0) {
+                var data = {user_id: CURRENT_USER_ID, demographics: -1, behaviors: -1};
+                data['type'] = 'demBehaviors';
+                data['timestamp'] = (new Date).getTime();
+                data['raw'] = resp;
+                console.log(data)
+                return
             }
-            
-                console.log('getting demographics')
- 
-    var demographics = getDem(htmlDoc);
-    var behaviors = getBeh(htmlDoc);
+
+            console.log('getting demographics')
+
+            var demographics = getDem(htmlDoc);
+            var behaviors = getBeh(htmlDoc);
 
 
+            if ((demographics == -1) && (behaviors == -1) && (count > 0)) {
+                count--;
+                if (isPreferencePageBlocked(htmlDoc)) {
+                    localStorage.lastErrorBehaviorDemographics = (new Date).getTime();
+                    return;
+                }
+                getDemographicsAndBehaviors(prefUrl, count)
+                return
+            }
 
-    
-    if ((demographics==-1) && (behaviors==-1) && (count>0)) {
-        count--;
-
-        if (isPreferencePageBlocked(htmlDoc)) {
-            console.log("Behaviors and demographics blocked");
-            localStorage.lastErrorBehaviorDemographics = (new Date).getTime();
-            return;
-        }
-        
-        getDemographicsAndBehaviors(prefUrl,count)
-//        window.setTimeout(getDemographicsAndBehaviors,1000)
-        return
-    }
-        
-            if ((demographics!=-1) || (behaviors!=-1) ){
-        var data = {user_id:CURRENT_USER_ID,demographics:demographics,behaviors:behaviors};
-        data['type'] = 'demBehaviors';
-        data['timestamp'] = (new Date).getTime();
-        data['raw'] =  resp;
-            console.log(data)
-              if (hasCurrentUserConsent(0)!==true) {
+            if ((demographics != -1) || (behaviors != -1)) {
+                var data = {user_id: CURRENT_USER_ID, demographics: demographics, behaviors: behaviors};
+                data['type'] = 'demBehaviors';
+                data['timestamp'] = (new Date).getTime();
+                data['raw'] = resp;
+                console.log(data)
+                if (hasCurrentUserConsent(0) !== true) {
+                    return
+                }
+                registerDemBehToServer(data);
+            }
+        } catch (e) {
+            console.log(e)
+            count--;
+            getDemographicsAndBehaviors(prefUrl, count)
             return
         }
-                
-  
-  			registerDemBehToServer(data);
-                
-                
-        
-//        chrome.runtime.sendMessage(data);
 
-    }
-//    ALL_CRAWLED.categories=true;
-    } catch (e) {
-        console.log(e)
-        
-        count--;
-        getDemographicsAndBehaviors(prefUrl,count)
-        return 
 
-//        window.setTimeout(getDemographicsAndBehaviors,1000)
-    }
-                
-            
-        
-    
-})
-    
+    })
 
 
 }
 
-function registerDemBehToServer(data){
+function registerDemBehToServer(data) {
 
-			console.log("registering dembeh to server");
-	       $.ajax({
-              type: REQUEST_TYPE,
-              url: URLS_SERVER.registerDemBeh,
-              dataType: "json",
-             traditional:true,
-              data: JSON.stringify(replaceUserIdEmail(data)),
-                tryCount : 0,
-                retryLimit : 3,
-              success: function (a) {
-                if (!a[STATUS] || (a[STATUS]==FAILURE)) {
-                    if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-                        captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-                    }                
 
-                    this.tryCount++;
-            if (this.tryCount <= this.retryLimit) {
-                //try again
-                console.log('Trying again...')
+    console.log("registering dembeh to server");
+    $.ajax({
+        type: REQUEST_TYPE,
+        url: URLS_SERVER.registerDemBeh,
+        dataType: "json",
+        traditional: true,
+        data: JSON.stringify(replaceUserIdEmail(data)),
+        tryCount: 0,
+        retryLimit: 3,
+        success: function (a) {
+            if (!a[STATUS] || (a[STATUS] == FAILURE)) {
+                if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
+                    captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+                }
 
-                $.ajax(this);
-                return;
-                    }
-                    console.log('Stoping trying...');
+                this.tryCount++;
+                if (this.tryCount <= this.retryLimit) {
+                    //try again
+                    console.log('Trying again...')
 
-                return true};
+                    $.ajax(this);
+                    return;
+                }
+                console.log('Stoping trying...');
 
-                setLastUserPreferenceCrawlSuccessfullAttempt(CURRENT_USER_ID,'behdem');
+                return true
+            }
+            ;
 
-               // localStorage.lastBehaviorCrawl = (new Date()).getTime();
+            setLastUserPreferenceCrawlSuccessfullAttempt(CURRENT_USER_ID, 'behdem');
+
+            // localStorage.lastBehaviorCrawl = (new Date()).getTime();
 
 //          sendFrontAd(request,sendResponse);
-          return true
-            },
-            error : function(xhr, textStatus, errorThrown ) {
+            return true
+        },
+        error: function (xhr, textStatus, errorThrown) {
             this.tryCount++;
             if (this.tryCount <= this.retryLimit) {
                 //try again
@@ -457,167 +452,181 @@ function registerDemBehToServer(data){
                 $.ajax(this);
                 return;
             }
-                console.log('Stoping trying...');
-                return
-            }
-        
-        }); 
+            console.log('Stoping trying...');
+            return
+        }
+
+    });
 }
 
 
 function getDemographicsAndBehaviorsNewInterface(count) {
+
+
     console.log("getDemographicsAndBehaviorsNewInterface");
     $.get({
-        url:PREFERENCES_URL,
-        success: function(resp) {
+        url: PREFERENCES_URL,
+        success: function (resp) {
             try {
-
                 let quickTokenMatch = resp.match(/compat_iframe_token":"[^"]+"|(\+)/);
-                if (!quickTokenMatch || quickTokenMatch.length<1) {
-                    window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
+                if (!quickTokenMatch || quickTokenMatch.length < 1) {
+                    window.setTimeout(function () {
+                        captureErrorBackground(getCurrentUserEmailByVersion, [], URLS_SERVER.registerError, undefined)
+                    }, ONE_HALF_MINUTE)
                     return;
                 }
+                let quickToken = quickTokenMatch[0].replace('compat_iframe_token":"', '');
+                quickToken = quickToken.slice(0, quickToken.length - 1);
 
-                let quickToken = quickTokenMatch[0].replace('compat_iframe_token":"','');
-                quickToken = quickToken.slice(0,quickToken.length-1);
-
-                captureErrorBackground(getDemographicsAndBehaviors,[PREFERENCES_URL_WITH_TOKEN_TEMPLATE.replace('{0}',quickToken),3],URLS_SERVER.registerError,{});
+                captureErrorBackground(getDemographicsAndBehaviors, [PREFERENCES_URL_WITH_TOKEN_TEMPLATE.replace('{0}', quickToken), 3], URLS_SERVER.registerError, {});
 
 
             } catch (e) {
                 console.log(e)
 
-                
+
             }
         }
     })
-    
 
 
 }
 
 /**
  * checks if it is time (and app allows it) to retrieve the behaviors/profile data of current user
- * @return {} 
+ * @return {}
  */
-function checkForBehaviorsDemographics(){
-   if (hasCurrentUserConsent(0)!==true) {
-        captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
+function checkForBehaviorsDemographics() {
+
+
+    if (hasCurrentUserConsent(0) !== true) {
+        captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+        window.setTimeout(checkForBehaviorsDemographics, ONEMINUTE);
         return;
-           
-    } 
 
-    if ((localStorage.collectPrefs!=='true') ) {
-    	console.log("CollectPrefs set to no");
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
-        return
-     }
+    }
 
-     if (!canUserPreferenceCrawl(CURRENT_USER_ID,'behdem')) {
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
+    if ((localStorage.collectPrefs !== 'true')) {
+        console.log("CollectPrefs set to no");
+        window.setTimeout(checkForBehaviorsDemographics, ONEMINUTE);
         return
     }
 
+    if (!canUserPreferenceCrawl(CURRENT_USER_ID, 'behdem')) {
+        window.setTimeout(checkForBehaviorsDemographics, ONEMINUTE);
+        return
+    }
 
 
     let interfaceVersion = getUserInterfaceVersion(CURRENT_USER_ID);
     console.log(interfaceVersion)
 
-    setUserPreferenceCrawlAttempt(CURRENT_USER_ID,'behdem');
+    setUserPreferenceCrawlAttempt(CURRENT_USER_ID, 'behdem');
 
 
-    if (interfaceVersion===INTERFACE_VERSIONS.unknown) {
-        window.setTimeout(function() {captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
+    if (interfaceVersion === INTERFACE_VERSIONS.unknown) {
+        window.setTimeout(function () {
+            captureErrorBackground(checkForBehaviorsDemographics, [], URLS_SERVER.registerError, undefined)
+        }, ONE_HALF_MINUTE)
         return;
     }
 
-    if (interfaceVersion===INTERFACE_VERSIONS.old) {
-        captureErrorBackground(getDemographicsAndBehaviors,[PREFERENCES_URL, 3],URLS_SERVER.registerError,undefined);
-        
-        window.setTimeout(function() {captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
+    if (interfaceVersion === INTERFACE_VERSIONS.old) {
+        captureErrorBackground(getDemographicsAndBehaviors, [PREFERENCES_URL, 3], URLS_SERVER.registerError, undefined);
+
+        window.setTimeout(function () {
+            captureErrorBackground(checkForBehaviorsDemographics, [], URLS_SERVER.registerError, undefined)
+        }, ONE_HALF_MINUTE)
 
         return
     }
 
-    if (interfaceVersion===INTERFACE_VERSIONS.new) {
-        captureErrorBackground(getDemographicsAndBehaviorsNewInterface,[3],URLS_SERVER.registerError,undefined);
-        return;
+    if (interfaceVersion === INTERFACE_VERSIONS.new) {
+        captureErrorBackground(getDemographicsAndBehaviors, [PREFERENCES_URL_NEW_INTERFACE, 3], URLS_SERVER.registerError, undefined);
+
+        window.setTimeout(function () {
+            captureErrorBackground(checkForBehaviorsDemographics, [], URLS_SERVER.registerError, undefined)
+        }, ONE_HALF_MINUTE)
+
+        return
     }
 
 
-        window.setTimeout(function() {captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
+//    if (interfaceVersion === INTERFACE_VERSIONS.new) {
+//        captureErrorBackground(getDemographicsAndBehaviorsNewInterface, [3], URLS_SERVER.registerError, undefined);
+ //       return;
+  //  }
 
-    
+
+    window.setTimeout(function () {
+        captureErrorBackground(checkForBehaviorsDemographics, [], URLS_SERVER.registerError, undefined)
+    }, ONE_HALF_MINUTE)
+
 
 }
 
 
 /**
  * checks if it is time (and app allows it) to retrieve the interests of current user
- * @return {} 
+ * @return {}
  */
-function checkForInterests(){
+function checkForInterests() {
 
-   if (hasCurrentUserConsent(0)!==true) {
-        captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-        window.setTimeout(checkForInterests,ONEMINUTE);
+
+    if (hasCurrentUserConsent(0) !== true) {
+        captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+        window.setTimeout(checkForInterests, ONEMINUTE);
         return
-           
-    }   
-    
-    if ((localStorage.collectPrefs!=='true') ) {
-    	console.log("CollectPrefs set to no");
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
+
+    }
+
+    if ((localStorage.collectPrefs !== 'true')) {
+        console.log("CollectPrefs set to no");
+        window.setTimeout(checkForBehaviorsDemographics, ONEMINUTE);
 
         return
-     }
+    }
 
-  
-    if (canUserPreferenceCrawl(CURRENT_USER_ID,'interests')) {
+
+    if (canUserPreferenceCrawl(CURRENT_USER_ID, 'interests')) {
         console.log("User can crawl for interests");
         getInterests();
     }
-    
-    
-    
-    window.setTimeout(checkForInterests,ONEMINUTE)
+
+
+    window.setTimeout(checkForInterests, ONEMINUTE)
 
 }
 
 
-
 /**
  * checks if it is time (and app allows it) to retrieve the advertisers (preference page) of current user
- * @return {} 
+ * @return {}
  */
-function checkForAdvertisers(){
+function checkForAdvertisers() {
 
-    
-   if (hasCurrentUserConsent(0)!==true) {
-        captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
-        window.setTimeout(checkForAdvertisers,ONEMINUTE);
+    if (hasCurrentUserConsent(0) !== true) {
+        captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+        window.setTimeout(checkForAdvertisers, ONEMINUTE);
         return;
-           
-    }   
 
-    if ((localStorage.collectPrefs!=='true') ) {
-    	console.log("CollectPrefs set to no");
+    }
 
-        window.setTimeout(checkForBehaviorsDemographics,ONEMINUTE);
+    if ((localStorage.collectPrefs !== 'true')) {
+        console.log("CollectPrefs set to no");
+
+        window.setTimeout(checkForBehaviorsDemographics, ONEMINUTE);
         return
-     }
+    }
 
-    if (canUserPreferenceCrawl(CURRENT_USER_ID,'advertisers')) {
+    if (canUserPreferenceCrawl(CURRENT_USER_ID, 'advertisers')) {
         console.log("User can crawl for advertisers");
 
         getAdvertisers();
     }
-    
-    
-    
-    
-    window.setTimeout(checkForAdvertisers,ONEMINUTE)
+
+
+    window.setTimeout(checkForAdvertisers, ONEMINUTE)
 
 }
   

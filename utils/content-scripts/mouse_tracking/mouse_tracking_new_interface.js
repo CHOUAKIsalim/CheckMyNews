@@ -45,9 +45,6 @@ function onMessagingNewInterface() {
 
 
 function addEventListenersNewInterface(ad) {
-    //Init the array of events
-    ad["events"] = [];
-
     // This vas will be used to advertiser check
     var dateForAdvertiserCheckWithHover;
 

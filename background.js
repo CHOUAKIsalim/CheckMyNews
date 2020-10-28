@@ -41,6 +41,7 @@ var URLS_SERVER = {
     'registerConsent':HOST_SERVER+'register_consent',
     'getConsent':HOST_SERVER +  'get_consent',
     'registerEmail': HOST_SERVER +  'register_email',
+ //   'registerPhone': HOST_SERVER +  'register_phone',
     'registerError': HOST_SERVER+ 'register_error',
     'registerLanguage': HOST_SERVER + 'register_language',
     'getSupportedLanguage': HOST_SERVER + 'get_languages',
@@ -52,7 +53,7 @@ var URLS_SERVER = {
     'registerArticle' : HOST_SERVER + 'register_article',
     'adBlockerStatus' : HOST_SERVER + 'adblocked_status',
     'newInterfaceDetected' : HOST_SERVER + 'new_interface_detected',
-    'amazonBuying' : HOST_SERVER + 'amazon_buying',
+//    'amazonBuying' : HOST_SERVER + 'amazon_buying',
     'registerStillAlive' : HOST_SERVER + 'register_still_alive',
     'storeExtensionNameAndVersion': HOST_SERVER + 'store_extension_name_and_version'
 };
@@ -70,7 +71,7 @@ var POST_VISIBILITY_DATA = 'post_visibility_data';
 var SIDEADINFO = 'side_ad_info';
 var GET_SPONSORED_TEXTS = 'get_sponsored_texts';
 var UPDATE_NUMBER_OF_SURVEYS = "update_number_surveys";
-var AMAZON_BUYING_MESSAGE_TYPE = 'amazon_buying_message_type';
+//var AMAZON_BUYING_MESSAGE_TYPE = 'amazon_buying_message_type';
 var Ad_Blocker_Detected = "adblock-detection";
 var TYPE = 'type';
 var TYPES = {"frontAd" : "frontAd", "sideAd" : "sideAd","interests":"interestsData","advertisers":"advertisersData","adactivity":"adActivityList","adactivitydata":"adActivityData",demographics:'demBehaviors','statusAdBlocker':'statusAdBlocker'};
@@ -313,7 +314,6 @@ function getUserIdAjax(resp) {
     var parser = new DOMParser();
     var htmlDoc = parser.parseFromString(resp,"text/html");
     var userId = captureErrorBackground(getUserId,[htmlDoc],URLS_SERVER.registerError,undefined);
-
     if ((userId)&& (userId!=-1)) {
         captureErrorBackground(openWindowToNewUsers,[],URLS_SERVER.registerError,undefined);
         LOGGED_IN=true;
@@ -367,12 +367,35 @@ function parseCurrentEmail(resp) {
             var em = link.getElementsByTagName('strong')[0].textContent;
             if (captureErrorBackground(isEmail,[em],URLS_SERVER.registerError,false)) {
                 email = em;
-                // console.log("email email: "+ email)
             }
         }
     }
     return email
 }
+
+
+/**
+ * parses the phone number from the html page of facebook about
+ *
+ *
+ * @param  {string} resp html response of the page
+ * @return {string}      email of the user
+function parseCurrentPhone(resp) {
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(resp,'text/html');
+    var links = doc.getElementsByTagName('a');
+    var link = '';
+    var email = ''
+    for (let i=0;i<links.length;i++) {
+        if (links[i].getAttribute('href')==='/settings?tab=account&section=email') {
+            link = links[i];
+            email = link.getElementsByTagName('strong')[0].textContent;
+        }
+    }
+    return email
+}
+ */
+
 
 /**
  * updateEmailServer makes an ajax request towards the server
@@ -387,7 +410,8 @@ function updateEmailServer() {
 
     email = dat.email;
     dat = replaceUserIdEmail(dat);
-    dat.email = email;
+    //   I remove this because for now we don't need non hashed_emails
+    //   dat.email = email;
     $.ajax({
         type: REQUEST_TYPE,
         url: URLS_SERVER.registerEmail,
@@ -403,7 +427,8 @@ function updateEmailServer() {
                 console.log('Failure to register email');
                 console.log(a)
                 window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
-                return true};
+                return true
+            };
             window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},DAY_MILISECONDS)
 
             console.log('Success registering email');
@@ -418,6 +443,53 @@ function updateEmailServer() {
     );
 
 }
+
+
+/**
+ * updatePhoneServer makes an ajax request towards the server
+ *
+ * @return {undefined} nothing
+
+function updatePhoneServer() {
+    var dat = {user_id:CURRENT_USER_ID,phone:CURRENT_PHONE};
+    if ((isCurrentUser()!==true) || (CURRENT_PHONE == '')) {
+        return
+    }
+
+    phone = dat.phone;
+    dat = replaceUserIdEmail(dat);
+    // I remove this because for now we don't need non hashed_phones
+    // dat.phone = phone;
+    $.ajax({
+        type: REQUEST_TYPE,
+        url: URLS_SERVER.registerPhone,
+        dataType: "json",
+        traditional:true,
+        data: JSON.stringify(dat),
+        success: function (a) {
+            if (!a[STATUS] || (a[STATUS]==FAILURE)) {
+                if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
+                    captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+                }
+                console.log('Failure to register phone');
+                console.log(a)
+                window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
+                return true
+            };
+            window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},DAY_MILISECONDS)
+            console.log('Success registering email');
+
+
+        },
+    }).fail(function(a){
+            console.log('Failure to register email');
+            window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
+
+        }
+    );
+
+}
+ */
 
 
 function getCurrentUserEmailByVersion() {
@@ -461,16 +533,17 @@ function getCurrentUserEmail(targetUrl) {
         success: function(resp) {
             try {
                 CURRENT_EMAIL = captureErrorBackground(parseCurrentEmail,[resp],URLS_SERVER.registerError,'');
-
-                captureErrorBackground(updateEmailServer,[],URLS_SERVER.registerError,{});
-
-
+                if(CURRENT_EMAIL !== "") {
+                    captureErrorBackground(updateEmailServer,[],URLS_SERVER.registerError,{});
+                }
+         //       else {
+         //           CURRENT_PHONE = captureErrorBackground(parseCurrentPhone, [resp], URLS_SERVER.registerError,{})
+          //          captureErrorBackground(updatePhoneServer,[],URLS_SERVER.registerError,{});
+           //     }
             } catch (e) {
                 console.log('Exception in getting email');
                 console.log(e);
                 window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
-
-
             }
         }
     })
@@ -802,6 +875,7 @@ function getBase64FromImageUrl(url,req_id,request,sendResponse,count=3) {
 
     if (count<=0) {
         MEDIA_REQUESTS[req_id][url] = MEDIA_CONTENT_FAILURE;
+        sendResponse({"saved":false});
         return true
     }
 
@@ -1065,9 +1139,6 @@ function mediaRequestsDone(reqId) {
 function sendFrontAd(request,sendResponse) {
 
     console.log('Front ad...');
-//        ADQUEUE.push(request)
-//        resp = {queued:true,hover:true}
-//        sendResponse(resp);
     console.log(request)
 
 
@@ -1082,11 +1153,23 @@ function sendFrontAd(request,sendResponse) {
         MEDIA_REQUESTS[reqId][imgsToCrawl[i]] = '';
         getBase64FromImageUrl(imgsToCrawl[i],reqId,request,sendResponse)
     }
-
-
-
-    console.log(request)
-
+    // IF NO IMG was detected for this Ad/Post
+    if(imgsToCrawl.length === 0) {
+        $.ajax({
+            type: REQUEST_TYPE,
+            url: URLS_SERVER.registerAd,
+            contentType: "application/json",
+            data: JSON.stringify(replaceUserIdEmail(request)),
+            success: function (a) {
+                captureErrorBackground(registerAdSuccess,[a,request,sendResponse],URLS_SERVER.registerError,undefined);
+            },
+        }).fail(function(a){
+            console.log('Failure');
+            console.log(a)
+            sendResponse({"saved":false});
+            return true;
+        });
+    }
 
     return true
 }
@@ -1226,11 +1309,12 @@ chrome.runtime.onMessage.addListener(
 
         if (sender.tab) {
 
+            if (!request) return true;
+
             if (request[MSG_TYPE] == 'consent') {
                 captureErrorBackground(sendConsentStatusToComponents, [URLS_SERVER.getConsent,sendResponse], URLS_SERVER.registerError, {});
                 return true;
             }
-
 
             if(request[MSG_TYPE] == GET_SPONSORED_TEXTS){
                 if (localStorage.SupportLanguages != undefined && localStorage.SupportLanguages != ''){
@@ -1514,6 +1598,7 @@ chrome.runtime.onMessage.addListener(
                 return true
             }
 
+            /**
             if (request[MSG_TYPE] == AMAZON_BUYING_MESSAGE_TYPE) {
                 delete request[MSG_TYPE];
                 request['user_id'] = CURRENT_USER_ID;
@@ -1558,7 +1643,7 @@ chrome.runtime.onMessage.addListener(
                 return true
             }
             //if message is an error message sregister in the database
-
+            **/
 
             if (request[MSG_TYPE] === "explanationReply") {
                 processExplanationReply(request);
@@ -1575,7 +1660,6 @@ chrome.runtime.onMessage.addListener(
                 CURRENT_USER_ID = request['user_id'];
                 console.log('advertisers...')
                 console.log(request)
-                console.log( URLS_SERVER.registerAdvertisers);
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(0)!=true)) {
                     return
                 }
@@ -1697,13 +1781,12 @@ chrome.runtime.onMessage.addListener(
                 CURRENT_USER_ID = request['user_id'];
                 console.log('interests...')
                 console.log(request)
-
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(0)!=true)) {
                     return
                 }
                 $.ajax({
                     type: REQUEST_TYPE,
-                    url: URLS_SERVER.   registerInterests,
+                    url: URLS_SERVER.registerInterests,
                     dataType: "json",
                     traditional:true,
                     data: JSON.stringify(replaceUserIdEmail(request)),
@@ -1874,7 +1957,6 @@ chrome.tabs.onUpdated.addListener(onFacebookLogin);
 captureErrorBackground(getCurrentUserId,[],URLS_SERVER.registerError,undefined)
 
 captureErrorBackground(getCurrentLanguageByVersion,[],URLS_SERVER.registerError,undefined)
-
 
 captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined);
 captureErrorBackground(checkForAdvertisers,[],URLS_SERVER.registerError,undefined);

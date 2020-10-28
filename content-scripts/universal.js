@@ -51,7 +51,9 @@ function universalCommunicationWithInjections(event) {
         var data = event.data
         data['user_id'] =getUserId()
         data['timestamp'] = (new Date).getTime();
-
+        console.log("---------------------------------------------------");
+        console.log("universalCommunicationWithInjections - advertisersData");
+        console.log(data);
         chrome.runtime.sendMessage(data);
         return;
         }

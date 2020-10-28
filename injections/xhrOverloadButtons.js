@@ -154,7 +154,7 @@ window.addEventListener("message", function(event) {
 
 
   if (event.data.grabNewInterface) {
-    processAd(event.data.customId);
+    processAd(event.data.customId, event.data.type);
     return true;
   }
    handleUniversalCommunication(event);

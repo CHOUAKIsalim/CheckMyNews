@@ -54,7 +54,6 @@ function hasCurrentUserConsent(consentMode) {
 
     var consents = JSON.parse(localStorage[CURRENT_USER_ID+'consents']);
 
-
     // 0 is set on the server
     if (!consents[consentMode]) {
         return false;
@@ -103,7 +102,6 @@ function getConsentFromServer(consentApiUrl,consentMode,onConsentPositive,onCons
                 return;
             }
             console.log(resp);
-
             setConsents(resp.consents);
             if (resp.consents[consentMode]==true) {
                 onConsentPositive(resp);
@@ -177,13 +175,12 @@ function sendConsentStatusToComponents(consentApiUrl,sendResponse,consentMode=0)
         return true;
     }
     if (hasCurrentUserConsent(consentMode)) {
-        sendResponse({"consent":true});
+        sendResponse({"consent":true, "currentUser" : sha512(String(CURRENT_USER_ID))});
         return true;
     }
     var onConsentPositiveSendResponse = replyOnConsentPositive.bind(sendResponse);
     var onConsentNegativeSendResponse = replyOnConsentNegative.bind(sendResponse);
     var onConsentErrorSendResponse = replyOnConsentError.bind(sendResponse);
-
     getConsentFromServer(consentApiUrl,consentMode,onConsentPositiveSendResponse,onConsentNegativeSendResponse,onConsentErrorSendResponse)
     return true;
 }
@@ -208,7 +205,7 @@ function openConsentWindow(resp) {
 
     var minTimestamp = resp.min_timestamp;
     if (minTimestamp && (minTimestamp<MIN_TIMESTAMP_MESSAGE)) {
-        alert("It seems that you have installed AdAnalyst but you didn't sign the consent form. Why don't you click on the AdAnalyst icon and sign the form?\n This message will not be shown again!");
+        alert("It seems that you have installed Social Media Monitor but you didn't sign the consent form. Why don't you click on the Social Media Monitor icon and sign the form?\n This message will not be shown again!");
         localStorage[CURRENT_USER_ID+'isMessageShown'] = true;
         return;
     }
@@ -232,7 +229,6 @@ function openConsentWindow(resp) {
 function openWindowToNewUsers(consentApiUrl,consentMode=0) {
 
     //TODO: MODIFY FOR NEW CONSENT IF WE WANT TO INFORM OLD USERS
-
     if (isCurrentUser()!==true) {
         return;
     }
@@ -286,7 +282,6 @@ function registerConsent(registerConsentApiUrl,sendResponse=undefined,countEffor
 
 
     if (isCurrentUser()!==true) {
-        alert("You are trying to register consent, even though you are not logged in with an account on Facebook. Please log-in and repeat the process!");
         return;
     }
 

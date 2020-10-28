@@ -49,7 +49,8 @@ function handleUniversalCommunication(event) {
 
   	if (event.data.grabAdvertisers) {
         captureErrorOverload(getInterestsAdvs, [ADVERTISERSURL, "advertisers"], undefined);
-    	return true;
+    	//captureErrorOverload(getInterestsAdvs, [ADVERTISERSURLNEWINTERFACE, "advertisers"], undefined)
+  	    return true;
   	}
 
 

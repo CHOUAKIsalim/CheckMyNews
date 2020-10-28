@@ -1,5 +1,7 @@
 
 
+const TYPES = {"frontAd" : "frontAd", "sideAd" : "sideAd", "newsPost": "newsPost", "publicPost" : "publicPost"}; // possible types of ads ad analyst collects
+
 
 
 function getReactKey(elem) {
@@ -51,11 +53,11 @@ function getAdId(frontAd) {
 		}
 
 		if (k.indexOf('ad_id')!==-1) {
-			adIds.push(JSON.parse(k.match(/sponsored_data":{[^}]*}/)[0].replace('sponsored_data":',''))["ad_id"])
-
+			let matchedToSponsoredElements = k.match(/sponsored_data":{[^}]*}/);
+			if(matchedToSponsoredElements && matchedToSponsoredElements.length > 0) {
+				adIds.push(JSON.parse(matchedToSponsoredElements[0].replace('sponsored_data":',''))["ad_id"])
+			}
 		}
-
-
 	}
 
 	adIds = getUniqueElems(adIds);
@@ -199,6 +201,7 @@ function findRightSideBrackets(text,position) {
 
 
 function getVideoImage(frontAd) {
+	console.log("getVideoImage");
 	let father = frontAd.getElementsByTagName('video')[0].parentElement;
 	let allChildren = father.getElementsByTagName('*');
 	for (let i=0;i<allChildren.length;i++) {
@@ -357,7 +360,7 @@ function findExtraFRTPIdentifiers(frontAd) {
 
 
 
-function getAdExtraData(customId) {
+function getAdExtraData(customId, type) {
 	try {
 		let elements = document.querySelectorAll('[adan="'+customId+'"]');
 		if (elements.length!=1) {
@@ -368,16 +371,18 @@ function getAdExtraData(customId) {
 
 		let frontAd = elements[0];
 		let [advertiserId,facebookPage,advertiserImage] = getReactAdvertiserInfo(frontAd);
-		let [adId,clientToken] = getAdId(frontAd);
-		let [objId,serialized_frtp_identifiers,story_debug_info]= findExtraFRTPIdentifiers(frontAd);
+		let [adId,clientToken] = [-1, -1];
+		if(type !== TYPES.newsPost && type !== TYPES.publicPost) {
+			[adId, clientToken] = getAdId(frontAd);
+		}
 
+		let [objId,serialized_frtp_identifiers,story_debug_info]= findExtraFRTPIdentifiers(frontAd);
 		let images = getImagesFrontAdsNewInterface(frontAd.getElementsByTagName('a'),frontAd);
 		let video = frontAd.getElementsByTagName('video')>0;
 		let video_id = ''
 		if (video) {
 			video_id = '';
 			images = [getVideoImage(frontAd)];
-
 		}
 
 
@@ -393,8 +398,8 @@ function getAdExtraData(customId) {
 
 
 
-function processAd(customId) {
-	let data = getAdExtraData(customId);
+function processAd(customId, type) {
+	let data = getAdExtraData(customId, type);
 	if(data) {
 		data['newInterface']=true;
 		data['customId'] = customId;

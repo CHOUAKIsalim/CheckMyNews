@@ -3,7 +3,7 @@
 //*****FACEBOOK RELATED URLS********
 var INTERESTSURL = "https://www.facebook.com/ads/profile/interests/";
 var ADVERTISERSURL = "https://www.facebook.com/ads/profile/advertisers/";
-
+ADVERTISERSURLNEWINTERFACE = "https://www.facebook.com/adpreferences/advertisers";
 
 
 
@@ -30,6 +30,7 @@ function getInterestsAdvs(url, type) {
       var intAdvData = JSON.parse(
         request.responseText.replace("for (;;);", "")
       );
+      console.log(intAdvData);
       var data =
         type !== "advertisers"
           ? { data: intAdvData[PAYLOAD][type], type: type + "Data" }

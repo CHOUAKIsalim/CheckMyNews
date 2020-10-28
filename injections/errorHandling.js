@@ -53,10 +53,6 @@ function captureErrorOverload(targetFunction,arguments,returnError) {
         errorInfo['error_message'] = constructErrorMsg(targetFunction,error);
         // chrome.runtime.sendMessage(errorInfo, function(response) {
         window.postMessage(errorInfo, "*");
-
-
-
         return returnError;
-
     }
 }

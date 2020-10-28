@@ -20,8 +20,9 @@ function grabNewsPostsOldInterface() {
         var allDomPosts = $('div[id*="' + HTML_POST_ID + '"]');
         for (let i = 0; i < allDomPosts.length; i++) {
             if (!allAdsId.includes(allDomPosts[i].id)) {
-                let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
-                if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) != -1) {
+//                let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
+  //              if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) != -1) {
+                if (allDomPosts[i].className.indexOf(POST_COLLECTED) !== -1) {
                     continue;
                 }
 
@@ -43,7 +44,7 @@ function grabNewsPostsOldInterface() {
                     console.log('News post collected')
                     postData['landing_pages'].push(_news_domain)
                     collected = true;
-                    captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
+                    collectPost(allDomPosts[i], postData);
                 }
                 else {
                     //Check if this post have landing URL link to a news website or not
@@ -63,7 +64,7 @@ function grabNewsPostsOldInterface() {
                                 postData['landing_pages'].push(shortcut_domain);
                             else
                                 postData['landing_pages'].push(landing_domain);
-                            captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
+                            collectPost(allDomPosts[i], postData);
                             collected = true;
                             break;
                         }
@@ -72,7 +73,7 @@ function grabNewsPostsOldInterface() {
                 if(collected === false) {
                     if(isPublicPost(postData['raw_ad'])) {
                         postData["type"] = TYPES.publicPost;
-                        captureErrorContentScript(getExplanationUrlFrontAds, [allDomPosts[i], postData], undefined);
+                        collectPost(allDomPosts[i], postData);
                     }
                 }
 
@@ -80,6 +81,12 @@ function grabNewsPostsOldInterface() {
         }
 
     }
+}
+
+function collectPost(domPost, postData) {
+    addEventListeners(postData);
+    MouseTrack(postData);
+    captureErrorContentScript(getExplanationUrlFrontAds, [domPost, postData], undefined);
 }
 
 function removeCommentsFromPost(raw_ad) {

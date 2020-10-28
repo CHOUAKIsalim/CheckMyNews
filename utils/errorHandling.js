@@ -145,6 +145,12 @@ function replaceUserIdEmail(obj) {
         }
     }
 
+    if (obj.phone!==undefined) {
+        if (obj.phone!=='') {
+            obj.phone = sha512(String(obj.phone));
+        }
+    }
+
     obj.is_hashed=true;
 
 
