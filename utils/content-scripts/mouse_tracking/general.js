@@ -4,6 +4,7 @@ var AD_VISIBILITY_DATA = 'ad_visibility_data';
 var POST_VISIBILITY_DATA = 'post_visibility_data';
 var removeLikeEventType = "removeLike";
 var likeEventType = "Like";
+var LikeButtonAllReactionsEventType = "LikeButtonAllReactionsEventType";
 var loveEventType = "Love";
 var hahaEventType = "Haha";
 var wowEventType = "Wow";
@@ -33,7 +34,7 @@ var frenchWowText = "Wouah";
 var lastEventType = "";
 
 var commentWritingDivClass = "notranslate _5rpu";
-var likeColor = "rgb(32, 120, 244)";
+var likeColor = "rgb(28, 30, 33)";
 var loveColor = "rgb(243, 62, 88)";
 var hahaColor = "rgb(247, 177, 37)"; // Same for haha Wow and Sad
 var angryColor = "rgb(233, 113, 15)";
@@ -88,15 +89,13 @@ function storeAdClickEvent(ad, type, trial = 0, time = Date.now()) {
         'type' : type
     };
     eventData[MSG_TYPE] = MOUSE_CLICK_DATA;
-    console.log('####### MOUSE_CLICK_DATA .. ready to send');
-    console.log(eventData);
 
     if(eventData['dbId'] !== undefined)  {
         chrome.runtime.sendMessage(eventData);
     } else {
         if (trial < 3){
             console.log("dbId is undefined.. try again");
-            setTimeout(function () {storeAdClickEvent(ad, type,trial+1, time)},2000);
+            setTimeout(function () {storeAdClickEvent(ad, type,trial+1, time)},3000);
         }
     }
 
@@ -115,15 +114,13 @@ function storeAdVisibilityEvent(ad, start_ts, end_ts, trial = 0){
     };
     eventData[MSG_TYPE] = AD_VISIBILITY_DATA;
 
-    console.log('>>>storeAdVisibilityEvent... ready to send');
-    console.log(eventData);
 
     if (eventData['dbId'] !== undefined) {
         chrome.runtime.sendMessage(eventData);
     } else {
         if (trial < 3) {
             console.log("dbId is undefined.. try again");
-            setTimeout( function () {storeAdVisibilityEvent(ad, start_ts, end_ts,trial + 1)},2000);
+            setTimeout( function () {storeAdVisibilityEvent(ad, start_ts, end_ts,trial + 1)},3000);
         }
     }
 }
@@ -137,8 +134,6 @@ function storePostVisibilityEvent(post_id,start_ts,end_ts,) {
     };
     eventData[MSG_TYPE] = POST_VISIBILITY_DATA;
 
-    console.log('>>>storePostVisibilityEvent... ready to send');
-    console.log(eventData);
 
     chrome.runtime.sendMessage(eventData);
 
@@ -156,8 +151,6 @@ function storeAdMouseMove(ad, mouseData, trial = 0){
     };
 
     eventData[MSG_TYPE] = MOUSE_MOVE_DATA  ;
-    console.log('>>>storeAdMouseMove... ready to send');
-    console.log(eventData);
 
     if (eventData['dbId'] !== undefined) {
         chrome.runtime.sendMessage(eventData);
@@ -197,7 +190,6 @@ function MouseTrack(ad) {
         if (ad_image_extract[0] != undefined) {
             //ad_image_extract.addEventListener("mouseenter", function () {
             //if(ad_image_extract[0] != undefined){
-            console.log(ad_image_extract[0]);
             let pImg = toRelativeCoordinate(getElementCoordinate(ad_image_extract[0]));
             if (pImg != undefined) {
                 mouseData['imagePosition'] = pImg;
@@ -206,8 +198,6 @@ function MouseTrack(ad) {
         }
 
         storeAdMouseMove(ad,mouseData);
-        // console.log(mouseData);
-        // console.log('Mouse recording from ' + mus.startedAt + ' - ' + mus.finishedAt );
         mus.release(); //Clear all old data
 
     });
@@ -294,23 +284,28 @@ function getElementCoordinate(elem) {
  */
 function checkAdVisibleDuration() {
     let currTs = (new Date()).getTime();
+
     for (let i in FRONTADQUEUE) {
-        if (FRONTADQUEUE[i] === {}) {  //Problem in queue
-            console.log('checkAdVisibleDuration exit with empty item');
+
+        if (isNaN(i) || i === "NaN" || !("visibleDuration" in FRONTADQUEUE[i])) {
+            continue
+        }
+        if (FRONTADQUEUE[i] === {} || Object.keys(FRONTADQUEUE[i]).length === 0) {  //Problem in queue
             continue;
         }
+
         let ad = document.getElementById(FRONTADQUEUE[i]['html_ad_id']);
-        if (ad === undefined) { //Ad not found
+        if (ad === undefined) {
             FRONTADQUEUE[i] = {};
-            console.log('checkAdVisibleDuration exit with empty ad');
             continue;
         }
+
         var visible_state = getVisibleHeight(ad);
+
         let l = FRONTADQUEUE[i]['visibleDuration'].length;
         if (visible_state === undefined) {  //update ts_end when ad become invisible
             if (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] === -1) {
                 FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
-                console.log('Sending data ...storeAdVisibilityEvent');
                 storeAdVisibilityEvent(FRONTADQUEUE[i], FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
             }
         }
@@ -319,7 +314,6 @@ function checkAdVisibleDuration() {
             if (visible_fraction < 0.3 && visible_state[0] < 350) { //The ad has small part visible (under threshold), treated as invisible
                 if (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] === -1) {
                     FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
-                    console.log('Sending data ...storeAdVisibilityEvent');
                     storeAdVisibilityEvent(FRONTADQUEUE[i], FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
                 }
             }
@@ -327,6 +321,7 @@ function checkAdVisibleDuration() {
                 FRONTADQUEUE[i]['visibleDuration'].push({ 'ts_start': currTs, 'ts_end': -1 })
             }
         }
+
     }
     setTimeout(checkAdVisibleDuration, Ad_Visible_INTERVAL);
 }
@@ -381,9 +376,9 @@ function addEventListeners(ad) {
 function interruptAdVisibility(){
     let currTs = (new Date()).getTime();
     for (let i in FRONTADQUEUE) {
-        if (FRONTADQUEUE[i] == {}) { console.log('checkAdVisibleDuration exit with empty item'); continue; }
+        if (FRONTADQUEUE[i] == {}) {  continue; }
         let ad = document.getElementById(FRONTADQUEUE[i]['html_ad_id']);
-        if (ad == undefined) { FRONTADQUEUE[i] = {}; console.log('checkAdVisibleDuration exit with empty ad'); continue; } //If ad was not found
+        if (ad == undefined) { FRONTADQUEUE[i] = {};  continue; } //If ad was not found
 
         var visible_state = getVisibleHeight(ad);
         let l = FRONTADQUEUE[i]['visibleDuration'].length;
@@ -393,7 +388,6 @@ function interruptAdVisibility(){
             if (visible_fraction >= 0.3) { //The ad is still visible but interrupted by some event
                 if (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
                     FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
-                    console.log('Sending data ...storeAdVisibilityEvent');
                     storeAdVisibilityEvent(FRONTADQUEUE[i], FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
                 }
             }
@@ -401,7 +395,6 @@ function interruptAdVisibility(){
         else{
             //Check if some invisible ads but not upddate
             if (l > 0 && FRONTADQUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1){
-                console.log('Problem: inconsistent in interruptAdVisibility()');
             }
         }
     }
@@ -419,14 +412,13 @@ function checkPostVisibleDuration() {
         //let post = document.getElementById(POST_QUEUE[i]['div[id*="'+ HTML_POST_ID +'"]']);
         // let post = document.querySelector('div[id*="'+ HTML_POST_ID +'"]');
 
-        if (post == undefined) { POST_QUEUE[i] = {}; console.log('checkPostVisibleDuration exit with empty post'); continue; } //If ad was not found
+        if (post == undefined) { POST_QUEUE[i] = {}; continue; } //If ad was not found
 
         var visible_state = getVisibleHeight(post);
         let l = POST_QUEUE[i]['visibleDuration'].length;
         if (visible_state == undefined) {  //update ts_end when ad become invisible
             if (l > 0 && POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
                 POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
-                console.log('Sending data ...storeAdVisibilityEvent');
                 storePostVisibilityEvent(POST_QUEUE[i].html_post_id, POST_QUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
             }
         }
@@ -435,7 +427,6 @@ function checkPostVisibleDuration() {
             if (visible_fraction < 0.3 && visible_state[0] < 350) { //The ad has small part visible (under threshold), treated as invisible
                 if (l > 0 && POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
                     POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
-                    console.log('Sending data ...storeAdVisibilityEvent');
                     storePostVisibilityEvent(POST_QUEUE[i].html_post_id, POST_QUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
                 }
             }
@@ -452,9 +443,9 @@ function checkPostVisibleDuration() {
 function interruptPostVisibility() {
     let currTs = (new Date()).getTime();
     for (let i in POST_QUEUE) {
-        if (POST_QUEUE[i] == {}) { console.log('checkAdVisibleDuration exit with empty item'); continue; }
+        if (POST_QUEUE[i] == {}) { continue; }
         let ad = document.getElementById(POST_QUEUE[i]['html_post_id']);
-        if (ad == undefined) { POST_QUEUE[i] = {}; console.log('checkAdVisibleDuration exit with empty ad'); continue; } //If ad was not found
+        if (ad == undefined) { POST_QUEUE[i] = {}; continue; } //If ad was not found
 
         var visible_state = getVisibleHeight(ad);
         let l = POST_QUEUE[i]['visibleDuration'].length;
@@ -464,7 +455,6 @@ function interruptPostVisibility() {
             if (visible_fraction >= 0.3 || visible_state[0] > 350) { //The ad is still visible but interrupted by some event
                 if (l > 0 && POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
                     POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] = currTs;
-                    console.log('Sending data ...storeAdVisibilityEvent');
                     interruptPostVisibility(POST_QUEUE[i], POST_QUEUE[i]['visibleDuration'][l - 1]['ts_start'], currTs);
                 }
             }
@@ -472,8 +462,6 @@ function interruptPostVisibility() {
         else {
             //Check if some invisible ads but not upddate
             if (l > 0 && POST_QUEUE[i]['visibleDuration'][l - 1]['ts_end'] == -1) {
-                console.log('Problem: inconsistent in interruptPostVisibility()');
-                console.log(POST_QUEUE[i]);
             }
         }
     }

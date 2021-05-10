@@ -1,5 +1,5 @@
 var LANDING_DOMAIN_NEW_INTERFACE_CLASS = "oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1et5uql a8c37x1j hop8lmos enqfppq2 e9vueds3 j5wam9gi knj5qynh m9osqain ni8dbmo4 stjgntxs ltmttdrg g0qnabr5";
-var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
+    var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
 var POST_COLLECTED = "post_collected";
 var COMMENTS_CLASS_NEW_INTERFACE = "l9j0dhe7 ecm0bbzt hv4rvrfc qt6c0cv9 dati1w0a j83agx80 btwxx1t3 lzcic4wl";
 var POST_TEXT_CLASS_NEW_INTERFACE = "ecm0bbzt hv4rvrfc ihqw7lf3 dati1w0a";
@@ -124,75 +124,81 @@ function anonymizePostNewInterface(raw_ad, advertiser_facebook_page) {
 
 }
 
+/**
+ * Grab News Posts from user view
+ */
+function filterCollectedPosts(posts) {
+    var filteredPosts = [];
+    for (let i=0;i<posts.length;i++) {
+        let post = posts[i];
+        if (post.className.indexOf(COLLECTED) !== -1) {
+            continue
+        }
+        if (post.className.indexOf(POST_COLLECTED) !== -1) {
+            continue
+        }
 
+        if (post.getAttribute('adan')) {
+            continue
+        }
+
+        filteredPosts.push(post);
+    }
+    return filteredPosts;
+
+}
 /**
  * Grab News Posts from user view
  */
 function grabNewsPostsNewInterface() {
 
-    if (window.location.href.indexOf('ads/preferences') === -1) {
+    var allDomPosts = document.getElementsByClassName(POST_CLASS_NEW_INTERFACE);
 
-        var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
-        var allDomPosts = document.getElementsByClassName(POST_CLASS_NEW_INTERFACE);
-        for (let i = 0; i < allDomPosts.length; i++) {
-            if (!allAdsId.includes(allDomPosts[i].parentElement.id)) {
-                // Changed the condition to collect even non visible posts
-                // let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
-                //if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) !== -1)
-                if (allDomPosts[i].className.indexOf(POST_COLLECTED) !== -1) {
+    allDomPosts = filterCollectedPosts(allDomPosts)
+    for (let i = 0; i < allDomPosts.length; i++) {
+
+        let postData = processNewsPostNewInterface(allDomPosts[i]);
+        if (isEqual(postData, {}) === true) {
+            console.log('processNewsPost does not work');
+            continue;
+        }
+
+
+        let collected = false;
+        postData[MSG_TYPE] = FRONTADINFO;
+
+        if (postData["landing_domain"]) {
+            allDomPosts[i].className += " " + POST_COLLECTED;
+            postData['landing_pages'].push(postData["landing_domain"]);
+            collected = true;
+            collectPostNewInterface(postData);
+            break;
+        }
+        else {
+            for (let j = 0; j < postData['landing_pages'].length; j++) {
+                landing_domain = url_domain(postData['landing_pages'][j]);
+                shortcut_domain = getShortcutNewsDomain(landing_domain);
+                if (landing_domain === '' || landing_domain === undefined)
                     continue;
-                }
-
-                let postData = processNewsPostNewInterface(allDomPosts[i]);
-                if (isEqual(postData, {}) === true) {
-                    console.log('processNewsPost does not work');
-                    continue;
-                }
-                let collected = false;
-                postData[MSG_TYPE] = FRONTADINFO;
-
-                if (postData["landing_domain"]) {
-                    COLLECTED_NEWS_DOMAINS.push(postData["landing_domain"]);
-                    //Store collected domains of news post in order to test
+                if (isNewsDomain(landing_domain) || shortcut_domain !== '') {
                     allDomPosts[i].className += " " + POST_COLLECTED;
-                    console.log('News post collected');
-                    postData['landing_pages'].push(postData["landing_domain"]);
-                    collected = true;
+                    if (shortcut_domain !== '')
+                        postData['landing_pages'].push(shortcut_domain);
+                    else
+                        postData['landing_pages'].push(landing_domain);
                     collectPostNewInterface(postData);
+                    collected = true;
                     break;
-                }
-                else {
-                    //Check if this post have landing URL link to a news website or not
-                    for (let j = 0; j < postData['landing_pages'].length; j++) {
-                        landing_domain = url_domain(postData['landing_pages'][j]);
-                        shortcut_domain = getShortcutNewsDomain(landing_domain);
-                        if (landing_domain === '' || landing_domain === undefined)
-                            continue;
-                        if (isNewsDomain(landing_domain) || shortcut_domain !== '') {
-                            //Store collected domains of news post in order to test
-                            COLLECTED_NEWS_DOMAINS.push(landing_domain);
-                            allDomPosts[i].className += " " + POST_COLLECTED;
-                            console.log('News post collected');
-                            if (shortcut_domain !== '')
-                                postData['landing_pages'].push(shortcut_domain);
-                            else
-                                postData['landing_pages'].push(landing_domain);
-                            collectPostNewInterface(postData);
-                            collected = true;
-                            break;
-                        }
-                    }
-                }
-                if(collected === false) {
-                    if(isPublicPostNewInterface(postData['raw_ad'])) {
-                        postData["type"] = TYPES.publicPost;
-                        allDomPosts[i].className += " " + POST_COLLECTED;
-                        collectPostNewInterface(postData);
-                    }
                 }
             }
         }
-
+        if(collected === false) {
+            if(isPublicPostNewInterface(postData['raw_ad'])) {
+                postData["type"] = TYPES.publicPost;
+                allDomPosts[i].className += " " + POST_COLLECTED;
+                collectPostNewInterface(postData);
+            }
+        }
     }
 }
 
@@ -218,13 +224,21 @@ function getLandingDomainNewIterface(postObj) {
 
 
 function getDisplayedDomains(html) {
-    for(let i=0; i<NEWS_DOMAINS.length; i++) {
-        if(html.includes(NEWS_DOMAINS[i].toLowerCase()) && !FACEBOOK_DOMAINS.includes(NEWS_DOMAINS[i])) {
-            return NEWS_DOMAINS[i];
+
+    let domains = getNewsDomainsArray();
+    if(domains === undefined){
+        throw "NEWS_DOMAINS AND SHORT_NEWS_DOMAINS ARE UNDEFINED";
+    }
+
+    for(let i=0; i<domains.length; i++) {
+        if(html.includes(domains[i].toLowerCase()) && !FACEBOOK_DOMAINS.includes(domains[i])) {
+            return domains[i];
         }
     }
     return ''
 }
+
+
 function processNewsPostNewInterface(frontAd) {
     var html_ad_id = undefined;
     if(frontAd.id) {

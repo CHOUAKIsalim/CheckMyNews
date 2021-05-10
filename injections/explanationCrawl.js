@@ -74,6 +74,36 @@ function getResourcesFromExplanation(explanationDialogText) {
 
 }
 
+
+function onlyUnique(value, index, self) {
+    return self.indexOf(value) === index;
+}
+
+
+function getResourcesFromExplanationNewInterface(sr_revision_id) {
+    let jsResources = []
+    let html_page = document.documentElement.innerHTML;
+    let resourceMapPost = html_page.indexOf(sr_revision_id.toString()+'},"rsrcMap"');
+
+
+    while (resourceMapPost !== - 1) {
+
+        let resources = findNextJSONObject(html_page, resourceMapPost + html_page.substring(resourceMapPost).indexOf("rsrcMap"))
+        for (let property in resources){
+            if (resources[property]['type']!=='js') {
+                continue;
+            }
+            jsResources.push(resources[property]['src']);
+        }
+
+        resourceMapPost = html_page.indexOf(sr_revision_id.toString()+'},"rsrcMap"', resourceMapPost + 1);
+
+    }
+
+    return jsResources.filter(onlyUnique)
+}
+
+/**
 function getResourcesFromExplanationNewInterface(explanationDialogText) {
     const resourceMapPos = explanationDialogText.indexOf('rsrcMap');
     if (resourceMapPos===-1) {
@@ -90,8 +120,8 @@ function getResourcesFromExplanationNewInterface(explanationDialogText) {
     }
 
     return jsResources;
-
 }
+ **/
 
 
 
@@ -127,11 +157,14 @@ function findNextJSONObject(text,position) {
  * @param  {string} jsResource a js file that conntains the functions that Facebook users in order to send the doc_id
  * @return {string}            the doc id in string form
  */
-function getDocIdFromWaistResource(jsResource) {
+function getDocIdFromWaistResource(jsResource, module) {
     const resourceLines = jsResource.match(/[^\r\n]+/g);
     for (let i=0;i<resourceLines.length;i++) {
-        if (resourceLines[i].indexOf('AdsPrefWAISTDialogQuery.graphql",[')!==-1) {
-            return resourceLines[i].match('id:"([0-9]*)"')[1]
+        if (resourceLines[i].indexOf(module+'",[')!==-1) {
+            let matchs = resourceLines[i].match('id:"([0-9]*)"')
+            if (matchs.length >= 2) {
+                return matchs[1]
+            }
         }
     }
     throw "Doc id was not found:"+ jsResource;
@@ -145,50 +178,63 @@ function getDocIdFromWaistResource(jsResource) {
  * @param  {Function} callback    function to be called after the docId is successfully retrieved
  * @return {}               
  */
-function getDocIdFromWaistResources(jsResources,callback) {
+function getDocIdFromWaistResources(jsResources,callback, module) {
     if (jsResources.length===0) {
         throw "Waist resource not found"
     }
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET",jsResources[0], true);
     xmlhttp.onload = function (e) {
-        // EXPLANATION_REQUESTS[CURRENT_USER_ID].push((new Date()).getTime())
-
         if (xmlhttp.readyState === 4 && xmlhttp.status === 200){
-            // console.log(xmlhttp.responseText);
-            if (xmlhttp.responseText.indexOf('AdsPrefWAISTDialogQuery.graphql')!==-1) {
-                // console.log("Graphql ");
-                //TODO: channge the capture error background
-                docId = captureErrorOverload(getDocIdFromWaistResource,[xmlhttp.responseText],undefined);
+            if (xmlhttp.responseText.indexOf(module)!==-1) {
+                docId = captureErrorOverload(getDocIdFromWaistResource,[xmlhttp.responseText, module],undefined);
 
-                debugLog("Found docId: "+ docId);
-
-                // setSavedDocId(userId,docId);
-                callback(docId);
-                return;
-                // TODO: send message if doc id has changed
+                if ((docId)) {
+                    callback(docId);
+                    return;
+                }
 
             }
-
-            getDocIdFromWaistResources(jsResources.slice(1,jsResources.length),callback);
+            getDocIdFromWaistResources(jsResources.slice(1,jsResources.length),callback, module);
             return;
 
-            // console.log(typeof xmlhttp.responseText);
         }
-        // TODO: SEND IF ERROR
-        // console.log("Error");
+        else{
+
+        }
+    }
+
+    xmlhttp.onerror = function (e) {
+        console.log("on Error")
+        console.log(e)
+        getDocIdFromWaistResources(jsResources.slice(1,jsResources.length),callback, module);
     }
 
     // xmlhttp.setRequestHeader('Origin', 'https://www.facebook.com/');
     // xmlhttp.setRequestHeader('Referer', 'https://www.facebook.com/');
-    xmlhttp.send(null);
+    try{
+        xmlhttp.send(null);
+    }
+    catch (e) {
+        console.log('error')
+        console.log(e)
+    }
 
 }
 
 
+function get_sr_revision_id(explanationDialogText) {
 
+    let sr_revision_matches = explanationDialogText.match(/"sr_revision":([0-9]*)/g)
+    if (sr_revision_matches.length > 0) {
+        let sr_revision_object = JSON.parse('{' + sr_revision_matches[0] + '}');
+        return sr_revision_object["sr_revision"];
+    }
+    return -1;
 
-function getDocIdFromMenuResourcesNewInterface(objId,serialized_frtp_identifiers,story_debug_info,callback) {
+}
+
+function getDocIdFromMenuResourcesNewInterface(objId,serialized_frtp_identifiers,story_debug_info,should_get_demographics, callback) {
     let params = require('getAsyncParams')('POST');
     params.doc_id = require("CometFeedStoryMenuQuery$Parameters").params.id;
     params.av = params.__user;
@@ -200,11 +246,17 @@ function getDocIdFromMenuResourcesNewInterface(objId,serialized_frtp_identifiers
     xmlhttp.open("POST",GRAPHQLURL, true);
     xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     xmlhttp.onload = function(e) {
-        let jsResources= getResourcesFromExplanationNewInterface(xmlhttp.responseText);
-        captureErrorOverload(getDocIdFromWaistResources,[jsResources,callback],undefined);
 
-}
+        let sr_revision_id = get_sr_revision_id(xmlhttp.responseText);
+        let jsResources= getResourcesFromExplanationNewInterface(sr_revision_id);
 
+        let module = "AdsPrefWAISTDialogQuery.graphql"
+        captureErrorOverload(getDocIdFromWaistResources,[jsResources,callback, module],undefined);
+
+        if(should_get_demographics) {
+            captureErrorOverload(getDemographicsAndBehaviorsNewInterface,[jsResources],undefined);
+        }
+    }
 
     xmlhttp.send(param(params));
 
@@ -212,14 +264,18 @@ function getDocIdFromMenuResourcesNewInterface(objId,serialized_frtp_identifiers
 
 
 
-function getExplanationsManuallyNewInterface(userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,docId,getNewDocId,adType,objId,serialized_frtp_identifiers,story_debug_info) {
+function getExplanationsManuallyNewInterface(userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,docId,getNewDocId,adType,objId,serialized_frtp_identifiers,story_debug_info, should_get_demographics) {
          if (getNewDocId===true){
+
+             /** I COMMENT THIS BECAUSE ITS USELESS, IT ALWAYS FAILS
             let adsPrefWAISTDialogQuery = require("AdsPrefWAISTDialogQuery.graphql");
             if (!!adsPrefWAISTDialogQuery===true) {
                 captureErrorOverload(getGraphQLExplanations,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,adsPrefWAISTDialogQuery.params.id,getNewDocId],undefined);
                 return;
             }
-            captureErrorOverload(getDocIdFromMenuResourcesNewInterface,[objId,serialized_frtp_identifiers,story_debug_info,function(newDocId) {
+              **/
+
+            captureErrorOverload(getDocIdFromMenuResourcesNewInterface,[objId,serialized_frtp_identifiers,story_debug_info,should_get_demographics,function(newDocId) {
                 captureErrorOverload(getGraphQLExplanations,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,newDocId,getNewDocId],undefined);
                 debugLog(adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken);
             }],undefined);
@@ -232,9 +288,6 @@ function getExplanationsManuallyNewInterface(userId,adId,explanationUrl,dbRecord
         return
 
 
-
-
-
 }
 
 /**
@@ -245,9 +298,9 @@ function getExplanationsManuallyNewInterface(userId,adId,explanationUrl,dbRecord
  * @param  {[type]} timestamp      [description]
  * @return {[type]}                [description]
  */
-function getExplanationsManually(userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,docId,getNewDocId,newInterface,adType,objId,serialized_frtp_identifiers,story_debug_info) {
+function getExplanationsManually(userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,docId,getNewDocId,newInterface,adType,objId,serialized_frtp_identifiers,story_debug_info, should_get_demographics) {
     if (newInterface===true) {
-        captureErrorOverload(getExplanationsManuallyNewInterface,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,docId,getNewDocId,adType,objId,serialized_frtp_identifiers,story_debug_info],undefined);
+        captureErrorOverload(getExplanationsManuallyNewInterface,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,docId,getNewDocId,adType,objId,serialized_frtp_identifiers,story_debug_info, should_get_demographics],undefined);
         return
     }
 
@@ -307,7 +360,7 @@ function getExplanationsManually(userId,adId,explanationUrl,dbRecordId,timestamp
                 jsResources = captureErrorOverload(getResourcesFromExplanation,[response],undefined);
                 debugLog(jsResources);
                 captureErrorOverload(getDocIdFromWaistResources,[jsResources,function(newDocId) {
-                captureErrorOverload(getGraphQLExplanations,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,newDocId,getNewDocId],undefined);
+                    captureErrorOverload(getGraphQLExplanations,[userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,newDocId,getNewDocId],undefined);
                     debugLog(adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken);
                 }],undefined);
                 
@@ -340,6 +393,7 @@ function getExplanationsManually(userId,adId,explanationUrl,dbRecordId,timestamp
  * @return {boolean}          true if explanation response contains targeting data
  */
 function containsTargetingDataGraphQL(response) {
+    debugLog(response);
     var responseObject = JSON.parse(response);
     return responseObject['data']['waist_targeting_data'].length >0;
 }
@@ -360,13 +414,14 @@ function containsTargetingDataGraphQL(response) {
  * @return {[type]}                    [description]
  */
 function getGraphQLExplanations(userId,adId,explanationUrl,dbRecordId,timestamp,graphQLAsyncParams,clientToken,docId,getNewDocId,newInterface,adType,objId,serialized_frtp_identifiers,story_debug_info) {
+    debugLog("getGraphQLExplanations");
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("POST",GRAPHQLURL, true);
     xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     xmlhttp.onload = function(e) {
+        debugLog("On load");
             // Do whatever with response
         if (xmlhttp.readyState === 4 && xmlhttp.status === 200){
-            // TODO: RE DO THIS WHOLE LOGIC IN THE BACKGROUND SCRIPT TO CHANNGE AS LITTLE AS POSSIBLE
             var containsTargetingData = captureErrorOverload(containsTargetingDataGraphQL,[xmlhttp.response],undefined);
             debugLog("Object contains targeting data:");
             debugLog(containsTargetingData);
@@ -380,12 +435,13 @@ function getGraphQLExplanations(userId,adId,explanationUrl,dbRecordId,timestamp,
             }
 
             if (containsTargetingData===true) {
-                window.postMessage({"type":"explanationReply","adId":adId,"dbRecordId":dbRecordId,"response":xmlhttp.response,"explanationType":"graphQLExplanation","docId":docId},"*");
+                window.postMessage({"type":"explanationReply","adId":adId,"dbRecordId":dbRecordId,"response":xmlhttp.response,"explanationType":"graphQLExplanation","docId":docId, "getNewDocId" : getNewDocId},"*");
 
 
 
                 return;
             }
+
             window.postMessage({"type":"explanationReply","adId":adId,"dbRecordId":dbRecordId,"response":xmlhttp.response,"explanationType":"graphQLOtherError","docId":docId,"getNewDocId":getNewDocId, adType:adType,
                     objId:objId,
                     serialized_frtp_identifiers:serialized_frtp_identifiers,

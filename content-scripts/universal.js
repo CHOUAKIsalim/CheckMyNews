@@ -3,13 +3,11 @@
 
 function universalOnMessageFunction(msg,sender,sendResponse) {
         if (!sender.tab) {
-        console.log('FROM background');
-        console.log(msg);
         if (msg.type === 'getInterests'){
             data = {grabInterests:true}
             window.postMessage(data,"*")
         }
-        
+
         if (msg.type === 'getAdvertisers'){
             data = {grabAdvertisers:true}
             window.postMessage(data,"*")
@@ -46,44 +44,42 @@ function universalCommunicationWithInjections(event) {
 
 
     if (event.data.type && (event.data.type=='advertisersData')){
-        console.log("Content script received message: ");
-        console.log(event.data)
         var data = event.data
         data['user_id'] =getUserId()
         data['timestamp'] = (new Date).getTime();
-        console.log("---------------------------------------------------");
-        console.log("universalCommunicationWithInjections - advertisersData");
-        console.log(data);
         chrome.runtime.sendMessage(data);
         return;
         }
     
     
-    if (event.data.type && (event.data.type=='interestsData')){
-        console.log("Content script received message: " );
+    if (event.data.type && (event.data.type=='demographicsNewInterface')){
         var data = event.data
         data['user_id'] =getUserId()
         data['timestamp'] = (new Date).getTime();
-
         chrome.runtime.sendMessage(data);   
-        return;     
+        return;
+    }
 
-        }
+
+    if (event.data.type && (event.data.type=='interestsData')){
+        var data = event.data
+        data['user_id'] =getUserId()
+        data['timestamp'] = (new Date).getTime();
+        chrome.runtime.sendMessage(data);
+        return;
+    }
+
 
     if (event.data.type && (event.data.type == 'adActivityList')) {
-        console.log("Content script received adActivityList: ");
         var data = event.data
         data['user_id'] = getUserId()
         data['timestamp'] = (new Date).getTime();
-        console.log('Content: received adActivityList...')
-        console.log(data);
-        
+
         chrome.runtime.sendMessage(data);
 
 
         // //Get ad activity from next page
         if (data['hasmore'] == true) {
-            console.log('get ad activity next page ..' + data['lastItem']);
             var lastItem = data['lastItem']
             data = { 'grabAdActivity': true, 'lastItem': lastItem };
             window.postMessage(data, '*');
@@ -94,7 +90,6 @@ function universalCommunicationWithInjections(event) {
     }
 
     if (event.data.type && (event.data.type == 'adActivityData')) {
-        console.log("Content script received adActivityData: ");
         var data = event.data;
         data['user_id'] = getUserId();
         data['timestamp'] = (new Date).getTime();
@@ -103,46 +98,13 @@ function universalCommunicationWithInjections(event) {
         return;      
     }
 
-    if (event.data.type && (event.data.type == 'statusAdBlocker')) {
-        if(event.data.value === true) {
-            if(timeNotUsingAdBlock === undefined || timeUsingAdBlock > timeNotUsingAdBlock) {
-                let currentTime = (new Date()).getTime();
-                timeNotUsingAdBlock = currentTime;
-                dataToSend = {
-                    'user_id': getUserId(),
-                    'timestamp': currentTime,
-                    'event' : 'usingAdBlocker'
-                };
-                dataToSend[MSG_TYPE] = 'adblock-detection';
-                chrome.runtime.sendMessage(dataToSend);
-
-            }
-        }
-        else {
-            if(timeUsingAdBlock === undefined || timeUsingAdBlock < timeNotUsingAdBlock) {
-                let currentTime = (new Date()).getTime();
-                timeUsingAdBlock = currentTime;
-                dataToSend = {
-                    'user_id': getUserId(),
-                    'timestamp': currentTime,
-                    'event' : 'notUsingAdBlocker'
-                };
-                dataToSend[MSG_TYPE] = 'adblock-detection';
-                chrome.runtime.sendMessage(dataToSend);
-
-            }
-
-        }
-
-        console.log("Content script recieved STATUS ADBLOCKER");
-        console.log('AdBlocker detected:' + event.data.value);
+    if (event.data.type && (event.data.type === 'statusAdBlocker')) {
         var data = event.data;
         chrome.runtime.sendMessage(data);
         return;
     }
 
     if (event.data.type && (event.data.type == 'explanationReply')) {
-        console.log("Content script received explanationReply ");
         var data = event.data;
         data['message_type']=data.type;
         delete data.type;

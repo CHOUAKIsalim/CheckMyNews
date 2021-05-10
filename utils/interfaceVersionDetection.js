@@ -3,9 +3,14 @@ var INTERFACE_VERSIONS = {unknown:"UNKNOWN",old:"OLD",new:"NEW"};
 var new_interface_sent = false;
 
 
+function initializeUsersNewInterfaceSent() {
+    if (!localStorage.newInterfaceSent) {
+        localStorage.newInterfaceSent = JSON.stringify([]);
+    }
+}
+
 function initializeUserInterfaceVersion(userId){
    if (!localStorage.userInterfaceVersion) {
-
         localStorage.userInterfaceVersion = JSON.stringify({});
     }
 
@@ -25,22 +30,37 @@ function setUserInterfaceVersion(userId,version) {
 	initializeUserInterfaceVersion(userId);
     let allVersions = JSON.parse(localStorage.userInterfaceVersion);
     allVersions[userId] = version;
-    if(version === 'NEW' && new_interface_sent===false) {
-        sendNewVersionDetected();
+    if(version === 'NEW') {
+        sendNewVersionDetected(userId);
     }
     localStorage.userInterfaceVersion = JSON.stringify(allVersions); 
 
 }
 
+function addUserToNewInterfaceSent(user_id) {
+    initializeUsersNewInterfaceSent()
+    let allUsersNewInterface = JSON.parse(localStorage.newInterfaceSent);
+    if (allUsersNewInterface.indexOf(user_id) === -1 ){
+        allUsersNewInterface.push(user_id);
+        localStorage.newInterfaceSent = JSON.stringify(allUsersNewInterface);
+    }
+}
 
-function sendNewVersionDetected() {
 
+function sendNewVersionDetected(user_id) {
 
-    if(CURRENT_USER_ID !== -1) {
+    initializeUsersNewInterfaceSent()
 
-        new_interface_sent = true;
+    let allUsersNewInterface = JSON.parse(localStorage.newInterfaceSent);
+
+    if (allUsersNewInterface.indexOf(user_id) !== -1) {
+        return
+    }
+
+    if(user_id !== -1) {
+
         var data = {
-            user_id : CURRENT_USER_ID,
+            user_id : user_id,
             status : 'New Interface',
             timestamp : (new Date()).getTime(),
         };
@@ -50,14 +70,11 @@ function sendNewVersionDetected() {
             url: URLS_SERVER.newInterfaceDetected,
             dataType: "json",
             traditional: true,
-            data: JSON.stringify(replaceUserIdEmail(data)   ),
+            data: JSON.stringify(replaceUserIdEmail(data)),
             tryCount: 0,
             retryLimit: 3,
             success: function (a) {
                 if (!a[STATUS] || (a[STATUS] == FAILURE)) {
-                    if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
-                        captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
-                    }
                     this.tryCount++;
                     if (this.tryCount <= this.retryLimit) {
                         console.log('Trying again...')
@@ -66,16 +83,17 @@ function sendNewVersionDetected() {
                     }
                     console.log('Stoping trying...');
                     return true
-                };
+                }
+                else {
+                    addUserToNewInterfaceSent(user_id)
+                }
                 return true
             },
 
             error: function (xhr, textStatus, errorThrown) {
                 this.tryCount++;
                 if (this.tryCount <= this.retryLimit) {
-                    //try again
                     console.log('Trying again...')
-
                     $.ajax(this);
                     return;
                 }

@@ -13,73 +13,60 @@ var LIKES_CLASS = "_81hb";
  */
 function grabNewsPostsOldInterface() {
 
-    if (window.location.href.indexOf('ads/preferences') == -1) {
+ var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
+    var allDomPosts = $('div[id*="' + HTML_POST_ID + '"]');
+    for (let i = 0; i < allDomPosts.length; i++) {
+        if (!allAdsId.includes(allDomPosts[i].id)) {
+            if (allDomPosts[i].className.indexOf(POST_COLLECTED) !== -1) {
+                continue;
+            }
 
-        var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
+            let postData = processNewsPostOldInterface(allDomPosts[i]);
+            if (isEqual(postData, {}) == true || postData['landing_pages'].length == 0) {
+                console.log('processNewsPost does not work')
+                continue; }
 
-        var allDomPosts = $('div[id*="' + HTML_POST_ID + '"]');
-        for (let i = 0; i < allDomPosts.length; i++) {
-            if (!allAdsId.includes(allDomPosts[i].id)) {
-//                let elmPosition = toRelativeCoordinate(getElementCoordinate(allDomPosts[i]));
-  //              if (elmPosition === undefined || allDomPosts[i].className.indexOf(POST_COLLECTED) != -1) {
-                if (allDomPosts[i].className.indexOf(POST_COLLECTED) !== -1) {
-                    continue;
+            let collected = false;
+            postData[MSG_TYPE] = FRONTADINFO;
+            //Extract landing domain from post HTML
+            let _news_domain = getLandingDomain(allDomPosts[i]);
+            if (isNewsDomain(_news_domain)) {
+                allDomPosts[i].className += " " + POST_COLLECTED;
+                // console.log(allDomPosts[i].textContent)
+                // console.log(postData);
+                console.log('News post collected')
+                postData['landing_pages'].push(_news_domain)
+                collected = true;
+                collectPost(allDomPosts[i], postData);
+            }
+            else {
+                //Check if this post have landing URL link to a news website or not
+                for (let j = 0; j < postData['landing_pages'].length; j++) {
+                    landing_domain = url_domain(postData['landing_pages'][j]);
+                    shortcut_domain = getShortcutNewsDomain(landing_domain);
+                    if (landing_domain == '' || landing_domain === undefined)
+                        continue;
+                    if (isNewsDomain(landing_domain) || shortcut_domain !== '') {
+                        allDomPosts[i].className += " " + POST_COLLECTED;
+                        console.log('News post collected')
+                        if (shortcut_domain !== '')
+                            postData['landing_pages'].push(shortcut_domain);
+                        else
+                            postData['landing_pages'].push(landing_domain);
+                        collectPost(allDomPosts[i], postData);
+                        collected = true;
+                        break;
+                    }
                 }
-
-                let postData = processNewsPostOldInterface(allDomPosts[i]);
-                if (isEqual(postData, {}) == true || postData['landing_pages'].length == 0) {
-                    console.log('processNewsPost does not work')
-                    continue; }
-
-                let collected = false;
-                postData[MSG_TYPE] = FRONTADINFO;
-                //Extract landing domain from post HTML
-                let _news_domain = getLandingDomain(allDomPosts[i]);
-                if (isNewsDomain(_news_domain)) {
-                    COLLECTED_NEWS_DOMAINS.push(_news_domain);
-                    //Store collected domains of news post in order to test
-                    allDomPosts[i].className += " " + POST_COLLECTED;
-                    // console.log(allDomPosts[i].textContent)
-                    // console.log(postData);
-                    console.log('News post collected')
-                    postData['landing_pages'].push(_news_domain)
-                    collected = true;
+            }
+            if(collected === false) {
+                if(isPublicPost(postData['raw_ad'])) {
+                    postData["type"] = TYPES.publicPost;
                     collectPost(allDomPosts[i], postData);
                 }
-                else {
-                    //Check if this post have landing URL link to a news website or not
-                    for (let j = 0; j < postData['landing_pages'].length; j++) {
-                        landing_domain = url_domain(postData['landing_pages'][j]);
-                        shortcut_domain = getShortcutNewsDomain(landing_domain);
-                        if (landing_domain == '' || landing_domain === undefined)
-                            continue;
-                        if (isNewsDomain(landing_domain) || shortcut_domain !== '') {
-                            //Store collected domains of news post in order to test
-                            COLLECTED_NEWS_DOMAINS.push(landing_domain)
-                            allDomPosts[i].className += " " + POST_COLLECTED;
-                            // console.log(allDomPosts[i].textContent)
-                            // console.log(postData);
-                            console.log('News post collected')
-                            if (shortcut_domain !== '')
-                                postData['landing_pages'].push(shortcut_domain);
-                            else
-                                postData['landing_pages'].push(landing_domain);
-                            collectPost(allDomPosts[i], postData);
-                            collected = true;
-                            break;
-                        }
-                    }
-                }
-                if(collected === false) {
-                    if(isPublicPost(postData['raw_ad'])) {
-                        postData["type"] = TYPES.publicPost;
-                        collectPost(allDomPosts[i], postData);
-                    }
-                }
-
             }
-        }
 
+        }
     }
 }
 

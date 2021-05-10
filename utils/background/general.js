@@ -33,7 +33,7 @@ var CURRENT_EMAIL = ''; //SAVING CURRENT EMAIL OF USER THAT IS LOGGED IN
 //var CURRENT_PHONE = ''; //SAVING CURRENT PHONE OF USER THAT IS LOGGED IN
 const REQUEST_TYPE = 'POST'; //ALL REQUESTS TO SERVER ARE POST REQUESTS
 const POPUPHTML = 'ui/popup.html?welcome=true'; //popup page to show once if a user has installed the tool but have not given consent
-const MIN_TIMESTAMP_MESSAGE=1523875976; //users before this timestamp that still have the tool installed but have not given consent are being prompted a message
+//const MIN_TIMESTAMP_MESSAGE=1523875976; //users before this timestamp that still have the tool installed but have not given consent are being prompted a message
 
 
 
@@ -74,7 +74,6 @@ function isCurrentUser() {
  * @return {} 
  */
 function genericRequestSuccess() {
-	console.log("Request successful");
 	return;
 }
 
@@ -129,7 +128,6 @@ function isUserRequest(details) {
 
 
     if (initiator) {
-        console.log("Browser version has initiator");
         return initiator.indexOf(FACEBOOK_URL)!=-1;
     }
 
@@ -156,7 +154,6 @@ function getIndexFromList(txt,lst) {
     for (let i=0;i<lst.length;i++) {
         idx = txt.indexOf(lst[i]);
         if (idx>=0) {
-            console.log(idx);
             return idx;
         }
     }

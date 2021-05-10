@@ -36,9 +36,6 @@ var GET_SPONSORED_TEXTS = 'get_sponsored_texts';
 var UPDATE_NUMBER_OF_SURVEYS = "update_number_surveys";
 //*******************************************************************************************************
 
-let timeUsingAdBlock = undefined;
-let timeNotUsingAdBlock = undefined;
-
 
 var sideAds= {};
 
@@ -125,6 +122,15 @@ function getAdFromButton(qId,buttonId) {
 }
 
 
+function getKeyInFrontadqueue(customAdAnalystId) {
+    for (let i in FRONTADQUEUE) {
+        if ((FRONTADQUEUE[i].adanalyst_ad_id===customAdAnalystId)) {
+            return i;
+        }
+    }
+    return NaN
+}
+
 function getAdFromCustomAdanalystId(customAdAnalystId) {
     for (let i in FRONTADQUEUE) {
         if ((FRONTADQUEUE[i].adanalyst_ad_id===customAdAnalystId)) {
@@ -151,7 +157,6 @@ function toggleOpacity(elem) {
 
 function clickOnMenusAd(adId,sideAd,adData) {
 
-    console.log('Processing ' + adId);
 
     var menus = get_dropdown_ad_menus(sideAd[DOM_AD]);
     if (menus.length===0) {
@@ -215,7 +220,6 @@ function clickOnMenusAd(adId,sideAd,adData) {
 
 
 function getExplanationUrlFrontAds(frontAd,adData) {
-
     var buttonId = getButtonId(frontAd)
     adData.buttonId = buttonId;
     addToFrontAdQueue(adData);
@@ -240,21 +244,19 @@ function notifyOverloadForMoreAdInfo(adData) {
  * @return {}
  */
 function grabFeedAds() {
-    if (window.location.href.indexOf('ads/preferences') == -1) {
-        console.log('Grabbing front ads...')
-        var frontAds = captureErrorContentScript(getFeedAdFrames, [], []);
-        for (let i = 0; i < frontAds.length; i++) {
-            let adData = captureErrorContentScript(processFeedAd, [frontAds[i]], {});
-            if (isEqual(adData, {}) == true) {
-                continue;
-            }
-            addEventListeners(adData);
-            MouseTrack(adData);
-
-            frontAds[i].className += " " + COLLECTED;
-            adData[MSG_TYPE] = FRONTADINFO;
-            captureErrorContentScript(getExplanationUrlFrontAds, [frontAds[i], adData], undefined);
+    console.log('Grabbing front ads...')
+    var frontAds = captureErrorContentScript(getFeedAdFrames, [], []);
+    for (let i = 0; i < frontAds.length; i++) {
+        let adData = captureErrorContentScript(processFeedAd, [frontAds[i]], {});
+        if (isEqual(adData, {}) == true) {
+            continue;
         }
+        addEventListeners(adData);
+        MouseTrack(adData);
+
+        frontAds[i].className += " " + COLLECTED;
+        adData[MSG_TYPE] = FRONTADINFO;
+        captureErrorContentScript(getExplanationUrlFrontAds, [frontAds[i], adData], undefined);
     }
 }
 
@@ -266,20 +268,17 @@ function grabFeedAds() {
  * @return {}
  */
 function grabFeedAdsNewInterface() {
-    if (window.location.href.indexOf('ads/preferences')==-1) {
-        console.log('Grabbing front ads...');
-        var frontAds = captureErrorContentScript(getFeedAdFrames,[getParentAdDivNewInterface],[]);
-        for (let i=0;i<frontAds.length;i++) {
-            let adData = captureErrorContentScript(processFeedAdNewInterface,[frontAds[i]],{});
-            if (isEqual(adData,{})==true) {
-                continue;
-            }
-            addEventListeners(adData);
-            MouseTrack(adData);
-            frontAds[i].className += " " + COLLECTED;
-            adData[MSG_TYPE] = FRONTADINFO;
-            captureErrorContentScript(notifyOverloadForMoreAdInfo,[adData],undefined);
+    var frontAds = captureErrorContentScript(getFeedAdFrames,[getParentAdDivNewInterface],[]);
+    for (let i=0;i<frontAds.length;i++) {
+        let adData = captureErrorContentScript(processFeedAdNewInterface,[frontAds[i]],{});
+        if (isEqual(adData,{})==true) {
+            continue;
         }
+        frontAds[i].className += " " + COLLECTED;
+        addEventListeners(adData);
+        MouseTrack(adData);
+        adData[MSG_TYPE] = FRONTADINFO;
+        captureErrorContentScript(notifyOverloadForMoreAdInfo,[adData],undefined);
     }
 }
 
@@ -334,7 +333,6 @@ function getSideAdExplanationUrlAndNotifyBackgroundScript(adData,paramsFinal,adI
  */
 function sendSideAdWithExplanationnUrl(adData,sideAds,adId) {
 
-
     adData[MSG_TYPE] = SIDEADINFO;
     var sideAd = sideAds[adId];
     var menus =  get_dropdown_ad_menus(sideAd[DOM_AD]);
@@ -347,18 +345,10 @@ function sendSideAdWithExplanationnUrl(adData,sideAds,adId) {
     // var asyncParametersGraphQL = SECOND_ASYNCPARAMS;
 
     adData.graphQLAsyncParams = SECOND_ASYNCPARAMS;
-    console.log('parameters ready');
     captureErrorContentScript(updateAsyncParams,[],undefined);
-    console.log('updating asynnc paramse')
     captureErrorContentScript(getSideAdExplanationUrlAndNotifyBackgroundScript,[adData,paramsFinal,adId,asyncParametersDialog],undefined);
 
-    console.log('usideads ok')
-
-
-
 }
-
-
 
 /** Grab side Ads
  *
@@ -368,47 +358,34 @@ function sendSideAdWithExplanationnUrl(adData,sideAds,adId) {
 function grabSideAds() {
 
     if ((Object.keys(ASYNCPARAMS).length<=0) || (Object.keys(SECOND_ASYNCPARAMS).length<=0) || (Object.keys(ASYNCPARAMSGET).length<=0)) {
-
         captureErrorContentScript(updateAsyncParams,[],undefined);
         console.log("need to update asyncparams...");
         setTimeout(grabAllAds, INTERVAL);
         return;
-
     }
-    if (window.location.href.indexOf('ads/preferences')==-1) {
-        sideAds = captureErrorContentScript(getSideAds,[],{});
-
-
-
-        var noNewAds = Object.keys(sideAds).length;
-
-        if (noNewAds>0) {
-
-            let adsToProcessKeys =Object.keys(sideAds);
-            for (var i=0; i<adsToProcessKeys.length;i++) {
-                let adId = adsToProcessKeys[i];
-                console.log('Processing sideAd'+ adId);
-
-
-                let adData = captureErrorContentScript(processSideAd,[sideAds[adId],adId],{});
-                if (isEqual(adData,{})==true) {
-                    continue
-                }
-
-
-                captureErrorContentScript(sendSideAdWithExplanationnUrl,[adData,sideAds,adId],{});
 
 
 
 
+    sideAds = captureErrorContentScript(getSideAds,[],{});
 
+
+
+    var noNewAds = Object.keys(sideAds).length;
+
+    if (noNewAds>0) {
+
+        let adsToProcessKeys =Object.keys(sideAds);
+        for (var i=0; i<adsToProcessKeys.length;i++) {
+            let adId = adsToProcessKeys[i];
+            console.log('Processing sideAd'+ adId);
+            let adData = captureErrorContentScript(processSideAd,[sideAds[adId],adId],{});
+            if (isEqual(adData,{})==true) {
+                continue
             }
-
+            captureErrorContentScript(sendSideAdWithExplanationnUrl,[adData,sideAds,adId],{});
         }
     }
-
-    // setTimeout(grabAds, INTERVAL);
-
 }
 
 
@@ -416,11 +393,9 @@ function grabSideAds() {
 function grabAllAds(){
     let facebookInterfaceVersion = getFacebookInterfaceVersionFromParsedDoc(document);
     if (facebookInterfaceVersion=== INTERFACE_VERSIONS.old) {
-        console.log("OLD FACEBOOK INTERFACE VERSION");
         captureErrorContentScript(grabSideAds,[],{});
         captureErrorContentScript(grabFeedAds,[],{});
     } else if (facebookInterfaceVersion=== INTERFACE_VERSIONS.new) {
-        console.log("NEW FACEBOOK INTERFACE VERSION");
         captureErrorContentScript(grabFeedAdsNewInterface,[],{});
     }
     setTimeout(grabAllAds, INTERVAL);
@@ -429,31 +404,31 @@ function grabAllAds(){
 
 
 function permissionToGrab() {
-    msg = {};
-    msg[MSG_TYPE]='consent';
-    chrome.runtime.sendMessage(msg,function(response) {
-        if (response.consent){
-            console.log('Consent exists, start collecting data');
-            captureErrorContentScript(grabAllAds, [], {});
-            captureErrorContentScript(checkAdVisibleDuration, [], {});
-            captureErrorContentScript(grabNewsPosts, [], {});
-            // TO CHECK TWO FOLLOWING AFTER OANA ANSWER
-            captureErrorContentScript(grabPosts, [], {});
-            captureErrorContentScript(checkPostVisibleDuration, [],{});
-            captureErrorContentScript(onFbMessaging, [], {});
-            return true
-        }
-        else {
-            setTimeout(permissionToGrab, INTERVAL);
-        }
-    })
+
+    if (window.location.pathname === "/") {
+        msg = {};
+        msg[MSG_TYPE] = 'consent';
+        chrome.runtime.sendMessage(msg, function (response) {
+            if (response.consent) {
+                captureErrorContentScript(grabAllAds, [], {});
+                captureErrorContentScript(grabNewsPosts, [], {});
+                captureErrorContentScript(checkAdVisibleDuration, [], {});
+              //   captureErrorContentScript(grabPosts, [], {});
+              //   captureErrorContentScript(checkPostVisibleDuration, [], {});
+              //   captureErrorContentScript(onFbMessaging, [], {});
+                return true
+            } else {
+                setTimeout(permissionToGrab, INTERVAL);
+            }
+        })
+
+    }
 }
 
-
 function update_sponsored_text(){
-    console.log('Executing in update_sponsored_text()....')
     let msg = {};
     msg[MSG_TYPE] = GET_SPONSORED_TEXTS;
+
     chrome.runtime.sendMessage(msg, function(response) {
         if (response['Status'] === "Error" ){
             setTimeout(captureErrorContentScript,1500, update_sponsored_text,[],{});
@@ -483,9 +458,7 @@ function update_sponsored_text(){
 
 
 $(document).ready(function() {
-    const updateNumberOfSurveyData = {
-        'user_id': getUserId() //getUserId()
-    };
+    const updateNumberOfSurveyData = {};
     updateNumberOfSurveyData[MSG_TYPE] = UPDATE_NUMBER_OF_SURVEYS;
     chrome.runtime.sendMessage(updateNumberOfSurveyData);
     setTimeout(captureErrorContentScript,500, update_sponsored_text,[],{});
@@ -508,35 +481,56 @@ window.addEventListener("message", function(event) {
     }
 
     if (event.data.newInterface) {
-        console.log('Data from new interface received');
-        console.log(event.data);
+        //We know that public_post and news post doesn't have id
+        //So we put this condition to avoid having ads collected as posts
+
         var customId = event.data.customId;
         var adData = getAdFromCustomAdanalystId(customId);
-        adData.advertiser_facebook_id = event.data.advertiser_facebook_id;
-        adData.advertiser_facebook_page = event.data.advertiser_facebook_page;
-        adData.advertiser_facebook_profile_pic = event.data.advertiser_facebook_profile_pic;
-        adData.clientToken = event.data.clientToken;
-        adData.fb_id = event.data.adId;
-        adData.graphQLAsyncParams = event.data.graphQLAsyncParams;
-        adData.newInterface = event.data.newInterface;
-        adData.objId = event.data.objId;
-        adData.serialized_frtp_identifiers = event.data.serialized_frtp_identifiers;
-        adData.story_debug_info = event.data.story_debug_info;
-        adData.images = event.data.images;
-        adData.video = event.data.video;
-        if(adData.type === TYPES.newsPost || adData.type === TYPES.publicPost) {
-            adData.raw_ad = anonymizePostNewInterface(adData.raw_ad, adData.advertiser_facebook_id);
-        }
-        chrome.runtime.sendMessage(adData, function(response) {
-            if(response) {
-                adData['saved'] = response['saved'];
-                adData['dbId'] = response['dbId'];
-                if(response['saved'] === true){
-                    adData['raw_ad'] = '';
-                }
+        if( event.data.adId === - 1 || adData.type === "frontAd") {
+            adData.advertiser_facebook_id = event.data.advertiser_facebook_id;
+            adData.advertiser_facebook_page = event.data.advertiser_facebook_page;
+            adData.advertiser_facebook_profile_pic = event.data.advertiser_facebook_profile_pic;
+            adData.clientToken = event.data.clientToken;
+            adData.fb_id = event.data.adId;
+            adData.graphQLAsyncParams = event.data.graphQLAsyncParams;
+            adData.newInterface = event.data.newInterface;
+            adData.objId = event.data.objId;
+            adData.serialized_frtp_identifiers = event.data.serialized_frtp_identifiers;
+            adData.story_debug_info = event.data.story_debug_info;
+            adData.images = event.data.images;
+            adData.video = event.data.video;
+            if(adData.type === TYPES.newsPost) {
+                adData.raw_ad = anonymizePostNewInterface(adData.raw_ad, adData.advertiser_facebook_id);
             }
-        });
-        return;
+            chrome.runtime.sendMessage(adData, function(response) {
+                if(response) {
+                    adData['saved'] = response['saved'];
+                    adData['dbId'] = response['dbId'];
+                    if(response['saved'] === true)  {
+                        let key = getKeyInFrontadqueue(adData["adanalyst_ad_id"])
+                        FRONTADQUEUE[key] = {
+                            'adanalyst_ad_id' : adData["adanalyst_ad_id"],
+                            'html_ad_id' : adData["html_ad_id"],
+                            'dbId' : adData["dbId"],
+                            'fb_id' : adData["fb_id"],
+                            'objId' : adData["objId"],
+                            'saved' : adData["saved"],
+                            'type' : adData["type"],
+                            'clientToken' : adData["clientToken"],
+                            'graphQLAsyncParams' : adData["graphQLAsyncParams"],
+                            'visibleDuration' : adData["visibleDuration"],
+                        }
+
+                    }
+                }
+            });
+            return;
+        }
+        else {
+            let key = getKeyInFrontadqueue(customId)
+            FRONTADQUEUE[key] = {"duplicate" : true}
+            return ;
+        }
     }
 
     if (event.data.adButton)    {
@@ -568,13 +562,12 @@ function onMessageFunction(msg,sender,sendResponse) {
 
     /** adgrabber specific messages */
     if (!sender.tab) {
-
         if (msg.type === 'showInfoPopup'){
             captureErrorContentScript(createDialog, [dialogHtml], undefined);
             return
         }
-
     }
+
     /**     global messages */
     universalOnMessageFunction(msg,sender,sendResponse);
 }

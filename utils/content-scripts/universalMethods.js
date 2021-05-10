@@ -62,9 +62,6 @@ Array.prototype.unique = function unique() {
     var self = this;
     return self.filter(function(a) {
         var that = this;
-//            console.log(that);
-//            console.log(a)
-//            console.log(that[a])
         return !that[a] ? that[a] = true : false;
     },{});}
 

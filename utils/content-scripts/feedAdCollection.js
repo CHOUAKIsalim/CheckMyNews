@@ -684,7 +684,7 @@ function findFeedAdsWithLettersInBoldElementsNotContainedInLinksUsingImgNextToSp
 
 function findFeedAdsWithLettersInBoldElementsNotContainedInLinks() {
     var elems = $("image").filter(function(){  return $(this.style.width = 40)});
-    var max_depth = 10;
+    var max_depth = 15;
     var links = [];
     for(let i=0; i<elems.length; i++){
         var currentElement = elems[i];
@@ -734,6 +734,30 @@ function findFeedAdsWithLettersInBoldElementsNotContainedInLinks() {
 }
 
 
+function findAdsWithPostTopClass() {
+    var elems = document.getElementsByClassName("j1lvzwm4 stjgntxs ni8dbmo4 q9uorilb gpro0wi8");
+
+    let links = [];
+    for(let i=0; i<elems.length; i++){
+        let second_span = elems[i].getElementsByClassName("b6zbclly myohyog2 l9j0dhe7 aenfhxwr l94mrbxd ihxqhq3m nc684nl6 t5a262vz sdhka5h4")[0];
+        let res = ''
+        let childrens = second_span.children;
+        res += second_span.childNodes[0].nodeValue;
+        for(let j=0; j<childrens.length; j++) {
+            if(childrens[j].style.position !== 'absolute') {
+                res = res + childrens[j].textContent
+            }
+            else {
+            }
+        }
+        if (res.includes('Sponsored')){
+            links.push(elems[i])
+        }
+    }
+    return links;
+
+}
+
 function containsPaidPartnership(element) {
     if(SPONSORED_CLASS === "") {
         return false;
@@ -757,9 +781,13 @@ function containsSponsoredPaidFor(text) {
  * @returns {boolean}
  */
 function hasSponsored(text, sponsored) {
+    if(text.length === 0)
+        return false;
+
     var caracters = sponsored.split("");
     var indexes = [];
-    caracters.forEach(function (caracter) {
+    for(var i =0; i < caracters.length; i++) {
+        caracter = caracters[i];
         if(indexes.length>0) {
             indexes.push(text.indexOf(caracter, indexes[indexes.length-1]));
             if (indexes[indexes.length-1] < 0 ) {
@@ -769,7 +797,8 @@ function hasSponsored(text, sponsored) {
         else {
             indexes.push(text.indexOf(caracter));
         }
-    });
+    }
+
     return true;
 }
 
@@ -808,6 +837,8 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
     Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElements());
     Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElementsNotContainedInLinks());
     Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElementsNotContainedInLinksUsingImgNextToSponsored());
+    Array.prototype.push.apply(links,findAdsWithPostTopClass());
+
     links = uniqueArray(links);
     links = getGrabbed(links);
 
@@ -816,12 +847,9 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
     for (var i=0;i<links.length;i++) {
         var link = links[i];
         var frame = funParent(link);
-
-
         if (frame===undefined || already_in_list.has(frame.id)) {
             continue
         }
-
         frontAds.push(frame);
         already_in_list.add(frame.id)
     }

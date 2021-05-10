@@ -41,8 +41,9 @@ var ANONYMIZATION_DATE = 1524175200;
 
 var VIEWS = [
   "survey_all",
-  "contact_us",
-  "rewards"
+  "rewards",
+  "study_details",
+  "contact_us"
 ];
 
 // var consent= false;
@@ -76,29 +77,24 @@ function getCollectPrefs() {
   document.getElementById("collectPrefs").checked = false;
 }
  **/
-function askAdBlockerStatus() {
-  var data = { getAdBlockerStatus: true };
-  chrome.runtime.sendMessage(data);
-}
 
 function checkAdBlockerStatus() {
-  if (localStorage.statusAdBlocker == "true") {
+  if (localStorage.statusAdBlocker === "true") {
     $("#warning").show();
   } else {
     $("#warning").hide();
   }
+  setInterval(checkAdBlockerStatus, 5000);
 }
 
 function getConsent() {
   chrome.runtime.sendMessage({ getConsent: true }, function(response) {
-    console.log("Getting consent");
-    console.log(response);
     if (response.consent) {
       $("#consentForm").hide();
       $("#notLoggedInView").hide();
       $("#normalView").show();
       setHostName(response.currentUser);
-      setTimeout(getConsent, FIVE_SECONDS);
+      setBadge(true, response.currentUser);
       return;
     }
 
@@ -108,19 +104,19 @@ function getConsent() {
       $("#consentForm").hide();
       setTimeout(getConsent, FIVE_SECONDS);
       return;
-      //        $('#consentButton').hide()
     }
     if (response.err) {
       $("#consentForm").hide();
       setTimeout(getConsent, FIVE_SECONDS);
-
       return;
     }
+    /**
     if (response.minTimestamp && response.minTimestamp < ANONYMIZATION_DATE) {
       $("#consentData").html(
         'The risk to you, as a participant, is minimal.  We are going to collect your Facebok id, the ads you receive, the explanations that Facebook provides to you, and periodically, your ad preferences page (<a href="https://www.facebook.com/ads/preferences">https://www.facebook.com/ads/preferences</a>). Moreover, we might target you with some ads, and consequently, collect their explanations.'
       );
     }
+     **/
     $("#notLoggedInView").hide();
     $("#consentForm").show();
     setTimeout(getConsent, FIVE_SECONDS);
@@ -141,20 +137,21 @@ function sendConsent() {
   chrome.runtime.sendMessage({ consent: true, setConsent: true }, function(
     response
   ) {
-    console.log("Send consent here...");
-    console.log(response);
+
     if (response.ok) {
       if (response.consents[0]!==true) {
-
         return;
       }
-      console.log("Consent received");
+      chrome.tabs.create({url: HOST_SERVER + VIEWS[0] + "?user=" + response.currentUser});
+/**
       $("#notLoggedInView").hide();
-
       $("#consentForm").hide();
       $("#consentButton").remove();
       $("#normalView").show();
       consent = true;
+      setHostName(response.currentUser);
+      setBadge(true, response.currentUser);
+ **/
       return;
     }
 
@@ -163,6 +160,7 @@ function sendConsent() {
       '  <div class="alert alert-danger alert-dismissable"><a href="#" class="close" data-dismiss="alert" aria-label="close">×</a> <strong>Danger!</strong> Something went wrong! Please try again!</div>';
 
     $("#consentForm").append(errorMessage);
+
   });
   return;
 }
@@ -177,43 +175,44 @@ function openPrivacyPolicy() {
 
 
 function i18nUpdates() {
-  $("#contact_us").html(__("menuContact"));
-  $("#view_search_ads").html(__("menuSearch"));
-  $("#view_all_ads").html(__("menuAds"));
-  $("#view_advertisers").html(__("menuAdvertiser"));
-  $("#view_data_about_me").html(__("menuData"));
+    $("#contact_us").html(__("menuContact"));
+    $("#view_search_ads").html(__("menuSearch"));
+    $("#view_all_ads").html(__("menuAds"));
+    $("#view_advertisers").html(__("menuAdvertiser"));
+    $("#view_data_about_me").html(__("menuData"));
 
-  $("#warning").html(__("warningAdBlocker"));
-  $("#collect_preferences").html(__("collectPreferences"));
-  $("#not_logged_yet").html(__("notLoggedYet"));
+    $("#warning").html(__("warningAdBlocker"));
+    $("#collect_preferences").html(__("collectPreferences"));
+    $("#not_logged_yet").html(__("notLoggedYet"));
 
-  $("#consentButton").html(__("consentButton"));
-  $("#consentAlert").html(__("consentAlert"));
+    $("#consentButton").html(__("consentButton"));
+    $("#consentAlert").html(__("consentAlert"));
 }
+
+
 $(document).ready(function() {
   i18nUpdates();
-
   var welcomePopup = getParameterByName("welcome");
-
   if (welcomePopup) {
     $("#consentAlert").show();
     $("#consentInfo").css("height", 550);
   }
 
-  //TODO: ASK IF THE USER HAS CONSENT
   $("#normalView").hide();
   $("#warning").hide();
 
   getConsent();
 
   $("#consentButton").click(function() {
-    console.log("clicked");
-
     sendConsent();
 
   });
 
   $("#noConsentButton").click(function() {
+    data = {};
+    data[MSG_TYPE] = "remind_me_consent";
+    chrome.runtime.sendMessage(data);
+    chrome.tabs.create({url: "chrome://extensions/"});
     window.close()
   });
 
@@ -237,23 +236,34 @@ $(document).ready(function() {
   });
 
   checkAdBlockerStatus();
-  askAdBlockerStatus();
-  setInterval(checkAdBlockerStatus, 1000);
 
   document.getElementById("privacyPolicy").addEventListener("click", openPrivacyPolicy);
-  // Add Badge
+
+});
+
+
+function setBadge(open = false, currentUserId) {
 
   if(localStorage.getItem('survey_number') > 0 ) {
     let badge = document.createElement('span');
     badge.className = 'badge badge-pill badge-danger';
     badge.innerHTML = localStorage.getItem('survey_number').toString();
     document.getElementById("survey_all").appendChild(badge);
-    document.getElementById("survey_red_text").innerHTML = "Hi, you are participating in our social media monitor study, please click on start survey to fill out the survey:<br>After filling the four surveys, you will get a token you can use to claim your reward on Prolific<br> Thank you !"
+    document.getElementById("survey_red_text").innerHTML = "Hi, you are participating in our social media monitor study, please click on start survey to fill out the survey:<br>Thank you !"
+/**
+    if (open) {
+      chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+        if (tabs[0].url.indexOf("survey") === -1) {
+          window.setTimeout(function () {chrome.tabs.create({url: HOST_SERVER + VIEWS[0] + "?user=" + currentUserId})}, 1000);
+        }
+      });
+    }
+ **/
   }
   else {
     document.getElementById("formForReminder").style.visibility = "hidden";
     document.getElementById("formForReminder").style.display = "none";
     document.getElementById("survey_red_text").innerHTML = "";
   }
-});
+}
 

@@ -47,6 +47,7 @@ function getAdIdParams(response) {
   }
   return NaN;
 }
+
 (function() {
   var XHR = XMLHttpRequest.prototype;
   // Remember references to original methods
@@ -108,8 +109,6 @@ function getAdIdParams(response) {
               .replace('ajaxify":"\\/ajax\\/feed\\/filter_action\\/dialog_direct_action\\/?', "");
           requestParams = requestParams.slice(0, requestParams.length - 1);
           requestParams = decodeURIComponent(unicodeToChar(requestParams));
-          console.log('>>>>>')
-          console.log(requestParams);
         }
 
 
@@ -137,7 +136,13 @@ function getAdIdParams(response) {
       }
 
     });
-    return send.apply(this, arguments);
+
+    try {
+      return send.apply(this, arguments);
+    }catch (e){
+      console.log("error in sending request from xhrOverloadButtons")
+      console.log(e)
+    }
   };
 })();
 
@@ -145,7 +150,6 @@ function getAdIdParams(response) {
 
 window.addEventListener("message", function(event) {
   // We only accept messages from ourselves
-  //    console.log(event)
   if (event.source != window) return;
 
 

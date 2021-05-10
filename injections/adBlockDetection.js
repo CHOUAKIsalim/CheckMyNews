@@ -1,7 +1,7 @@
 var requestLock = undefined;
 var ADBLOCKERDETECTIONINTERVAL =  10 * 60000;
 
-// 
+
 function getAdBlockerStatus(){
     var requestLock = undefined;
     try{
@@ -11,7 +11,6 @@ function getAdBlockerStatus(){
 
         img.onload = function(){
             requestLock = false;
-            // console.log('postMessage() from adRequests.js')
             var data = {'type':'statusAdBlocker','value':requestLock}
             debugLog(data);
             window.postMessage(data, '*');
@@ -23,8 +22,6 @@ function getAdBlockerStatus(){
 
         img.onerror = function(event){
             requestLock = true;
-            // console.log('Error status:' + event.target.status);
-            // console.log('postMessage() from adRequests.js')
             var data = {'type':'statusAdBlocker','value':requestLock};
             debugLog(data);
             window.postMessage(data, '*');

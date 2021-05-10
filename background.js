@@ -28,8 +28,6 @@
 
 //***** INTERNAL ADANALYST VARIABLES (FLAGS/etc)
 
-//
-
 
 var URLS_SERVER = {
     'registerAd' : HOST_SERVER+'register_ad',
@@ -55,11 +53,13 @@ var URLS_SERVER = {
     'newInterfaceDetected' : HOST_SERVER + 'new_interface_detected',
 //    'amazonBuying' : HOST_SERVER + 'amazon_buying',
     'registerStillAlive' : HOST_SERVER + 'register_still_alive',
-    'storeExtensionNameAndVersion': HOST_SERVER + 'store_extension_name_and_version'
+    'storeExtensionNameAndVersion': HOST_SERVER + 'store_extension_name_and_version',
+    'registerDemographicsNewInterface' : HOST_SERVER + 'register_demographics_new_interface'
 };
 
 
-var WAIT_BETWEEN_REQUESTS = 360000; //waiting time between two explanation
+var WAIT_BETWEEN_REQUESTS = 180000; //waiting time between two explanation
+//var WAIT_BETWEEN_REQUESTS = 360000; //waiting time between two explanation
 var MSG_TYPE = 'message_type'; //needed for communcation with content scriptsß
 
 
@@ -74,7 +74,7 @@ var UPDATE_NUMBER_OF_SURVEYS = "update_number_surveys";
 //var AMAZON_BUYING_MESSAGE_TYPE = 'amazon_buying_message_type';
 var Ad_Blocker_Detected = "adblock-detection";
 var TYPE = 'type';
-var TYPES = {"frontAd" : "frontAd", "sideAd" : "sideAd","interests":"interestsData","advertisers":"advertisersData","adactivity":"adActivityList","adactivitydata":"adActivityData",demographics:'demBehaviors','statusAdBlocker':'statusAdBlocker'};
+var TYPES = {"frontAd" : "frontAd", "sideAd" : "sideAd","interests":"interestsData","advertisers":"advertisersData","adactivity":"adActivityList","adactivitydata":"adActivityData",demographics:'demBehaviors','statusAdBlocker':'statusAdBlocker', 'demographicsNewInterface' : 'demographicsNewInterface'};
 
 var STATUS = 'status';
 var FAILURE = 'failure';
@@ -97,18 +97,24 @@ var DAY_MILISECONDS =  8.64e+7;
 
 var ONE_HALF_MINUTE = 90000;
 
-
 var ONEMINUTE = 60000
 
 var FIFTEENMINUTES = ONE_HALF_MINUTE*15;
 
 var WAIT_FOR_TWO_HOURS = false; //If set true AdAnalust explanation crawling will sleep for two hours (due to rate limiting)
 var TWO_HOURS = FIFTEENMINUTES* 8;
+
+var ONE_HOUR = 3600000;
+
 var LOGGED_IN = false;
 
 
 var ADACTIVITY = {}; //clicked ads object (not active feature)
 var EXPLANATION_REQUESTS = {}; //used to check the timestamps of requests to explanations and whether it is time for a new one
+
+var SENT_ERRORS = []
+
+
 var PROBLEMATIC_EXPLANATIONS = []; //record of explanations with some issue (to debug)
 
 var MEDIA_REQUESTS = {}; //** used to chec requests that are neeed
@@ -161,30 +167,38 @@ var BUTTONS = {};
 var FLAG = {};
 var COLLECT_PREFERENCES_TAG = false;
 
-
-
 var timeToRemindSurveyAnswering = undefined;
 
+var idx_icon = 0;
+
+//FACEBOOK LOGIN
+var successURL = 'www.facebook.com/connect/login_success.html';
 
 
-//var REQUEST_TYPE = 'GET';
+var not_logged_page_opened = false
+var consent_page_opened = false;
 
 
+chrome.storage.sync.set({"last_time": new Date().getTime()});
+
+chrome.storage.sync.get("last_time", function(last_time){
+    if(last_time !== undefined && last_time["last_time"] !== undefined) {
+        last_time = last_time["last_time"];
+        if((new Date().getTime() - last_time) / (1000 * 3600 * 24) >= 3 ) {
+            alert("Oups! It seems that you have not used Facebook on Chrome for a while. \n" +
+                "\n" +
+                "You subscribed to participate in social media monitoring study, for this we need you to regularly access Facebook from Chrome. \n" +
+                "\n" +
+                "Thank you! ")
+        }
+    }
+    else {
+        chrome.storage.sync.set({"last_time": new Date().getTime()});
+    }
+});
 
 
-
-
-
-
-// localStorage.adActivity = JSON.stringify({});
-
-
-//var INTERESTSCRAWL  = localhost.interestsCrawl?localhost.interestsCrawl:0;
-//var ADVERTISERSCRAWL =localhost.advertisersCrawl?localhost.interestsCrawl:0;
-//var DEMOGRAPHICSCRAWL =localhost.interestsCrawl?localhost.interestsCrawl:0;
-
-
-
+/****************************************** FUNCTIONS ************************************/
 
 function sendStillAliveRequest() {
     let date = new Date();
@@ -206,13 +220,11 @@ function sendStillAliveRequest() {
             chrome.storage.sync.set({"still_alive_time": currentDate});
             return true
         },
-
         error : function(xhr, textStatus, errorThrown ) {
             this.tryCount++;
             if (this.tryCount <= this.retryLimit) {
                 //try again
                 console.log('Trying again...')
-
                 $.ajax(this);
                 return;
             }
@@ -221,10 +233,6 @@ function sendStillAliveRequest() {
         }
     });
 }
-
-
-
-
 
 function checkStillAlive() {
     let date = new Date();
@@ -242,32 +250,12 @@ function checkStillAlive() {
     })
 }
 
-
-chrome.storage.sync.set({"last_time": new Date().getTime()});
-
-chrome.storage.sync.get("last_time", function(last_time){
-    if(last_time !== undefined && last_time["last_time"] !== undefined) {
-        last_time = last_time["last_time"];
-        if((new Date().getTime() - last_time) / (1000 * 3600 * 24) >= 3 ) {
-            alert("Oups! It seems that you have not used Facebook on Chrome for a while. \n" +
-                "\n" +
-                "You subscribed to participate in social media monitoring study, for this we need you to regularly access Facebook from Chrome. \n" +
-                "\n" +
-                "Thank you! ")
-        }
-    }
-    else {
-        chrome.storage.sync.set({"last_time": new Date().getTime()});
-    }
-});
-
 function getCaptchaStatus(){
     if(!localStorage.captchaDetected){
         localStorage.captchaDetected = -1;
     }
     return parseInt(localStorage.captchaDetected);
 }
-CAPTCHA_DETECTED = captureErrorBackground(getCaptchaStatus, [], URLS_SERVER.registerError, {});
 
 function getLastTimeShowPopup(){
     if(!localStorage.lastTimeShowPopUp)
@@ -276,8 +264,6 @@ function getLastTimeShowPopup(){
     }
     return parseInt(localStorage.lastTimeShowPopUp);
 }
-TIMESTAMP_SHOWN_POPUP = captureErrorBackground(getLastTimeShowPopup, [], URLS_SERVER.registerError, {});
-
 
 function getFlgNotifyPoupStatus(){
     if(!localStorage.notNotifyPopupAgain){
@@ -285,8 +271,6 @@ function getFlgNotifyPoupStatus(){
     }
     return parseInt(localStorage.notNotifyPopupAgain);
 }
-NOT_SHOW_POPUP_AGAIN = captureErrorBackground(getFlgNotifyPoupStatus, [], URLS_SERVER.registerError, {});
-
 
 function getAdActivityList(){
     if(!localStorage.adActivity){
@@ -294,12 +278,6 @@ function getAdActivityList(){
     }
     return JSON.parse(localStorage.adActivity);
 }
-ADACTIVITY = captureErrorBackground(getAdActivityList,[],URLS_SERVER.registerError,{});
-
-
-
-EXPLANATION_REQUESTS= captureErrorBackground(getExplanationRequests,[],URLS_SERVER.registerError,{});
-
 
 /**
  * [getUserIdAjax  proceesses the ajax request to parse the user_id.
@@ -317,24 +295,25 @@ function getUserIdAjax(resp) {
     if ((userId)&& (userId!=-1)) {
         captureErrorBackground(openWindowToNewUsers,[],URLS_SERVER.registerError,undefined);
         LOGGED_IN=true;
-        if ((userId!=CURRENT_USER_ID) || (CURRENT_EMAIL==='')) {
+        if ((userId!==CURRENT_USER_ID) || (CURRENT_EMAIL==='')) {
             CURRENT_USER_ID = userId;
             captureErrorBackground(setFacebookInterfaceVersionDoc,[CURRENT_USER_ID,resp],URLS_SERVER.registerError,undefined);
-
-            captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined);
+            executeAfterUserId();
         }
         CURRENT_USER_ID = userId;
 
     } else {
         LOGGED_IN=false;
+        executeAfterUserIdNotFound();
     }
 
 }
+
 function getCurrentUserId() {
     $.get({
         headers: {
-        	Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
-        },  
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+        },
         url:FACEBOOK_PAGE,
         success: function(resp) {
             captureErrorBackground(getUserIdAjax,[resp],URLS_SERVER.registerError,undefined);
@@ -342,12 +321,10 @@ function getCurrentUserId() {
         }
     });
 
-    window.setTimeout(getCurrentUserId,ONE_HALF_MINUTE/3)
+    window.setTimeout(getCurrentUserId,ONE_HALF_MINUTE/6)
 
 }
 
-
-                                                                                                        
 /**
  * parses the email from the html page of facebook about. If it has a phone number it doesn't parse anything
  *
@@ -380,7 +357,7 @@ function parseCurrentEmail(resp) {
  *
  * @param  {string} resp html response of the page
  * @return {string}      email of the user
-function parseCurrentPhone(resp) {
+ function parseCurrentPhone(resp) {
     var parser = new DOMParser();
     var doc = parser.parseFromString(resp,'text/html');
     var links = doc.getElementsByTagName('a');
@@ -421,22 +398,17 @@ function updateEmailServer() {
         success: function (a) {
             if (!a[STATUS] || (a[STATUS]==FAILURE)) {
                 if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-                    captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+                    //   captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
                 }
-
-                console.log('Failure to register email');
-                console.log(a)
                 window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
                 return true
             };
             window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},DAY_MILISECONDS)
 
-            console.log('Success registering email');
 
 
         },
     }).fail(function(a){
-            console.log('Failure to register email');
             window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
 
         }
@@ -450,7 +422,7 @@ function updateEmailServer() {
  *
  * @return {undefined} nothing
 
-function updatePhoneServer() {
+ function updatePhoneServer() {
     var dat = {user_id:CURRENT_USER_ID,phone:CURRENT_PHONE};
     if ((isCurrentUser()!==true) || (CURRENT_PHONE == '')) {
         return
@@ -472,7 +444,6 @@ function updatePhoneServer() {
                     captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
                 }
                 console.log('Failure to register phone');
-                console.log(a)
                 window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
                 return true
             };
@@ -499,7 +470,6 @@ function getCurrentUserEmailByVersion() {
     }
 
     let interfaceVersion = getUserInterfaceVersion(CURRENT_USER_ID);
-    console.log(interfaceVersion)
 
     if (interfaceVersion===INTERFACE_VERSIONS.unknown) {
         window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
@@ -536,13 +506,11 @@ function getCurrentUserEmail(targetUrl) {
                 if(CURRENT_EMAIL !== "") {
                     captureErrorBackground(updateEmailServer,[],URLS_SERVER.registerError,{});
                 }
-         //       else {
-         //           CURRENT_PHONE = captureErrorBackground(parseCurrentPhone, [resp], URLS_SERVER.registerError,{})
-          //          captureErrorBackground(updatePhoneServer,[],URLS_SERVER.registerError,{});
-           //     }
+                //       else {
+                //           CURRENT_PHONE = captureErrorBackground(parseCurrentPhone, [resp], URLS_SERVER.registerError,{})
+                //          captureErrorBackground(updatePhoneServer,[],URLS_SERVER.registerError,{});
+                //     }
             } catch (e) {
-                console.log('Exception in getting email');
-                console.log(e);
                 window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
             }
         }
@@ -567,8 +535,6 @@ function getCurrentUserEmailNewInterface() {
 
 
             } catch (e) {
-                console.log('Exception in getting email')
-                console.log(e)
                 window.setTimeout(function() {captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
 
             }
@@ -629,8 +595,6 @@ function getCurrentLanguageNewInterface() {
 
 
             } catch (e) {
-                console.log('Exception in getting email')
-                console.log(e)
                 window.setTimeout(function() {captureErrorBackground(getCurrentLanguageByVersion,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE*3)
 
 
@@ -724,6 +688,8 @@ function parseLanguageFromLanguagePage(doc) {
 
     }
 
+    if (languageElem === '') return
+
     var strongElems = languageElem.getElementsByTagName('strong');
 
     if (strongElems.length!=1) {
@@ -769,61 +735,25 @@ function updateLanguageServer(server_message) {
         data: JSON.stringify(replaceUserIdEmail(dat)),
         success: function (a) {
             if (!a[STATUS] || (a[STATUS]==FAILURE)) {
-                console.log('Failure to register language');
 
                 if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-                    captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+                    //         captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
                 }
 
 
                 // window.setTimeout(function() {captureErrorBackground(getCurrentUserEmail,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
                 return true};
 
-            console.log('Success registering language');
 
 
         },
     }).fail(function(a){
-            console.log('Failure to register language');
             // window.setTimeout(function() {captureErrorBackground(getCurrentUserEmail,[],URLS_SERVER.registerError,undefined)},ONE_HALF_MINUTE)
 
         }
     );
 
 }
-
-
-
-var CRAWLED_EXPLANATIONS = captureErrorBackground(getCrawledExplanations,[],URLS_SERVER.registerError,undefined);
-var EXPLANATIONS_QUEUE = captureErrorBackground(getExplanationsQueue,[],URLS_SERVER.registerError,undefined);
-
-
-chrome.windows.getAll( null, function( windows ){
-    NUM_WINDOWS = windows.length;
-    console.log('Window Created + '+ NUM_WINDOWS)
-});
-chrome.windows.onCreated.addListener(function(windows){
-    NUM_WINDOWS++;
-    console.log("Window created event caught. Open windows #: " + NUM_WINDOWS);
-});
-chrome.windows.onRemoved.addListener(function(windows){
-
-    NUM_WINDOWS--;
-
-    console.log("Window removed event caught. Open windows #: " + NUM_WINDOWS);
-    if( NUM_WINDOWS <= 0 ) {
-        localStorage.crawledExplanations = JSON.stringify(CRAWLED_EXPLANATIONS);
-        localStorage.explanationsQueue = JSON.stringify(EXPLANATIONS_QUEUE);
-        localStorage.explanationRequests = JSON.stringify(EXPLANATION_REQUESTS);
-
-
-    }
-
-});
-
-
-
-
 
 
 /**
@@ -838,21 +768,17 @@ function registerAdSuccess(a,request,sendResponse){
 
     if (!a[STATUS] || (a[STATUS]==FAILURE)) {
         if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-            captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+            //    captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
         }
-        console.log('Failure');
-        console.log(a)
         sendResponse({"saved":false});
         return true
     }
 
-    console.log('Success');
     let resp = {saved:true,dbId:a[ADID]}
-    let isCrawled = captureErrorBackground(isCrawledOrQueue,[a[FBID],CURRENT_USER_ID],URLS_SERVER.registerError,false);
 
+    let isCrawled = captureErrorBackground(isCrawledOrQueue,[a[FBID],CURRENT_USER_ID],URLS_SERVER.registerError,false);
     if ((a[FBID] !== -1) && !isCrawled )  {
         if(request["type"] === TYPES.frontAd || request["type"] === TYPES.sideAd) {
-            console.log('Adding to explanations queue...');
             captureErrorBackground(addToQueueExplanations,[CURRENT_USER_ID,request.fb_id,request.explanationUrl,a[ADID],request.graphQLAsyncParams,request.clientToken,!!request.newInterface,request.adType,request.objId,request.serialized_frtp_identifiers,request.story_debug_info],URLS_SERVER.registerError,undefined);
         }
     }
@@ -871,7 +797,6 @@ function registerAdSuccess(a,request,sendResponse){
  */
 function getBase64FromImageUrl(url,req_id,request,sendResponse,count=3) {
 
-    console.log('For ',request.fb_id,' ', count);
 
     if (count<=0) {
         MEDIA_REQUESTS[req_id][url] = MEDIA_CONTENT_FAILURE;
@@ -893,14 +818,9 @@ function getBase64FromImageUrl(url,req_id,request,sendResponse,count=3) {
 
             var dataURL = canvas.toDataURL("image/png");
             MEDIA_REQUESTS[req_id][url] = dataURL
-            console.log('For ',request.fb_id,' ', mediaRequestsDone(req_id));
             if (mediaRequestsDone(req_id)){
                 request[MEDIA_CONTENT] = MEDIA_REQUESTS[req_id];
                 delete MEDIA_REQUESTS[req_id];
-                console.log('Sending request for frontAd');
-                console.log(Object.keys(request))
-                console.log('ALL ready to send ');
-                console.log(request)
 
                 $.ajax({
                     type: REQUEST_TYPE,
@@ -911,8 +831,6 @@ function getBase64FromImageUrl(url,req_id,request,sendResponse,count=3) {
                         captureErrorBackground(registerAdSuccess,[a,request,sendResponse],URLS_SERVER.registerError,undefined);
                     },
                 }).fail(function(a){
-                    console.log('Failure');
-                    console.log(a)
                     sendResponse({"saved":false});
                     return true;
                 });
@@ -921,9 +839,6 @@ function getBase64FromImageUrl(url,req_id,request,sendResponse,count=3) {
         img.src = url;
     }
     catch (e) {
-        console.log("Couldn't grab "+ url);
-        console.log(e);
-        console.log("Trying again...");
         captureErrorBackground(getBase64FromImageUrl,[url,req_id,request,sendResponse,count-1],URLS_SERVER.registerError,false);
     }
     return true
@@ -935,11 +850,9 @@ function getBase64FromImageUrlClickedAd(url, req_id, request, count = 3) {
     var curr_ts = (new Date()).getTime();
     if ((localStorage.lastClickedAdSaved) && (curr_ts - localStorage.lastClickedAdSaved) < ONEMINUTE){
         getBase64FromImageUrlClickedAd(url,req_id, request,count = 3);
-        console.log("Wait for 1 minute until the next save")
         return;
     }
 
-    console.log('For ', request.fb_id, ' ', count);
 
     if (count <= 0) {
         //        FLAG FINISHED
@@ -964,14 +877,9 @@ function getBase64FromImageUrlClickedAd(url, req_id, request, count = 3) {
             var dataURL = canvas.toDataURL("image/png");
 
             MEDIA_REQUESTS[req_id][url] = dataURL
-            //console.log('For ', req_id, ' ', mediaRequestsDone(req_id));
             if (mediaRequestsDone(req_id)) {
                 request[MEDIA_CONTENT] = MEDIA_REQUESTS[req_id];
-                //console.log(request[MEDIA_CONTENT]);
                 delete MEDIA_REQUESTS[req_id];
-                console.log('Sending request for ClickedAd');
-                //console.log(Object.keys(request));
-                console.log(request)
                 localStorage.lastClickedAdSaved = (new Date()).getTime();
                 $.ajax({
                     type: REQUEST_TYPE,
@@ -981,21 +889,15 @@ function getBase64FromImageUrlClickedAd(url, req_id, request, count = 3) {
                     success: function (a) {
                         if (!a[STATUS] || (a[STATUS] == FAILURE)) {
                             if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+                                //  captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
                             }
 
-                            console.log('Failure');
-                            console.log(a)
 
                             return true
                         };
 
-                        console.log('Success');
-
                     },
                 }).fail(function (a) {
-                    console.log('Failure');
-                    console.log(a)
                 });
             }
 
@@ -1005,69 +907,11 @@ function getBase64FromImageUrlClickedAd(url, req_id, request, count = 3) {
 
         //FLAG FINSHED
     } catch (e) {
-        console.log("Couldn't grab " + url);
-        console.log(e);
-        console.log("Trying again...");
         getBase64FromImageUrlClickedAd(url, req_id, request, count - 1);
     }
 
     return true;
 }
-
-//https://www.facebook.com/ads/preferences/dialog/?ad_id=6066215713784&optout…mnBCwNoy9Dx6WK&__af=iw&__req=d&__be=-1&__pc=PHASED%3ADEFAULT&__rev=2872472
-chrome.webRequest.onBeforeRequest.addListener(
-    function (details) {
-
-        if (details.url.indexOf('waist_content/dialog/?id')==-1) {
-            console.log(details.url)
-            console.log('not an explanation request...');
-            return {cancel:false}
-        }
-
-        console.log(details);
-
-
-        if (isUserRequest(details)) {
-            console.log("User explanation request! Will be allowed");
-            EXPLANATION_REQUESTS[CURRENT_USER_ID].push((new Date()).getTime())
-
-            return   {cancel: false};
-
-
-        }
-
-        cleanRequestLog(CURRENT_USER_ID)
-        var ts =  (new Date()).getTime()
-        var maxTs = Math.max.apply(null, EXPLANATION_REQUESTS[CURRENT_USER_ID])
-
-        if ((WAIT_FOR_TWO_HOURS) && (ts-maxTs < TWO_HOURS)) {
-            console.log('Cannot make request. Need to wait for ' + (TWO_HOURS - (ts-maxTs))/60000 + 'minutes (rate limited)');
-            return   {cancel: true};
-        }
-
-        if ((WAIT_FOR_TWO_HOURS) && (ts-maxTs >= TWO_HOURS)) {
-            console.log('time to break the limit');
-            WAIT_FOR_TWO_HOURS = false;
-        }
-
-        if (ts-maxTs < WAIT_BETWEEN_REQUESTS) {
-            console.log('Cannot make request. Need to wait for ' + (WAIT_BETWEEN_REQUESTS - (ts-maxTs))/60000 + 'minutes');
-            return   {cancel: true};
-        }
-
-        EXPLANATION_REQUESTS[CURRENT_USER_ID].push((new Date()).getTime())
-        return   {cancel: false};
-
-
-
-
-
-//            return   {cancel: true};
-    },
-    { urls: [BLOCKING_URL]},["blocking"]
-);
-
-
 
 function getAdActivity(lastItem) {
 
@@ -1094,15 +938,13 @@ function getAdActivity(lastItem) {
  * question_text and story_text) for the adgrabber.js
  */
 function getSupportedLangs(){
-    //console.log('Get languages stubs....');
     $.ajax({
         url:URLS_SERVER.getSupportedLanguage,
         type:REQUEST_TYPE,
         dataType: "json",
         traditional:true,
         success: function(resp){
-            console.log(resp)
-            if (resp[STATUS] != FAILURE) {
+            if (resp[STATUS] !== FAILURE) {
                 localStorage['SupportLanguages'] = resp['languages'];
                 localStorage['SponsoredTexts'] = resp['sponsored_texts'];
                 localStorage['QuestionTexts'] = resp['question_texts'];
@@ -1117,16 +959,10 @@ function getSupportedLangs(){
     });
 }
 
-
-
-captureErrorBackground(getSupportedLangs,[],URLS_SERVER.registerError,undefined)
-
-
 function mediaRequestsDone(reqId) {
     let allDone = true;
     for (let key in MEDIA_REQUESTS[reqId]) {
         if (MEDIA_REQUESTS[reqId][key].length<=0){
-            console.log(MEDIA_REQUESTS[reqId][key].length)
             allDone= false;
             break
         }
@@ -1137,10 +973,6 @@ function mediaRequestsDone(reqId) {
 
 
 function sendFrontAd(request,sendResponse) {
-
-    console.log('Front ad...');
-    console.log(request)
-
 
     delete request[MSG_TYPE];
     var reqId = MEDIA_REQUEST_ID++;
@@ -1164,8 +996,6 @@ function sendFrontAd(request,sendResponse) {
                 captureErrorBackground(registerAdSuccess,[a,request,sendResponse],URLS_SERVER.registerError,undefined);
             },
         }).fail(function(a){
-            console.log('Failure');
-            console.log(a)
             sendResponse({"saved":false});
             return true;
         });
@@ -1180,7 +1010,6 @@ function sendClickedAd(clickedAds) {
     for(key in adClickedData){
         var request = adClickedData[key];
         request['user_id'] = clickedAds.user_id;
-        console.log('Clicked ad...');
 
         var reqId = MEDIA_REQUEST_ID++;
         var imgsToCrawl = request.contents['fullImageURLs']; //imageURLs,fullImageURLs,facebookPageProfilePicURL
@@ -1197,7 +1026,6 @@ function sendClickedAd(clickedAds) {
             getBase64FromImageUrlClickedAd(imgsToCrawl[i], reqId, request);
         }
 
-        console.log(request)
 
     }
 
@@ -1217,7 +1045,6 @@ function appendObject(l1, l2){
     return l1;
 }
 
-var idx_icon = 0;
 function changeIcon(){
     if (hasCurrentUserConsent(0)===true) {
         chrome.browserAction.setIcon({ path: "media/enabled.png" });
@@ -1231,11 +1058,7 @@ function changeIcon(){
     setTimeout(changeIcon,1000);
 }
 
-changeIcon();
-
 function sendSideAd(request,sendResponse) {
-    console.log('SENDING Side ad...');
-    console.log(request);
     delete request[MSG_TYPE];
     var reqId = MEDIA_REQUEST_ID++;
     var imgsToCrawl = request[IMAGES];
@@ -1243,7 +1066,7 @@ function sendSideAd(request,sendResponse) {
     MEDIA_REQUESTS[reqId] = {};
     for (let i =0 ; i<imgsToCrawl.length; i++) {
         MEDIA_REQUESTS[reqId][imgsToCrawl[i]] = '';
-//              console.log(MEDIA_REQUESTS[reqId])
+
 
         getBase64FromImageUrl(imgsToCrawl[i],reqId,request,sendResponse)
     }
@@ -1252,11 +1075,229 @@ function sendSideAd(request,sendResponse) {
 
 }
 
+
+function openConsent() {
+    chrome.tabs.create({'url':chrome.extension.getURL('ui/new_consent.html')});
+}
+
+
+function getNumberOfSurveys(showPopup = false) {
+    if(!isCurrentUser()) {
+        window.setTimeout(getNumberOfSurveys,FIFTEENMINUTES);
+        return;
+    }
+    let dataToSend = {
+        'user_id' : CURRENT_USER_ID
+    };
+    $.ajax({
+        type: REQUEST_TYPE,
+        url: URLS_SERVER.updateSurveysNumber,
+        dataType: "json",
+        traditional: true,
+        data: JSON.stringify(replaceUserIdEmail(dataToSend)),
+        tryCount: 0,
+        retryLimit: 3,
+        showPopup : showPopup,
+        success: function (a) {
+            if (a[STATUS] && (a[STATUS] == FAILURE)) {
+                if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
+                    //   captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+                }
+                this.tryCount++;
+                if (this.tryCount <= this.retryLimit) {
+                    console.log('Trying again...')
+                    $.ajax(this);
+                    return;
+                }
+                console.log('Stoping trying...');
+                window.setTimeout(getNumberOfSurveys,ONE_HOUR);
+                return true
+            }
+            else {
+                localStorage.setItem('survey_number', a.survey_number);
+                if(a.survey_number > 0) {
+                    chrome.browserAction.setBadgeText({text: a.survey_number.toString()});
+                    if( timeToRemindSurveyAnswering === undefined || (new Date()).getTime() >= timeToRemindSurveyAnswering ) {
+                        if(showPopup)
+                            window.open("ui/popup.html", "extension_popup", "width=400,height=500s,status=no,scrollbars=yes,resizable=no");
+                    }
+                }
+                else {
+                    chrome.browserAction.setBadgeText({text: ''});
+                }
+            }
+            return true
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            this.tryCount++;
+            if (this.tryCount <= this.retryLimit) {
+                //try again
+                console.log('Trying again...')
+
+                $.ajax(this);
+                return;
+            }
+            window.setTimeout(getNumberOfSurveys,ONE_HOUR);
+            console.log('Stoping trying...');
+            return
+        }
+    });
+}
+
+function onFacebookLogin(){
+    if (!localStorage.getItem('accessToken')) {
+        chrome.tabs.query({}, function(tabs) { // get all tabs from every window
+            for (var i = 0; i < tabs.length; i++) {
+                if (!tabs[i].url) {continue}
+                if (tabs[i].url.indexOf(successURL) !== -1) {
+                    // below you get string like this: access_token=...&expires_in=...
+                    var params = tabs[i].url.split('#')[1];
+
+                    // in my extension I have used mootools method: parseQueryString. The following code is just an example ;)
+                    var accessToken = params.split('&')[0];
+                    accessToken = accessToken.split('=')[1];
+
+
+                    localStorage.setItem('accessToken', accessToken);
+//          chrome.tabs.remove(tabs[i].id);
+                }
+            }
+        });
+    }
+}
+
+
+
+function executeAfterUserIdNotFound() {
+    if(not_logged_page_opened) {
+        chrome.tabs.create({'url':chrome.extension.getURL("ui/not_logged.html")});
+        not_logged_page_opened = false;
+    }
+
+}
+
+
+function executeAfterUserId() {
+    captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+    window.setTimeout(executeAfterConsent, 8000);
+}
+
+
+
+
+function executeAfterConsent() {
+    changeIcon();
+    captureErrorBackground(getSupportedLangs,[],URLS_SERVER.registerError,undefined)
+    captureErrorBackground(getNumberOfSurveys, [], URLS_SERVER.registerError, undefined);
+    captureErrorBackground(getCurrentUserEmailByVersion,[],URLS_SERVER.registerError,undefined);
+    captureErrorBackground(getCurrentLanguageByVersion,[],URLS_SERVER.registerError,undefined)
+    captureErrorBackground(checkForAdBlocker,[],URLS_SERVER.registerError,undefined);
+    // captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined);
+    captureErrorBackground(checkForAdvertisers,[],URLS_SERVER.registerError,undefined);
+    captureErrorBackground(checkForInterests,[],URLS_SERVER.registerError,undefined);
+    captureErrorBackground(exploreQueue,[],URLS_SERVER.registerError,undefined);
+}
+
+/*********************************** FUCTIONS FIRST CALLS - RETRIVING DATA FROM LOCAL STORAGE **********************/
+
+
+CAPTCHA_DETECTED = captureErrorBackground(getCaptchaStatus, [], URLS_SERVER.registerError, {});
+
+TIMESTAMP_SHOWN_POPUP = captureErrorBackground(getLastTimeShowPopup, [], URLS_SERVER.registerError, {});
+
+NOT_SHOW_POPUP_AGAIN = captureErrorBackground(getFlgNotifyPoupStatus, [], URLS_SERVER.registerError, {});
+
+ADACTIVITY = captureErrorBackground(getAdActivityList,[],URLS_SERVER.registerError,{});
+
+EXPLANATION_REQUESTS= captureErrorBackground(getExplanationRequests,[],URLS_SERVER.registerError,{});
+
+SENT_ERRORS = captureErrorBackground(getSentErrors, [], URLS_SERVER.registerError, {});
+
+var CRAWLED_EXPLANATIONS = captureErrorBackground(getCrawledExplanations,[],URLS_SERVER.registerError,undefined);
+
+var EXPLANATIONS_QUEUE = captureErrorBackground(getExplanationsQueue,[],URLS_SERVER.registerError,undefined);
+
+
+/*************************** CHROME WINDOWS LISTENERS ***********************************/
+
+chrome.windows.getAll( null, function( windows ){
+    NUM_WINDOWS = windows.length;
+});
+
+chrome.windows.onCreated.addListener(function(windows){
+    NUM_WINDOWS++;
+});
+
+
+chrome.windows.onRemoved.addListener(function(windows){
+
+    NUM_WINDOWS--;
+    if( NUM_WINDOWS <= 0 ) {
+        localStorage.crawledExplanations = JSON.stringify(CRAWLED_EXPLANATIONS);
+        localStorage.explanationsQueue = JSON.stringify(EXPLANATIONS_QUEUE);
+        localStorage.explanationRequests = JSON.stringify(EXPLANATION_REQUESTS);
+        localStorage.sentErrors = JSON.stringify(SENT_ERRORS);
+
+    }
+
+});
+
+
+
+/*************************** CHROME REQUEST LISTENER ***********************************/
+
+//https://www.facebook.com/ads/preferences/dialog/?ad_id=6066215713784&optout…mnBCwNoy9Dx6WK&__af=iw&__req=d&__be=-1&__pc=PHASED%3ADEFAULT&__rev=2872472
+chrome.webRequest.onBeforeRequest.addListener(
+    function (details) {
+
+        if (details.url.indexOf('waist_content/dialog/?id')==-1) {
+            return {cancel:false}
+        }
+
+
+
+        if (isUserRequest(details)) {
+            EXPLANATION_REQUESTS[CURRENT_USER_ID].push((new Date()).getTime())
+
+            return   {cancel: false};
+
+
+        }
+
+        cleanRequestLog(CURRENT_USER_ID)
+        var ts =  (new Date()).getTime()
+        var maxTs = Math.max.apply(null, EXPLANATION_REQUESTS[CURRENT_USER_ID])
+
+        if ((WAIT_FOR_TWO_HOURS) && (ts-maxTs < TWO_HOURS)) {
+            return   {cancel: true};
+        }
+
+        if ((WAIT_FOR_TWO_HOURS) && (ts-maxTs >= TWO_HOURS)) {
+            WAIT_FOR_TWO_HOURS = false;
+        }
+
+        if (ts-maxTs < WAIT_BETWEEN_REQUESTS) {
+            return   {cancel: true};
+        }
+
+        EXPLANATION_REQUESTS[CURRENT_USER_ID].push((new Date()).getTime())
+        return   {cancel: false};
+
+
+
+
+
+//            return   {cancel: true};
+    },
+    { urls: [BLOCKING_URL]},["blocking"]
+);
+
+
+/*************************** CHROME MESSAGE LISTENER ***********************************/
+
+
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
-        console.log(sender.tab ?
-            "from a content script:" + sender.tab.url :
-            "from the extension");
 
         if ((!sender.tab) || (sender.tab && (sender.url) && (typeof sender.url === "string") && (sender.url.indexOf('new_consent.html')>-1)) ){
             if (request.setConsent) {
@@ -1294,17 +1335,15 @@ chrome.runtime.onMessage.addListener(
                 return true;
             }
 
-            if (request.getAdBlockerStatus){
-                chrome.tabs.query({}, function (tabs) {
-                    for (let i = 0; i < tabs.length; i++) {
-                        try {
-                            chrome.tabs.sendMessage(tabs[i].id, {type: "getAdBlockerStatus"}, function (response) {});
-                        } catch (err) {
-                            console.log(err)
-                        }
-                    }
-                });
+            if(request[MSG_TYPE] === "remind_me_consent") {
+                window.setTimeout(openConsent, 3600000);
             }
+
+            if(request[MSG_TYPE] === UPDATE_NUMBER_OF_SURVEYS) {
+                getNumberOfSurveys(true);
+                return true
+            }
+
         }
 
         if (sender.tab) {
@@ -1354,16 +1393,12 @@ chrome.runtime.onMessage.addListener(
 
             if (request[MSG_TYPE] == SIDEADINFO) {
                 CURRENT_USER_ID = request['user_id'];
-                console.log('SideAd');
-                console.log(request);
                 sendSideAd(request,sendResponse)
-//          console.log(request);
                 return true;
 
             }
             if (request[MSG_TYPE] === FRONTADINFO) {
                 CURRENT_USER_ID = request['user_id'];
-                console.log(CURRENT_USER_ID);
                 sendFrontAd(request,sendResponse);
                 return true;
             }
@@ -1371,9 +1406,6 @@ chrome.runtime.onMessage.addListener(
             if (request[MSG_TYPE] == MOUSE_CLICK_DATA){
                 let dataToSend = request;
                 delete dataToSend.MSG_TYPE;
-                console.log('######' + MOUSE_CLICK_DATA
-                );
-                console.log(dataToSend)
                 $.ajax({
                     type: REQUEST_TYPE,
                     url: URLS_SERVER.updateAdClickEvents,
@@ -1385,7 +1417,7 @@ chrome.runtime.onMessage.addListener(
                     success: function (a) {
                         if (!a[STATUS] || (a[STATUS]==FAILURE)) {
                             if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+                                //    captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
                             }
                             this.tryCount++;
                             if (this.tryCount <= this.retryLimit) {
@@ -1419,8 +1451,6 @@ chrome.runtime.onMessage.addListener(
             if (request[MSG_TYPE] ==AD_VISIBILITY_DATA){
 
                 delete request.MSG_TYPE;
-                console.log('######' + AD_VISIBILITY_DATA);
-                console.log(request)
                 $.ajax({
                     type: REQUEST_TYPE,
                     url: URLS_SERVER.updateAdVisibilityEvents,
@@ -1432,7 +1462,7 @@ chrome.runtime.onMessage.addListener(
                     success: function (a) {
                         if (!a[STATUS] || (a[STATUS] == FAILURE)) {
                             if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+                                //     captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
                             }
                             this.tryCount++;
                             if (this.tryCount <= this.retryLimit) {
@@ -1465,8 +1495,6 @@ chrome.runtime.onMessage.addListener(
             if (request[MSG_TYPE] == POST_VISIBILITY_DATA) {
 
                 delete request[MSG_TYPE];
-                console.log('######' + POST_VISIBILITY_DATA);
-                console.log(request)
                 $.ajax({
                     type: REQUEST_TYPE,
                     url: URLS_SERVER.updatePosstVisibilityEvents,
@@ -1478,7 +1506,7 @@ chrome.runtime.onMessage.addListener(
                     success: function (a) {
                         if (!a[STATUS] || (a[STATUS] == FAILURE)) {
                             if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+                                //       captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
                             }
                             this.tryCount++;
                             if (this.tryCount <= this.retryLimit) {
@@ -1511,8 +1539,6 @@ chrome.runtime.onMessage.addListener(
             if (request[MSG_TYPE] == MOUSE_MOVE_DATA) {
 
                 delete request[MSG_TYPE];
-                console.log('######' + MOUSE_MOVE_DATA);
-                console.log(request)
                 $.ajax({
                     type: REQUEST_TYPE,
                     url: URLS_SERVER.updateMouseMoveEvents,
@@ -1524,51 +1550,7 @@ chrome.runtime.onMessage.addListener(
                     success: function (a) {
                         if (!a[STATUS] || (a[STATUS] == FAILURE)) {
                             if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
-                            }
-                            this.tryCount++;
-                            if (this.tryCount <= this.retryLimit) {
-                                console.log('Trying again...')
-                                $.ajax(this);
-                                return;
-                            }
-                            console.log('Stoping trying...');
-                            return true
-                        };
-                        return true
-                    },
-
-                    error: function (xhr, textStatus, errorThrown) {
-                        this.tryCount++;
-                        if (this.tryCount <= this.retryLimit) {
-                            //try again
-                            console.log('Trying again...')
-
-                            $.ajax(this);
-                            return;
-                        }
-                        console.log('Stoping trying...');
-                        return
-                    }
-                });
-                return true
-            }
-
-            if (request[MSG_TYPE] == Ad_Blocker_Detected) {
-                delete request[MSG_TYPE];
-                USER_ID = request['user_id'];
-                $.ajax({
-                    type: REQUEST_TYPE,
-                    url: URLS_SERVER.adBlockerStatus,
-                    dataType: "json",
-                    traditional: true,
-                    data: JSON.stringify(replaceUserIdEmail(request)),
-                    tryCount: 0,
-                    retryLimit: 3,
-                    success: function (a) {
-                        if (!a[STATUS] || (a[STATUS] == FAILURE)) {
-                            if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+                                //    captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
                             }
                             this.tryCount++;
                             if (this.tryCount <= this.retryLimit) {
@@ -1599,7 +1581,7 @@ chrome.runtime.onMessage.addListener(
             }
 
             /**
-            if (request[MSG_TYPE] == AMAZON_BUYING_MESSAGE_TYPE) {
+             if (request[MSG_TYPE] == AMAZON_BUYING_MESSAGE_TYPE) {
                 delete request[MSG_TYPE];
                 request['user_id'] = CURRENT_USER_ID;
                 $.ajax({
@@ -1642,8 +1624,8 @@ chrome.runtime.onMessage.addListener(
                 });
                 return true
             }
-            //if message is an error message sregister in the database
-            **/
+             //if message is an error message sregister in the database
+             **/
 
             if (request[MSG_TYPE] === "explanationReply") {
                 processExplanationReply(request);
@@ -1651,15 +1633,12 @@ chrome.runtime.onMessage.addListener(
             }
 
             if (isMessageTypeError(request[MSG_TYPE])) {
-                console.log("Sending error to server")
                 sendErrorMessage(request, URLS_SERVER.registerError);
                 return true;
             }
 
             if (request[TYPE] == TYPES.advertisers) {
                 CURRENT_USER_ID = request['user_id'];
-                console.log('advertisers...')
-                console.log(request)
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(0)!=true)) {
                     return
                 }
@@ -1674,7 +1653,7 @@ chrome.runtime.onMessage.addListener(
                     success: function (a) {
                         if (!a[STATUS] || (a[STATUS]==FAILURE)) {
                             if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+                                //     captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
                             }
 
                             this.tryCount++;
@@ -1688,10 +1667,7 @@ chrome.runtime.onMessage.addListener(
                             console.log('Stoping trying...');
 
                             return true};
-
-
                         setLastUserPreferenceCrawlSuccessfullAttempt(CURRENT_USER_ID,'advertisers')
-//          sendFrontAd(request,sendResponse);
                         return true
                     },
                     error : function(xhr, textStatus, errorThrown ) {
@@ -1714,8 +1690,6 @@ chrome.runtime.onMessage.addListener(
             if (request[TYPE] == TYPES.adactivity) {
 
                 CURRENT_USER_ID = request['user_id'];
-                console.log('ad activity...')
-                console.log(request)
 
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(3)!=true)) {
                     return
@@ -1725,7 +1699,6 @@ chrome.runtime.onMessage.addListener(
 
                 ADACTIVITY = getAdActivityList();
                 ADACTIVITY = appendObject(ADACTIVITY,request);
-                console.log(ADACTIVITY);
                 localStorage.adActivity = JSON.stringify(ADACTIVITY);
 
                 //waiting for adActivityData comming
@@ -1737,8 +1710,6 @@ chrome.runtime.onMessage.addListener(
             if (request[TYPE] == TYPES.adactivitydata){
                 ADACTIVITY = getAdActivityList();
                 CURRENT_USER_ID = request['user_id'];
-                console.log('ad activity data...')
-                console.log(request)
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(3)!=true)) {
                     return
                 }
@@ -1762,13 +1733,6 @@ chrome.runtime.onMessage.addListener(
                     }
                 }
                 if( !isCrawling && ADACTIVITY.hasmore == false){
-                    //Crawling ad activity done --> Send request to server
-                    //Send to server
-                    console.log('Crawling ad activity finished...');
-                    console.log(ADACTIVITY);
-                    //localStorage.adActivity = JSON.stringify(ADACTIVITY);
-                    //localStorage.setItem('crawling_adactivity','true');
-                    //Send to server
                     sendClickedAd(ADACTIVITY);
                     localStorage.adActivity = JSON.stringify({});
 
@@ -1777,10 +1741,60 @@ chrome.runtime.onMessage.addListener(
                 return true
             }
 
+            if (request[TYPE] == TYPES.demographicsNewInterface) {
+
+                if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(0)!=true)) {
+                    return
+                }
+
+                $.ajax({
+                    type: REQUEST_TYPE,
+                    url: URLS_SERVER.registerDemographicsNewInterface,
+                    dataType: "json",
+                    traditional:true,
+                    data: JSON.stringify(replaceUserIdEmail(request)),
+                    tryCount : 0,
+                    retryLimit : 3,
+                    success: function (a) {
+                        if (!a[STATUS] || (a[STATUS]==FAILURE)) {
+                            if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
+                                //    captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+                            }
+
+                            this.tryCount++;
+                            if (this.tryCount <= this.retryLimit) {
+                                //try again
+                                console.log('Trying again...')
+
+                                $.ajax(this);
+                                return;
+                            }
+                            console.log('Stoping trying...');
+                            return true
+                        };
+
+                        return true
+                    },
+                    error : function(xhr, textStatus, errorThrown ) {
+                        this.tryCount++;
+                        if (this.tryCount <= this.retryLimit) {
+                            //try again
+                            console.log('Trying again...')
+
+                            $.ajax(this);
+                            return;
+                        }
+                        console.log('Stoping trying...');
+                        return
+                    }
+
+                });
+
+                return true
+            }
+
             if (request[TYPE] == TYPES.interests) {
                 CURRENT_USER_ID = request['user_id'];
-                console.log('interests...')
-                console.log(request)
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(0)!=true)) {
                     return
                 }
@@ -1793,10 +1807,9 @@ chrome.runtime.onMessage.addListener(
                     tryCount : 0,
                     retryLimit : 3,
                     success: function (a) {
-                        console.log(a)
                         if (!a[STATUS] || (a[STATUS]==FAILURE)) {
                             if (a[STATUS] && (a[REASON]=NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
+                                //    captureErrorBackground(getConsentFromServer,[URLS_SERVER.getConsent,0,genericRequestSuccess,genericRequestNoConsent,genericRequestError],URLS_SERVER.registerError,undefined);
                             }
 
                             this.tryCount++;
@@ -1808,9 +1821,8 @@ chrome.runtime.onMessage.addListener(
                                 return;
                             }
                             console.log('Stoping trying...');
-                            return true};
-
-                        console.log('saving last interest scroll')
+                            return true
+                        };
 
                         setLastUserPreferenceCrawlSuccessfullAttempt(CURRENT_USER_ID,'interests')
                         // localStorage.lastInterestCrawl = (new Date()).getTime()
@@ -1837,14 +1849,8 @@ chrome.runtime.onMessage.addListener(
 
             if (request[TYPE] == TYPES.demographics) {
                 CURRENT_USER_ID = request['user_id'];
-                console.log('demographics and behaviors...');
-                console.log(request)
 
                 if ((localStorage.collectPrefs!=='true') || (hasCurrentUserConsent(0)!=true)) {
-
-                    console.log(localStorage.collectPrefs);
-                    console.log(hasCurrentUserConsent(0));
-                    console.log("No consent or no preferences")
                     return
                 }
                 registerDemBehToServer(request);
@@ -1852,68 +1858,81 @@ chrome.runtime.onMessage.addListener(
             }
 
             if(request[TYPE] === TYPES.statusAdBlocker){
+
+                let currentTime = (new Date()).getTime()
+                setAdBlockerTimeChecked(CURRENT_USER_ID, currentTime)
+
+                if(!localStorage.statusAdBlocker || localStorage.statusAdBlocker !== request["value"]) {
+                    let state = ''
+                    if (request['value'] === "true") {
+                        state = "usingAdBlocker";
+                    }
+                    else {
+                        state = "notUsingAdBlocker"
+                    }
+
+
+                    let data = {
+                        user_id: CURRENT_USER_ID,
+                        timestamp: currentTime,
+                        event: state
+                    }
+
+                    $.ajax({
+                        type: REQUEST_TYPE,
+                        url: URLS_SERVER.adBlockerStatus,
+                        dataType: "json",
+                        traditional: true,
+                        data: JSON.stringify(replaceUserIdEmail(data)),
+                        tryCount: 0,
+                        retryLimit: 3,
+                        success: function (a) {
+                            if (!a[STATUS] || (a[STATUS] == FAILURE)) {
+                                if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
+                                    //    captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+                                }
+                                this.tryCount++;
+                                if (this.tryCount <= this.retryLimit) {
+                                    console.log('Trying again...')
+                                    $.ajax(this);
+                                    return;
+                                }
+                                console.log('Stoping trying...');
+                                return true
+                            };
+                            return true
+                        },
+
+                        error: function (xhr, textStatus, errorThrown) {
+                            this.tryCount++;
+                            if (this.tryCount <= this.retryLimit) {
+                                //try again
+                                console.log('Trying again...')
+
+                                $.ajax(this);
+                                return;
+                            }
+                            console.log('Stoping trying...');
+                            return
+                        }
+                    });
+                    return true
+
+                }
+
                 localStorage.statusAdBlocker = request['value'];
-                if(localStorage.statusAdBlocker == "true"){
+                if(localStorage.statusAdBlocker === "true"){
                     chrome.browserAction.setIcon({ path: "media/enabled_alert.png" });
                 }
                 else{
                     chrome.browserAction.setIcon({ path: "media/enabled.png" });
                 }
+
+
             }
 
-            if(request[MSG_TYPE] == UPDATE_NUMBER_OF_SURVEYS) {
-                let dataToSend = request;
-                delete dataToSend[TYPE];
-                $.ajax({
-                    type: REQUEST_TYPE,
-                    url: URLS_SERVER.updateSurveysNumber,
-                    dataType: "json",
-                    traditional: true,
-                    data: JSON.stringify(replaceUserIdEmail(dataToSend)),
-                    tryCount: 0,
-                    retryLimit: 3,
-                    success: function (a) {
-                        if (a[STATUS] && (a[STATUS] == FAILURE)) {
-                            if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
-                                captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
-                            }
-                            this.tryCount++;
-                            if (this.tryCount <= this.retryLimit) {
-                                console.log('Trying again...')
-                                $.ajax(this);
-                                return;
-                            }
-                            console.log('Stoping trying...');
-                            return true
-                        }
-                        else {
-                            localStorage.setItem('survey_number', a.survey_number);
-                            if(a.survey_number > 0) {
-                                chrome.browserAction.setBadgeText({text: a.survey_number.toString()});
-                                if( timeToRemindSurveyAnswering === undefined || (new Date()).getTime() >= timeToRemindSurveyAnswering ) {
-                                    window.open("ui/popup.html", "extension_popup", "width=400,height=500s,status=no,scrollbars=yes,resizable=no");
-                                }
-                            }
-                            else {
-                                chrome.browserAction.setBadgeText({text: ''});
-                                console.log("We have 0 survey to answer ! ");
-                            }
-                        }
-                        return true
-                    },
-                    error: function (xhr, textStatus, errorThrown) {
-                        this.tryCount++;
-                        if (this.tryCount <= this.retryLimit) {
-                            //try again
-                            console.log('Trying again...')
-
-                            $.ajax(this);
-                            return;
-                        }
-                        console.log('Stoping trying...');
-                        return
-                    }
-                });
+            if(request[MSG_TYPE] === UPDATE_NUMBER_OF_SURVEYS) {
+                getNumberOfSurveys(true);
                 return true
             }
 
@@ -1924,44 +1943,26 @@ chrome.runtime.onMessage.addListener(
 
     });
 
-//FACEBOOK LOGIN
 
-var successURL = 'www.facebook.com/connect/login_success.html';
-
-function onFacebookLogin(){
-    if (!localStorage.getItem('accessToken')) {
-        chrome.tabs.query({}, function(tabs) { // get all tabs from every window
-            for (var i = 0; i < tabs.length; i++) {
-                if (!tabs[i].url) {continue}
-                if (tabs[i].url.indexOf(successURL) !== -1) {
-                    // below you get string like this: access_token=...&expires_in=...
-                    var params = tabs[i].url.split('#')[1];
-
-                    // in my extension I have used mootools method: parseQueryString. The following code is just an example ;)
-                    var accessToken = params.split('&')[0];
-                    accessToken = accessToken.split('=')[1];
-
-
-                    localStorage.setItem('accessToken', accessToken);
-//          chrome.tabs.remove(tabs[i].id);
-                }
-            }
-        });
-    }
-}
+/*************************** CHROME TABS LISTENER ***********************************/
 
 chrome.tabs.onUpdated.addListener(onFacebookLogin);
+
+
+/*************************** On INSTALLED LISTENER ***********************************/
+
+
+chrome.runtime.onInstalled.addListener(function(details){
+    consent_page_opened = true;
+    not_logged_page_opened = true;
+});
+
+
+
 
 
 
 captureErrorBackground(getCurrentUserId,[],URLS_SERVER.registerError,undefined)
 
-captureErrorBackground(getCurrentLanguageByVersion,[],URLS_SERVER.registerError,undefined)
-
-captureErrorBackground(checkForBehaviorsDemographics,[],URLS_SERVER.registerError,undefined);
-captureErrorBackground(checkForAdvertisers,[],URLS_SERVER.registerError,undefined);
-captureErrorBackground(checkForInterests,[],URLS_SERVER.registerError,undefined);
-
-captureErrorBackground(exploreQueue,[],URLS_SERVER.registerError,undefined);
 
 

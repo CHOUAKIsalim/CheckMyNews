@@ -30,6 +30,7 @@
 
 
 
+var consentRequestedTime = null;
 
 
 /**
@@ -84,13 +85,15 @@ function setConsents(consents) {
  * @return {}
  */
 function getConsentFromServer(consentApiUrl,consentMode,onConsentPositive,onConsentNegative,onConsentError) {
-
     if (isCurrentUser()!==true) {
         return;
     }
 
-    var dat = replaceUserIdEmail({user_id:CURRENT_USER_ID});
+    if((consentRequestedTime !== null) && (new Date().getTime() - consentRequestedTime < 5 * 60 * 1000)) {
+        return;
+    }
 
+    var dat = replaceUserIdEmail({user_id:CURRENT_USER_ID});
     $.ajax({
         url:consentApiUrl,
         type:REQUEST_TYPE,
@@ -98,16 +101,15 @@ function getConsentFromServer(consentApiUrl,consentMode,onConsentPositive,onCons
         dataType: "json",
         traditional:true,
         success: function(resp){
+            consentRequestedTime = new Date().getTime();
             if (isCurrentUser()!==true) {
                 return;
             }
-            console.log(resp);
             setConsents(resp.consents);
             if (resp.consents[consentMode]==true) {
                 onConsentPositive(resp);
                 return;
             }
-
             onConsentNegative(resp);
         },
         error: function() {
@@ -128,7 +130,7 @@ function getConsentFromServer(consentApiUrl,consentMode,onConsentPositive,onCons
  * @return {}
  */
 function replyOnConsentPositive() {
-    this({"consent":true});
+    this({"consent":true, 'currentUser' : sha512(String(CURRENT_USER_ID))});
 
 }
 
@@ -138,7 +140,8 @@ function replyOnConsentPositive() {
  * @return {}
  */
 function replyOnConsentNegative(resp) {
-    this({"consent":false,"minTimestamp":resp.min_timestamp});
+//    this({"consent":false,"minTimestamp":resp.min_timestamp});
+    this({"consent":false});
 }
 
 /**
@@ -156,8 +159,11 @@ function replyOnConsentError() {
  * @return {}
  */
 function genericRequestNoConsent() {
-    console.log("Specific consent not given");
-
+    if(consent_page_opened) {
+        chrome.tabs.create({'url':chrome.extension.getURL("ui/new_consent.html")});
+        consent_page_opened = false;
+    }
+    window.setTimeout(function() {captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);},ONE_HOUR)
     return;
 }
 
@@ -196,25 +202,25 @@ function sendConsentStatusToComponents(consentApiUrl,sendResponse,consentMode=0)
  * @return {}
  */
 function openConsentWindow(resp) {
-    var isMessageShown = localStorage[CURRENT_USER_ID+'isMessageShown'];
+//    var isMessageShown = localStorage[CURRENT_USER_ID+'isMessageShown'];
 
     //Message has already been shown
-    if (isMessageShown===true) {
-        return;
-    }
+//    if (isMessageShown===true) {
+  //      return;
+  //  }
 
-    var minTimestamp = resp.min_timestamp;
-    if (minTimestamp && (minTimestamp<MIN_TIMESTAMP_MESSAGE)) {
-        alert("It seems that you have installed Social Media Monitor but you didn't sign the consent form. Why don't you click on the Social Media Monitor icon and sign the form?\n This message will not be shown again!");
-        localStorage[CURRENT_USER_ID+'isMessageShown'] = true;
-        return;
-    }
+//    var minTimestamp = resp.min_timestamp;
+//    if (minTimestamp && (minTimestamp<MIN_TIMESTAMP_MESSAGE)) {
+ //       alert("It seems that you have installed Social Media Monitor but you didn't sign the consent form. Why don't you click on the Social Media Monitor icon and sign the form?\n This message will not be shown again!");
+ //       localStorage[CURRENT_USER_ID+'isMessageShown'] = true;
+ //       return;
+ //   }
 
 
-    chrome.tabs.create({'url':chrome.extension.getURL(POPUPHTML)});
-    localStorage[CURRENT_USER_ID+'isMessageShown'] = true;
+//    chrome.tabs.create({'url':chrome.extension.getURL(POPUPHTML)});
+ //   localStorage[CURRENT_USER_ID+'isMessageShown'] = true;
 
-    return ;
+//    return ;
 
 
 }
@@ -252,10 +258,9 @@ function openWindowToNewUsers(consentApiUrl,consentMode=0) {
  */
 function replyOnSuccessInRegistration(consents,sendResponse) {
     if (sendResponse) {
-        sendResponse({"ok":true,"consents":consents});
+        sendResponse({"ok":true,"consents":consents, "currentUser" :  sha512(String(CURRENT_USER_ID))});
+        consentRequestedTime = null;
     }
-
-
 }
 
 
@@ -280,7 +285,6 @@ function replyOnFailureInRegistration(errorMsg,sendResponse) {
  */
 function registerConsent(registerConsentApiUrl,sendResponse=undefined,countEffort=3) {
 
-
     if (isCurrentUser()!==true) {
         return;
     }
@@ -288,7 +292,6 @@ function registerConsent(registerConsentApiUrl,sendResponse=undefined,countEffor
     if (countEffort<=0) {
         return
     }
-
 
     $.ajax({
         url: registerConsentApiUrl,
@@ -319,7 +322,6 @@ function registerConsent(registerConsentApiUrl,sendResponse=undefined,countEffor
             }
         }
     });
-
 
     sendExtensionNameAndVersion();
       return true

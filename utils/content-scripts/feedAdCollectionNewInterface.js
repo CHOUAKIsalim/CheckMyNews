@@ -35,7 +35,10 @@
  * @return {object}      DOM element of the whole ad
  */
 function getParentAdDivNewInterface(elem) {
-        if (elem.getAttribute('data-pagelet') && (elem.getAttribute('data-pagelet').indexOf("FeedUnit_")!==-1)){
+    if(elem === null) {
+        return
+    }
+    if (elem.getAttribute('data-pagelet') && (elem.getAttribute('data-pagelet').indexOf("FeedUnit_")!==-1)){
         return elem;
     }
     return getParentAdDivNewInterface(elem.parentElement);

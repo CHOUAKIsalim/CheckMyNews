@@ -117,7 +117,6 @@ function getDem() {
     if (script ==-1 )
     {return -1}
     var pos = script.innerHTML.indexOf(txt);
-    console.log(pos)
     return parseList(script.innerHTML.slice(pos+txt.length))
 
 }
@@ -143,7 +142,6 @@ function getBeh() {
     if (script ==-1 )
     {return -1}
     var pos = script.innerHTML.nthIndexOf(txt_1,1);
-    console.log(pos)
     return parseList(script.innerHTML.slice(pos+txt_0.length))
 
 }
@@ -161,12 +159,9 @@ function getDemographicsAndBehaviors(){
         chrome.runtime.sendMessage(data)
         return
     }
-    console.log('getting demographics')
     try {
         var demographics = getDem();
         var behaviors = getBeh();
-        console.log(demographics)
-        console.log(behaviors)
 
         if ((demographics==-1) && (behaviors==-1) && (count>0)) {
             count--;
@@ -185,8 +180,6 @@ function getDemographicsAndBehaviors(){
         }
         ALL_CRAWLED.categories=true;
     } catch (e) {
-        console.log(e)
-
         count--;
         window.setTimeout(getDemographicsAndBehaviors,1000)
     }

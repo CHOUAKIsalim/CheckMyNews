@@ -1,5 +1,4 @@
 
-var COLLECTED_NEWS_DOMAINS = [];
 var FB_LINKS = ['www.facebook.com', 'fbcdn.net'] // used to remove URLs that are not landingURL
 var SWAPINGFUNCTION = /"[\s\S]*"/; // related to getting landing urls
 var LINKSHIMASYNCLINK = 'LinkshimAsyncLink';
@@ -34,7 +33,6 @@ var NON_PUBLIC_LABELS = ['members of', 'friends', 'custom', 'membres de', 'amis 
  */
 function getLandingPagesFrontAds(links, frontAd) {
     var landingPages = getURLsFromString(frontAd.outerHTML);
-    //console.log(landingPages)
     var images = []
     for (let i = 0; i < links.length; i++) {
         let link = links[i];
@@ -50,7 +48,6 @@ function getLandingPagesFrontAds(links, frontAd) {
                     images.push(imgs[j].src)
                     continue
                 }
-                console.log(imgs[j])
             }
         }
         if ((onmouseover.indexOf(LINKSHIMASYNCLINK) === -1)) {
@@ -244,10 +241,8 @@ function getLandingDomain(postObj) {
 function grabNewsPosts() {
     let facebookInterfaceVersion = getFacebookInterfaceVersionFromParsedDoc(document);
     if (facebookInterfaceVersion=== INTERFACE_VERSIONS.old) {
-        console.log('Grabbing news posts - old Fb interface')
         captureErrorContentScript(grabNewsPostsOldInterface,[],{});
     } else if (facebookInterfaceVersion=== INTERFACE_VERSIONS.new) {
-        console.log('Grabbing news posts - new Fb interface')
         captureErrorContentScript(grabNewsPostsNewInterface,[],{});
     }
     setTimeout(grabNewsPosts, INTERVAL);
@@ -266,10 +261,20 @@ function grabPosts() {
 
 
 function isNewsOrganisationFacebookPage(facebook_page_id) {
+
+
     if (facebook_page_id === '' || facebook_page_id === undefined)
         return false;
-    for (let i = 0; i < FACEBOOK_PAGE_IDS.length; i++) {
-        if (FACEBOOK_PAGE_IDS[i].toString() === facebook_page_id) {
+
+    let facebook_ids = getFacebookIdsArray();
+
+
+    if(facebook_ids === undefined){
+        throw "FACEBOOK_PAGE_IDS not defined !"
+    }
+
+    for (let i = 0; i < facebook_ids.length; i++) {
+        if (facebook_ids[i].toString() === facebook_page_id) {
             return true;
         }
     }
@@ -284,10 +289,15 @@ function isNewsOrganisationFacebookPage(facebook_page_id) {
 function isNewsDomain(landing_domain) {
     if (landing_domain === '' || landing_domain === undefined)
         return false;
-    for (let i = 0; i < NEWS_DOMAINS.length; i++) {
-        //if (NEWS_DOMAINS[i].indexOf(landing_domain) != -1) {
-        if (NEWS_DOMAINS[i] === landing_domain) {
-            console.log(NEWS_DOMAINS[i] + " " + landing_domain);
+
+    let domains = getNewsDomainsArray();
+
+    if(domains === undefined) {
+        throw "NEWS DOMAINS AND SHORT DOMAINS ARE UNDEFINED !";
+    }
+
+    for (let i = 0; i < domains.length; i++) {
+        if (domains[i] === landing_domain) {
             return true;
         }
     }

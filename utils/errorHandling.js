@@ -39,6 +39,16 @@ var ERROR_TYPES = {
 var ERROR_MESSAGE = 'error_message';
 
 
+function getSentErrors() {
+    if (!localStorage.sentErrors) {
+        localStorage.sentErrors = JSON.stringify({})
+    }
+
+    return JSON.parse(localStorage.sentErrors);
+
+}
+
+
 
 /**
  * Check if string is a message type of the ERROR_TYPES object
@@ -159,6 +169,28 @@ function replaceUserIdEmail(obj) {
 }
 
 
+function alreadySent(errorInfo) {
+    for(let i =0 ; i<SENT_ERRORS.length; i++ ) {
+        var currentElem = SENT_ERRORS[i];
+        if(currentElem['user_id']===errorInfo['user_id'] && currentElem['error_message']===errorInfo['error_message'] && currentElem['message_type'] === errorInfo['message_type']) {
+            return true
+        }
+    }
+    return false
+}
+
+function cleanErrorMessages() {
+    let res = []
+    let currTime = (new Date()).getTime();
+
+    for(let i =0 ; i<SENT_ERRORS.length; i++ ) {
+        let  currentElem = SENT_ERRORS[i];
+        if (currTime - currentElem["time"] <= 15 * DAY_MILISECONDS) {
+            res.push(currentElem)
+        }
+    }
+    return res;
+}
 
 
 /**
@@ -169,11 +201,24 @@ function replaceUserIdEmail(obj) {
  * @return {}
  */
 function sendErrorMessage(errorInfo, errorURL) {
-    // if (CURRENT_USER_ID==-1) || (CURRENT_USER_ID=="") {
-    //   console.log("Current user id is {}".format(''))
-    // }
+
+    SENT_ERRORS = cleanErrorMessages()
+
     errorInfo['user_id'] = CURRENT_USER_ID
     errorInfo =replaceUserIdEmail(errorInfo)
+
+    if(alreadySent(errorInfo)) {
+        return true
+    }
+    else{
+        SENT_ERRORS.push({
+            'user_id' : errorInfo['user_id'],
+            'error_message' : errorInfo['error_message'],
+            'message_type' : errorInfo['message_type'],
+            'time' : (new Date()).getTime()
+        })
+    }
+
     try {
 
         $.ajax({
@@ -191,13 +236,10 @@ function sendErrorMessage(errorInfo, errorURL) {
                 console.log(errorInfo);
                 console.log('Success registering error');
 
-
             },
         }).fail(function(a){
                 console.log('Failure to register error');
                 console.log(JSON.stringify(errorInfo));
-
-
             }
         )}
 

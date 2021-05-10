@@ -65,7 +65,6 @@ function getAdId(frontAd) {
 
 	if (adIds.length!==1 || clientTokens.length!==1) {
 		//NOTIFY SERVER
-		// console.log("problem: ",JSON.stringify(adIds),JSON.stringify(clientTokens));
 		return [-1,-1]
 
 	}
@@ -201,7 +200,6 @@ function findRightSideBrackets(text,position) {
 
 
 function getVideoImage(frontAd) {
-	console.log("getVideoImage");
 	let father = frontAd.getElementsByTagName('video')[0].parentElement;
 	let allChildren = father.getElementsByTagName('*');
 	for (let i=0;i<allChildren.length;i++) {
@@ -372,9 +370,8 @@ function getAdExtraData(customId, type) {
 		let frontAd = elements[0];
 		let [advertiserId,facebookPage,advertiserImage] = getReactAdvertiserInfo(frontAd);
 		let [adId,clientToken] = [-1, -1];
-		if(type !== TYPES.newsPost && type !== TYPES.publicPost) {
-			[adId, clientToken] = getAdId(frontAd);
-		}
+
+		[adId, clientToken] = getAdId(frontAd);
 
 		let [objId,serialized_frtp_identifiers,story_debug_info]= findExtraFRTPIdentifiers(frontAd);
 		let images = getImagesFrontAdsNewInterface(frontAd.getElementsByTagName('a'),frontAd);

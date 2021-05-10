@@ -1,6 +1,6 @@
 
 
-var likeButtonClassNewInterface = "e71nayrh  _18vj";
+var likeButtonClassNewInterface = "rq0escxv l9j0dhe7 du4w35lb j83agx80 cbu4d94t pfnyh3mw d2edcug0 hpfvmrgz ph5uu5jm b3onmgus iuny7tx3 ipjc6fyt";
 var normalLikeColorNewInterface = "rgb(101, 103, 107)";
 var commentButtonClassNewInterface = "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv n05y2jgg hbms080z p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h vul9dhcy f1sip0of lzcic4wl l9j0dhe7 abiwlrkh p8dawk7l f49446kz  _666h  _18vj _18vk"
 var shareButtonClassNewInterface = "oajrlxb2 bp9cbjyn g5ia77u1 mtkw9kbi tlpljxtp qensuy8j ppp5ayq2 goun2846 ccm00jje s44p3ltw mk2mc5f4 rt8b4zig n8ej3o3l agehan2d sk4xxmp2 rq0escxv nhd2j8a9 j83agx80 rj1gh0hx btwxx1t3 pfnyh3mw p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x tgvbjcpo hpfvmrgz jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso l9j0dhe7 i1ao9s8h esuyzwwr f1sip0of du4w35lb lzcic4wl abiwlrkh p8dawk7l buofh1pr k7cz35w2 taijpn5t ms05siws flx89l3n ogy3fsii";
@@ -32,7 +32,6 @@ function onMessagingNewInterface() {
             }
         } else {
             if (!isOnMessaging) {
-                console.log('Messaging is ON');
                 lastTimestampOnMessaging = Date.now();
                 isOnMessaging = true;
                 interruptAdVisibility();
@@ -48,51 +47,67 @@ function addEventListenersNewInterface(ad) {
     // This vas will be used to advertiser check
     var dateForAdvertiserCheckWithHover;
 
-    // Getting the html object of the ad
-    console.log("in add event listeners New Interface : " + ad.html_ad_id);
 
     let frontAd = document.getElementById(ad.html_ad_id);
 
     // Listener for réactions : like, love, haha, wow, sad, angry
-    let likeButton = frontAd.getElementsByClassName(likeButtonClassNewInterface)[0];
-    var observer = new MutationObserver(function (mutations) {
-        if (likeButton != null) {
-            newColor = getComputedStyle(likeButton).color;
-            let type = undefined;
-            if (newColor === normalLikeColorNewInterface) {
-                if ( lastEventType !== normalLikeColor){
-                    type = removeLikeEventType;
-                }
-            } else if (newColor === likeColor) {
-                if (lastEventType !== likeEventType) {
-                    type = likeEventType;
-                }
-            } else if (newColor === loveColor) {
-                type = loveEventType;
-            } else if (newColor === hahaColor) { //Haha wow and sad
-                if (likeButton.innerHTML.indexOf(hahaText) !== -1) {
-                    type = hahaEventType;
-                } else if (likeButton.innerHTML.indexOf(englishWowText) !== -1 || likeButton.innerHTML.indexOf(frenchWowText) !== -1) {
-                    type = wowEventType;
-                } else if (likeButton.innerHTML.indexOf(englishCareText) !== -1 || likeButton.innerHTML.indexOf(frenchCareText) !== -1) {
-                    type = careEventType;
-                } else {
-                    type = sadEventType
+    //    let likeButton = frontAd.getElementsByClassName(likeButtonClassNewInterface)[0];
+
+    let likeButton = frontAd.querySelectorAll('[aria-label="Like"]')[0];
+    if(likeButton!== undefined){
+
+        // IT was with the observer to detect the different colors (different reactions)
+        // But facebook made it impossible
+        // So i just detect the click now
+        /**
+        var observer = new MutationObserver(function (mutations) {
+            if (likeButton != null) {
+                newColor = getComputedStyle(likeButton).color;
+                console.log(getComputedStyle(likeButton));
+                let type = undefined;
+                if (newColor === normalLikeColorNewInterface) {
+                    if ( lastEventType !== normalLikeColor){
+                        type = removeLikeEventType;
+                    }
+                } else if (newColor === likeColor) {
+                    if (lastEventType !== likeEventType) {
+                        type = likeEventType;
+                    }
+                } else if (newColor === loveColor) {
+                    type = loveEventType;
+                } else if (newColor === hahaColor) { //Haha wow and sad
+                    if (likeButton.innerHTML.indexOf(hahaText) !== -1) {
+                        type = hahaEventType;
+                    } else if (likeButton.innerHTML.indexOf(englishWowText) !== -1 || likeButton.innerHTML.indexOf(frenchWowText) !== -1) {
+                        type = wowEventType;
+                    } else if (likeButton.innerHTML.indexOf(englishCareText) !== -1 || likeButton.innerHTML.indexOf(frenchCareText) !== -1) {
+                        type = careEventType;
+                    } else {
+                        type = sadEventType
+                    }
+
+                } else if (newColor === angryColor) {
+                    type = angryEventType;
                 }
 
-            } else if (newColor === angryColor) {
-                type = angryEventType;
+                if(type !== undefined) {
+                    storeAdClickEvent(ad, type);
+                }
             }
+        });
+        observer.observe(likeButton, {attributes: true, childList: true});
+ **/
 
-            if(type !== undefined) {
-                storeAdClickEvent(ad, type);
-            }
-        }
-    });
-    observer.observe(likeButton, {attributes: true, childList: true});
+        likeButton.addEventListener('click', function (){
+            storeAdClickEvent(ad, LikeButtonAllReactionsEventType);
+        })
+    }
+
 
     // Listener for clicking on comment button and writing comment
-    let commentButton = frontAd.getElementsByClassName(commentButtonClassNewInterface)[0];
+
+//    let commentButton = frontAd.getElementsByClassName(commentButtonClassNewInterface)[0];
+    let commentButton = frontAd.querySelectorAll('[aria-label="Leave a comment"]')[0];
     if (commentButton !== undefined) {
         commentButton.addEventListener('click', function () {
             storeAdClickEvent(ad, commentButtonClickEventType)
@@ -111,7 +126,9 @@ function addEventListenersNewInterface(ad) {
     }
 
     //Listener for share button
-    let shareButton = frontAd.getElementsByClassName(shareButtonClassNewInterface)[0];
+
+//    let shareButton = frontAd.getElementsByClassName(shareButtonClassNewInterface)[0];
+    let shareButton = frontAd.querySelectorAll('[aria-label="Send this to friends or post it on your timeline."]')[0];
     if (shareButton !== undefined) {
         shareButton.addEventListener('click', function () {
             storeAdClickEvent(ad, shareEventType);
@@ -249,7 +266,6 @@ function grabPostsNewInterface(){
         nextNum = Math.max.apply(null,Object.keys(POST_QUEUE).map(function (x) {return parseInt(x)})) +1 ;
     }
     if(window.location.href.indexOf('ads/preferences') == -1){
-        console.log('Grabbing posts');
         var allAdsId = Object.keys(FRONTADQUEUE).map(key => FRONTADQUEUE[key]['html_ad_id']);
         var allDomPosts = document.getElementsByClassName(POST_CLASS_NEW_INTERFACE);
         for (let i = 0; i < allDomPosts.length; i++) {

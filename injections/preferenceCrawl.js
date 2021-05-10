@@ -19,7 +19,8 @@ function mergeInterestAdvertisers(interest_advertisers_payload) {
 }
 
 function getInterestsAdvs(url, type) {
-  var request = new XMLHttpRequest();
+
+ var request = new XMLHttpRequest();
   request.open("POST", url, true);
   //    content-type:
   request.setRequestHeader("content-type", "application/x-www-form-urlencoded");
@@ -30,7 +31,6 @@ function getInterestsAdvs(url, type) {
       var intAdvData = JSON.parse(
         request.responseText.replace("for (;;);", "")
       );
-      console.log(intAdvData);
       var data =
         type !== "advertisers"
           ? { data: intAdvData[PAYLOAD][type], type: type + "Data" }
@@ -47,6 +47,42 @@ function getInterestsAdvs(url, type) {
   request.onerror = function() {
     // There was a connection error of some sort
   };
-
   request.send(param(require("getAsyncParams")("POST")));
+
+
+}
+
+
+function getDemographicsObject(docId, module) {
+
+    var xmlhttp = new XMLHttpRequest();
+
+    xmlhttp.open("POST",GRAPHQLURL, true);
+    xmlhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+
+    xmlhttp.onload = function(e) {
+        if (xmlhttp.readyState === 4 && xmlhttp.status === 200){
+            window.postMessage({"type":"demographicsNewInterface","response":xmlhttp.responseText,"docId":docId, "module" : module},"*");
+            return;
+        }
+    }
+
+    let params = require("getAsyncParams")("POST");
+    params.doc_id = docId;
+    xmlhttp.send(param(params));
+}
+
+
+
+
+
+function getDemographicsAndBehaviorsNewInterface(jsResources) {
+    let modules = ["AdPreferencesProfileRelationshipStatusRowQuery.graphql", "AdPreferencesSavedFormResponsesPageQuery.graphql", "AdPreferencesAudienceTargetingLandingPageQuery.graphql","AdPreferencesDemographicCategoriesPageQuery"]
+
+    for (let i =0; i<modules.length; i++) {
+        let module = modules[i];
+        captureErrorOverload(getDocIdFromWaistResources,[jsResources, function (docId) {
+            captureErrorOverload(getDemographicsObject,[docId, module]);
+        }, module],undefined);
+    }
 }

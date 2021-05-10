@@ -35,13 +35,16 @@
  */
 
 
-// var consent= false;
 if (!localStorage.collectPrefs) {
     localStorage.collectPrefs = true;
 }
 
 var PREFERENCES_URL = 'https://www.facebook.com/ds/preferences/' // ad preferences url
-var PREFERENCES_URL_NEW_INTERFACE = 'https://www.facebook.com/adpreferences/data' // ad preferences url
+
+//var PREFERENCES_URL_NEW_INTERFACE = 'https://www.facebook.com/adpreferences/ad' // ad preferences url
+
+var PREFERENCES_URL_NEW_INTERFACE = 'https://www.facebook.com/adpreferences/ad_settings' // ad preferences url
+
 
 var PREFERENCES_URL_WITH_TOKEN_TEMPLATE = "https://www.facebook.com/ds/preferences/?cquick=jsc_c_d&cquick_token={0}&ctarget=https%3A%2F%2Fwww.facebook.com"
 
@@ -50,7 +53,6 @@ function notifyFirstFacebookTab(tabs, callback) {
 
 
     if (tabs.length === 0) {
-        console.log("No Facebook tab open");
         return
     }
 
@@ -128,23 +130,19 @@ function canUserPreferenceCrawl(userId, type) {
 
     // user has crawled preference the last halfday so no need to crawl more
     if ((Math.abs(now - lastSuccessfulAttempt) < DAY_MILISECONDS / 2)) {
-        console.log(type + " collected the last halfday")
         return false;
     }
 
 
     const attemptsTheLastHalfDay = getUserPreferenceCrawlAttempts(userId, type);
 
-    // user has not crawled and has not attempted the last halfday
-    if (attemptsTheLastHalfDay.length == 0) {
-        console.log("user has not crawled" + type + " and has not attempted the last halfday")
+    if (attemptsTheLastHalfDay.length === 0) {
         return true;
     }
 
 
     // user has not crawled and has  attempted the last halfday three or more times
     if (attemptsTheLastHalfDay.length >= 3) {
-        console.log("user has not crawled" + type + " and the last halfday three or more times")
         return false;
     }
 
@@ -156,7 +154,11 @@ function canUserPreferenceCrawl(userId, type) {
 
 }
 
-
+/**
+ * Delete attempts for user with type that were done more that 12h ago
+ * @param userId
+ * @param type
+ */
 function filterOldAPreferenceCrawlAttempts(userId, type) {
 
 
@@ -222,7 +224,6 @@ function getInterests(tabId) {
         notifyFirstFacebookTab(tabs, function (tabId) {
             chrome.tabs.sendMessage(tabId, {type: "getInterests"});
             setUserPreferenceCrawlAttempt(CURRENT_USER_ID, 'interests');
-
         })
 
 
@@ -239,7 +240,6 @@ function getAdvertisers(tabId) {
         notifyFirstFacebookTab(tabs, function (tabId) {
             chrome.tabs.sendMessage(tabId, {type: "getAdvertisers"});
             setUserPreferenceCrawlAttempt(CURRENT_USER_ID, 'advertisers');
-
         })
 
 
@@ -316,14 +316,12 @@ function isPreferencePageBlocked(doc) {
 }
 
 function getDem(doc) {
-
     var txt = 'demographicStatus":'
     var script = getScriptWithData(doc, txt);
     if (script == -1) {
         return -1
     }
     var pos = script.innerHTML.indexOf(txt);
-    console.log(pos)
     return parseList(script.innerHTML.slice(pos + txt.length))
 
 }
@@ -340,36 +338,29 @@ function getBeh(doc) {
         return -1
     }
     var pos = script.innerHTML.nthIndexOf(txt_1, 1);
-    console.log(pos)
     return parseList(script.innerHTML.slice(pos + txt_0.length))
 
 }
 
 
-//var count = 200
 function getDemographicsAndBehaviors(prefUrl, count) {
-
     $.get(prefUrl, function (resp) {
         try {
+
             var parser = new DOMParser();
             var htmlDoc = parser.parseFromString(resp, "text/html");
-            console.log(htmlDoc);
 
             if (count < 0) {
                 var data = {user_id: CURRENT_USER_ID, demographics: -1, behaviors: -1};
                 data['type'] = 'demBehaviors';
                 data['timestamp'] = (new Date).getTime();
                 data['raw'] = resp;
-                console.log(data)
                 return
             }
 
-            console.log('getting demographics')
 
             var demographics = getDem(htmlDoc);
             var behaviors = getBeh(htmlDoc);
-
-
             if ((demographics == -1) && (behaviors == -1) && (count > 0)) {
                 count--;
                 if (isPreferencePageBlocked(htmlDoc)) {
@@ -385,7 +376,6 @@ function getDemographicsAndBehaviors(prefUrl, count) {
                 data['type'] = 'demBehaviors';
                 data['timestamp'] = (new Date).getTime();
                 data['raw'] = resp;
-                console.log(data)
                 if (hasCurrentUserConsent(0) !== true) {
                     return
                 }
@@ -400,14 +390,12 @@ function getDemographicsAndBehaviors(prefUrl, count) {
 
 
     })
-
-
 }
+
 
 function registerDemBehToServer(data) {
 
 
-    console.log("registering dembeh to server");
     $.ajax({
         type: REQUEST_TYPE,
         url: URLS_SERVER.registerDemBeh,
@@ -419,7 +407,7 @@ function registerDemBehToServer(data) {
         success: function (a) {
             if (!a[STATUS] || (a[STATUS] == FAILURE)) {
                 if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
-                    captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+            //        captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
                 }
 
                 this.tryCount++;
@@ -460,47 +448,14 @@ function registerDemBehToServer(data) {
 }
 
 
-function getDemographicsAndBehaviorsNewInterface(count) {
-
-
-    console.log("getDemographicsAndBehaviorsNewInterface");
-    $.get({
-        url: PREFERENCES_URL,
-        success: function (resp) {
-            try {
-                let quickTokenMatch = resp.match(/compat_iframe_token":"[^"]+"|(\+)/);
-                if (!quickTokenMatch || quickTokenMatch.length < 1) {
-                    window.setTimeout(function () {
-                        captureErrorBackground(getCurrentUserEmailByVersion, [], URLS_SERVER.registerError, undefined)
-                    }, ONE_HALF_MINUTE)
-                    return;
-                }
-                let quickToken = quickTokenMatch[0].replace('compat_iframe_token":"', '');
-                quickToken = quickToken.slice(0, quickToken.length - 1);
-
-                captureErrorBackground(getDemographicsAndBehaviors, [PREFERENCES_URL_WITH_TOKEN_TEMPLATE.replace('{0}', quickToken), 3], URLS_SERVER.registerError, {});
-
-
-            } catch (e) {
-                console.log(e)
-
-
-            }
-        }
-    })
-
-
-}
-
 /**
  * checks if it is time (and app allows it) to retrieve the behaviors/profile data of current user
  * @return {}
  */
 function checkForBehaviorsDemographics() {
 
-
     if (hasCurrentUserConsent(0) !== true) {
-        captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+//        captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
         window.setTimeout(checkForBehaviorsDemographics, ONEMINUTE);
         return;
 
@@ -519,7 +474,6 @@ function checkForBehaviorsDemographics() {
 
 
     let interfaceVersion = getUserInterfaceVersion(CURRENT_USER_ID);
-    console.log(interfaceVersion)
 
     setUserPreferenceCrawlAttempt(CURRENT_USER_ID, 'behdem');
 
@@ -532,6 +486,7 @@ function checkForBehaviorsDemographics() {
     }
 
     if (interfaceVersion === INTERFACE_VERSIONS.old) {
+
         captureErrorBackground(getDemographicsAndBehaviors, [PREFERENCES_URL, 3], URLS_SERVER.registerError, undefined);
 
         window.setTimeout(function () {
@@ -541,8 +496,8 @@ function checkForBehaviorsDemographics() {
         return
     }
 
+
     if (interfaceVersion === INTERFACE_VERSIONS.new) {
-        captureErrorBackground(getDemographicsAndBehaviors, [PREFERENCES_URL_NEW_INTERFACE, 3], URLS_SERVER.registerError, undefined);
 
         window.setTimeout(function () {
             captureErrorBackground(checkForBehaviorsDemographics, [], URLS_SERVER.registerError, undefined)
@@ -550,12 +505,6 @@ function checkForBehaviorsDemographics() {
 
         return
     }
-
-
-//    if (interfaceVersion === INTERFACE_VERSIONS.new) {
-//        captureErrorBackground(getDemographicsAndBehaviorsNewInterface, [3], URLS_SERVER.registerError, undefined);
- //       return;
-  //  }
 
 
     window.setTimeout(function () {
@@ -574,7 +523,7 @@ function checkForInterests() {
 
 
     if (hasCurrentUserConsent(0) !== true) {
-        captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+      //  captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
         window.setTimeout(checkForInterests, ONEMINUTE);
         return
 
@@ -582,14 +531,13 @@ function checkForInterests() {
 
     if ((localStorage.collectPrefs !== 'true')) {
         console.log("CollectPrefs set to no");
-        window.setTimeout(checkForBehaviorsDemographics, ONEMINUTE);
+        window.setTimeout(checkForInterests, ONEMINUTE);
 
         return
     }
 
 
     if (canUserPreferenceCrawl(CURRENT_USER_ID, 'interests')) {
-        console.log("User can crawl for interests");
         getInterests();
     }
 
@@ -606,7 +554,6 @@ function checkForInterests() {
 function checkForAdvertisers() {
 
     if (hasCurrentUserConsent(0) !== true) {
-        captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
         window.setTimeout(checkForAdvertisers, ONEMINUTE);
         return;
 
@@ -615,13 +562,11 @@ function checkForAdvertisers() {
     if ((localStorage.collectPrefs !== 'true')) {
         console.log("CollectPrefs set to no");
 
-        window.setTimeout(checkForBehaviorsDemographics, ONEMINUTE);
+        window.setTimeout(checkForAdvertisers, ONEMINUTE);
         return
     }
 
     if (canUserPreferenceCrawl(CURRENT_USER_ID, 'advertisers')) {
-        console.log("User can crawl for advertisers");
-
         getAdvertisers();
     }
 

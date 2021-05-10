@@ -49,7 +49,6 @@ function handleUniversalCommunication(event) {
 
   	if (event.data.grabAdvertisers) {
         captureErrorOverload(getInterestsAdvs, [ADVERTISERSURL, "advertisers"], undefined);
-    	//captureErrorOverload(getInterestsAdvs, [ADVERTISERSURLNEWINTERFACE, "advertisers"], undefined)
   	    return true;
   	}
 
@@ -61,24 +60,18 @@ function handleUniversalCommunication(event) {
 
   	if (event.data.getAdBlockerStatus) {
         captureErrorOverload(getAdBlockerStatus, [], undefined);
-
         return true;
     }
 
 
+    if (event.data.type && event.data.type === 'getExplanation') {
+        captureErrorOverload(getExplanationsManually, [event.data.userId, event.data.adId, event.data.explanationUrl, event.data.dbRecordId, event.data.timestamp, event.data.graphQLAsyncParams, event.data.clientToken, event.data.docId, event.data.getNewDocId, event.data.newInterface, event.data.adType, event.data.objId,event.data.serialized_frtp_identifiers,event.data.story_debug_info, event.data.getDemographics], undefined);
 
-  if (event.data.type && event.data.type === 'getExplanation') {
-        // console.log(event.data)
-        captureErrorOverload(getExplanationsManually, [event.data.userId, event.data.adId, event.data.explanationUrl, event.data.dbRecordId, event.data.timestamp, event.data.graphQLAsyncParams, event.data.clientToken, event.data.docId, event.data.getNewDocId, event.data.newInterface, event.data.adType, event.data.objId,event.data.serialized_frtp_identifiers,event.data.story_debug_info], undefined);
-
-  }
+    }
 
 
 }
 
-
-
-captureErrorOverload(function() {setInterval(getAdBlockerStatus, ADBLOCKERDETECTIONINTERVAL)} ,[], undefined);
 
 
 

@@ -17,7 +17,6 @@ var lastTimestampMessagingOFF = 0;
 function onMessaginOldInterface(){
     var chatPage = document.getElementById('ChatTabsPagelet');
     if (chatPage === null || chatPage === undefined){
-        console.log('Error: ChatTabsPagelet not found');
         return;
     }
     chatPage.addEventListener('DOMSubtreeModified',function(event){
@@ -33,7 +32,6 @@ function onMessaginOldInterface(){
         }
         else{
             if(!isOnMessaging){
-                console.log('Messaging is ON');
                 lastTimestampOnMessaging = Date.now();
                 isOnMessaging = true;
                 interruptAdVisibility();
@@ -57,38 +55,40 @@ function addEventListenersOldInterface(ad) {
 
     // Listener for réactions : like, love, haha, wow, sad, angry
     let likeButton = frontAd.getElementsByClassName(likeButtonClass)[0];
-    var observer = new MutationObserver(function (mutations) {
-        if (likeButton != null)     {
-            newColor = getComputedStyle(likeButton).color;
-            let type = undefined;
-            if (newColor === normalLikeColor) {
-                if ( lastEventType !== normalLikeColor){
-                    type = removeLikeEventType;
+    if(likeButton !== undefined) {
+        var observer = new MutationObserver(function (mutations) {
+            if (likeButton != null)     {
+                newColor = getComputedStyle(likeButton).color;
+                let type = undefined;
+                if (newColor === normalLikeColor) {
+                    if ( lastEventType !== normalLikeColor){
+                        type = removeLikeEventType;
+                    }
+                } else if (newColor === likeColor) {
+                    if (lastEventType !== likeEventType) {
+                        type = likeEventType;
+                    }
+                } else if (newColor === loveColor) {
+                    type = loveEventType;
+                } else if (newColor === hahaColor) { //Haha wow and sad
+                    if (likeButton.innerHTML.indexOf(hahaText) !== -1) {
+                        type = hahaEventType;
+                    } else if (likeButton.innerHTML.indexOf(englishWowText) !== -1 || likeButton.innerHTML.indexOf(frenchWowText) !== -1) {
+                        type = wowEventType;
+                    } else {
+                        type = sadEventType;
+                    }
+                } else if (newColor === angryColor) {
+                    type = angryEventType;
                 }
-            } else if (newColor === likeColor) {
-                if (lastEventType !== likeEventType) {
-                    type = likeEventType;
-                }
-            } else if (newColor === loveColor) {
-                type = loveEventType;
-            } else if (newColor === hahaColor) { //Haha wow and sad
-                if (likeButton.innerHTML.indexOf(hahaText) !== -1) {
-                    type = hahaEventType;
-                } else if (likeButton.innerHTML.indexOf(englishWowText) !== -1 || likeButton.innerHTML.indexOf(frenchWowText) !== -1) {
-                    type = wowEventType;
-                } else {
-                    type = sadEventType;
-                }
-            } else if (newColor === angryColor) {
-                type = angryEventType;
-            }
 
-            if(type !== undefined) {
-                storeAdClickEvent(ad, type);
+                if(type !== undefined) {
+                    storeAdClickEvent(ad, type);
+                }
             }
-        }
-    });
-    observer.observe(likeButton, {attributes: true, childList: true});
+        });
+        observer.observe(likeButton, {attributes: true, childList: true});  
+    }
 
     // Listener for clicking on comment button and writing comment
     let commentButton = frontAd.getElementsByClassName(commentButtonClass)[0];

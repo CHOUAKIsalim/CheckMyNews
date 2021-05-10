@@ -5,37 +5,24 @@ var NEWS_ARTICLES = {};
 
 
 function sendTabArticle(request){
+    if (hasCurrentUserConsent(0) !== true) {
+        return true;
+    }
+
     $.ajax({
-        type: REQUEST_TYPE,
-        url: URLS_SERVER.registerArticle,
-        dataType: "json",
-        traditional: true,
-        data: JSON.stringify(replaceUserIdEmail(request)),
-        tryCount: 0,
-        retryLimit: 3,
-        success: function (a) {
-            console.log(a)
-            if (!a[STATUS] || (a[STATUS] == FAILURE)) {
-                if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
-                    captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
-                }
+    type: REQUEST_TYPE,
+    url: URLS_SERVER.registerArticle,
+    dataType: "json",
+    traditional: true,
+    data: JSON.stringify(replaceUserIdEmail(request)),
+    tryCount: 0,
+    retryLimit: 3,
+    success: function (a) {
+        if (!a[STATUS] || (a[STATUS] == FAILURE)) {
+            if (a[STATUS] && (a[REASON] = NO_USER_CONSENT)) {
+           //     captureErrorBackground(getConsentFromServer, [URLS_SERVER.getConsent, 0, genericRequestSuccess, genericRequestNoConsent, genericRequestError], URLS_SERVER.registerError, undefined);
+            }
 
-                this.tryCount++;
-                if (this.tryCount <= this.retryLimit) {
-                    //try again
-                    console.log('Trying again...')
-
-                    $.ajax(this);
-                    return;
-                }
-                console.log('Stoping trying...');
-                console.log('failure')
-                return true
-            };
-
-            return true
-        },
-        error: function (xhr, textStatus, errorThrown) {
             this.tryCount++;
             if (this.tryCount <= this.retryLimit) {
                 //try again
@@ -45,10 +32,25 @@ function sendTabArticle(request){
                 return;
             }
             console.log('Stoping trying...');
-            return
-        }
+            console.log('failure')
+            return true
+        };
 
-    });
+        return true
+    },
+    error: function (xhr, textStatus, errorThrown) {
+        this.tryCount++;
+        if (this.tryCount <= this.retryLimit) {
+            //try again
+            console.log('Trying again...')
+
+            $.ajax(this);
+            return;
+        }
+        console.log('Stoping trying...');
+        return
+    }
+});
     return true;
 }
 
@@ -218,9 +220,7 @@ function isNewsDomain(landing_domain) {
     if (landing_domain === '' || landing_domain === undefined)
         return false;
     for (let i = 0; i < NEWS_DOMAINS.length; i++) {
-        //if (NEWS_DOMAINS[i].indexOf(landing_domain) != -1) {
         if (NEWS_DOMAINS[i] === landing_domain) {
-            console.log(NEWS_DOMAINS[i] + " " + landing_domain);
             return true;
         }
     }
