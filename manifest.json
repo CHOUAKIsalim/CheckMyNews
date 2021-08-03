@@ -101,6 +101,7 @@
     "injections/universal.js",
     "injections/xhrOverloadPreferences.js",
     "injections/xhrOverloadButtons.js",
+    "injections/misinfoWarning.js",
     "media/solving_captcha.gif"
   ]
 }

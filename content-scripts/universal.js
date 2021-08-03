@@ -147,10 +147,16 @@ function injectUniversalScripts() {
     s4.src = chrome.extension.getURL("injections/explanationCrawl.js");
     (document.head||document.documentElement).appendChild(s4);
 
-
+    var s6 = document.createElement("script");
+    s6.src = chrome.extension.getURL("injections/misinfoWarning.js");
+    (document.head||document.documentElement).appendChild(s6);
+    
+    
     var s5 = document.createElement("script");
     s5.src = chrome.extension.getURL("injections/universal.js");
     (document.head||document.documentElement).appendChild(s5);
+
+    
 
 
 }

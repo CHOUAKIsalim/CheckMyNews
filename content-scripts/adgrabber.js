@@ -251,6 +251,9 @@ function grabFeedAds() {
         if (isEqual(adData, {}) == true) {
             continue;
         }
+        // $(window).trigger("postCollected",[adData])
+        POST_COLLECTED_EVENT = CustomEvent("postCollected", { "detail": {"adData":adData} });
+        window.dispatchEvent(POST_COLLECTED_EVENT)
         addEventListeners(adData);
         MouseTrack(adData);
 
@@ -274,6 +277,12 @@ function grabFeedAdsNewInterface() {
         if (isEqual(adData,{})==true) {
             continue;
         }
+        
+        // $(window).trigger("postCollected",[adData])
+
+        POST_COLLECTED_EVENT = new CustomEvent("postCollected", { "detail": {"adData":adData} });
+        document.dispatchEvent(POST_COLLECTED_EVENT)
+        console.log("post collected !")
         frontAds[i].className += " " + COLLECTED;
         addEventListeners(adData);
         MouseTrack(adData);
