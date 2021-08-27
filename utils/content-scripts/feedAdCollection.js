@@ -847,7 +847,7 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
     for (var i=0;i<links.length;i++) {
         var link = links[i];
         var frame = funParent(link);
-        if (frame===undefined || already_in_list.has(frame.id)) {
+        if (frame===undefined || frame === null || already_in_list.has(frame.id)) {
             continue
         }
         frontAds.push(frame);

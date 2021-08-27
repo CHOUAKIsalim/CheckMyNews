@@ -1320,7 +1320,7 @@ chrome.runtime.onMessage.addListener(
         if ((!sender.tab) || (sender.tab && (sender.url) && (typeof sender.url === "string") && (sender.url.indexOf('popup.html')>-1)) ){
             if (request.setConsent) {
 
-                if (CURRENT_USER_ID==-1) {
+                if (CURRENT_USER_ID===-1) {
                     sendResponse({"ok":false});
                     return true
 

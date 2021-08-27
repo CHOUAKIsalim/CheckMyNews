@@ -43,7 +43,8 @@ var VIEWS = [
   "survey_all",
   "rewards",
   "study_details",
-  "contact_us"
+  "contact_us",
+  "general_statistics"
 ];
 
 // var consent= false;

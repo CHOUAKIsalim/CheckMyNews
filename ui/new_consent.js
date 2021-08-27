@@ -2,7 +2,10 @@
 	//HOST_SERVER = 'https://smm.mpi-sws.org/';
 	HOST_SERVER = 'https://adanalystplus.imag.fr/';
 	function sendConsent() {
+		 console.log("sending consent");
  		 chrome.runtime.sendMessage({ consent: true, setConsent: true }, function(response) {
+ 		 	console.log("this is the response");
+ 		 	console.log(response);
 		    if (response.ok) {
     	     	if (response.consents[3]!==true) {
     	     		$("#noConsentButton").hide();
@@ -25,12 +28,12 @@
 
 	function getConsent() {
   		chrome.runtime.sendMessage({ getConsent: true ,consentMode:3}, function(response) {
-		    if (response.consent) {
+		    if (response && response.consent) {
 		 		$("#noConsentButton").hide();
 		 		$("#consentButton").hide();
 		      return;
 		    }
-    	setTimeout(getConsent, FIVE_SECONDS);
+    	setTimeout(getConsent, 5000);
   		});
   	}
 
