@@ -1,4 +1,4 @@
-# Ad Impact
+# Social Media Monitor
 
 
 Social Media Monitor is a tool developed by the MIAI Multidisciplinary Institute on Artificial Intelligence in Europe that allows users to donate data about the posts that are shown in their Facebook timeline. 
