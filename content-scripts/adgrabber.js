@@ -411,11 +411,13 @@ function permissionToGrab() {
         chrome.runtime.sendMessage(msg, function (response) {
             if (response.consent) {
                 captureErrorContentScript(grabAllAds, [], {});
-                captureErrorContentScript(grabNewsPosts, [], {});
-                captureErrorContentScript(checkAdVisibleDuration, [], {});
+            //    captureErrorContentScript(grabNewsPosts, [], {});
+            //    captureErrorContentScript(checkAdVisibleDuration, [], {});
+
               //   captureErrorContentScript(grabPosts, [], {});
               //   captureErrorContentScript(checkPostVisibleDuration, [], {});
               //   captureErrorContentScript(onFbMessaging, [], {});
+
                 return true
             } else {
                 setTimeout(permissionToGrab, INTERVAL);

@@ -43,8 +43,8 @@ var angryColor = "rgb(233, 113, 15)";
 var isOnMessaging = false;
 var POST_QUEUE= {};
 
-var Ad_Visible_INTERVAL = 2000;
-var Post_Visible_INTERVAL = 2000;
+var Ad_Visible_INTERVAL = 500;
+var Post_Visible_INTERVAL = 500;
 
 var lastScrolledTs = 0;
 

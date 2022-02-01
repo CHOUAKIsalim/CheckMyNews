@@ -83,11 +83,11 @@ function onlyUnique(value, index, self) {
 function getResourcesFromExplanationNewInterface(sr_revision_id) {
     let jsResources = []
     let html_page = document.documentElement.innerHTML;
+
     let resourceMapPost = html_page.indexOf(sr_revision_id.toString()+'},"rsrcMap"');
 
-
     while (resourceMapPost !== - 1) {
-
+        alert("inside loop");
         let resources = findNextJSONObject(html_page, resourceMapPost + html_page.substring(resourceMapPost).indexOf("rsrcMap"))
         for (let property in resources){
             if (resources[property]['type']!=='js') {
@@ -95,11 +95,11 @@ function getResourcesFromExplanationNewInterface(sr_revision_id) {
             }
             jsResources.push(resources[property]['src']);
         }
+        alert(jsResources.length);
 
         resourceMapPost = html_page.indexOf(sr_revision_id.toString()+'},"rsrcMap"', resourceMapPost + 1);
 
     }
-
     return jsResources.filter(onlyUnique)
 }
 
@@ -188,13 +188,14 @@ function getDocIdFromWaistResources(jsResources,callback, module) {
         if (xmlhttp.readyState === 4 && xmlhttp.status === 200){
             if (xmlhttp.responseText.indexOf(module)!==-1) {
                 docId = captureErrorOverload(getDocIdFromWaistResource,[xmlhttp.responseText, module],undefined);
-
+                alert("fouuund");
                 if ((docId)) {
                     callback(docId);
                     return;
                 }
 
             }
+
             getDocIdFromWaistResources(jsResources.slice(1,jsResources.length),callback, module);
             return;
 
@@ -204,6 +205,7 @@ function getDocIdFromWaistResources(jsResources,callback, module) {
         }
     }
 
+    console.log("HOUNAAAAAAAAAAAA");
     xmlhttp.onerror = function (e) {
         console.log("on Error")
         console.log(e)
@@ -225,10 +227,10 @@ function getDocIdFromWaistResources(jsResources,callback, module) {
 
 function get_sr_revision_id(explanationDialogText) {
 
-    let sr_revision_matches = explanationDialogText.match(/"sr_revision":([0-9]*)/g)
-    if (sr_revision_matches.length > 0) {
+    let sr_revision_matches = explanationDialogText.match(/"rev":([0-9]*)/g)
+    if (sr_revision_matches !== null && sr_revision_matches.length > 0) {
         let sr_revision_object = JSON.parse('{' + sr_revision_matches[0] + '}');
-        return sr_revision_object["sr_revision"];
+        return sr_revision_object["rev"];
     }
     return -1;
 
@@ -239,7 +241,7 @@ function getDocIdFromMenuResourcesNewInterface(objId,serialized_frtp_identifiers
     params.doc_id = require("CometFeedStoryMenuQuery$Parameters").params.id;
     params.av = params.__user;
     params.fb_api_caller_class="RelayModern";
-    params.fb_api_req_friendly_name = "CometFeedStoryMenuQuery";
+    params.fb_api_req_friendly_name = "CometFeedStoryMenuQuery.graphql";
     params.variables = JSON.stringify({feed_location:"NEWSFEED",id:objId,serialized_frtp_identifiers:serialized_frtp_identifiers,scale:2,story_debug_info:story_debug_info});
 
     var xmlhttp = new XMLHttpRequest();
@@ -250,7 +252,11 @@ function getDocIdFromMenuResourcesNewInterface(objId,serialized_frtp_identifiers
         let sr_revision_id = get_sr_revision_id(xmlhttp.responseText);
         let jsResources= getResourcesFromExplanationNewInterface(sr_revision_id);
 
-        let module = "AdsPrefWAISTDialogQuery.graphql"
+        //let module = "AdsPrefWAISTDialogQuery.graphql"
+
+
+        let module = "CometAdPrefsWAISTDialogRootQuery.graphql"
+
         captureErrorOverload(getDocIdFromWaistResources,[jsResources,callback, module],undefined);
 
         if(should_get_demographics) {

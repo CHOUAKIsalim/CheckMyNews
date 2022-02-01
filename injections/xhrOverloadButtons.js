@@ -138,7 +138,7 @@ function getAdIdParams(response) {
     });
 
     try {
-      return send.apply(this, arguments);
+     return send.apply(this, arguments);
     }catch (e){
       console.log("error in sending request from xhrOverloadButtons")
       console.log(e)

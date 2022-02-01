@@ -47,8 +47,8 @@ function getAdId(frontAd) {
 
 		k = stringifyReact(allChildren[i][reactKey],9);
 
-		if (k.indexOf('client_token')!==-1) {
-    		clientTokens.push(JSON.parse(k.match(/sponsored_data":{[^}]*}/)[0].replace('sponsored_data":',''))["client_token"])
+		if (k.indexOf('client_token')!==-1 && k.indexOf("sponsored_data")!==-1) {
+			clientTokens.push(JSON.parse(k.match(/sponsored_data":{[^}]*}/)[0].replace('sponsored_data":',''))["client_token"])
 
 		}
 

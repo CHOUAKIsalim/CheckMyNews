@@ -21,19 +21,19 @@
     "message": "Contact Us"
   },
   "warningAdBlocker": {
-    "message": "It seems an Ad Blocker running. Please turn off all Ad Blocker to make Social Media Monitor work better."
+    "message": "It seems an Ad Blocker running. Please turn off all Ad Blocker to make CheckMyNews work better."
   },
   "collectPreferences": {
     "message": "Collect Preferences"
   },
   "notLoggedYet": {
-    "message": " <strong>Note!</strong> If you have not logged in Facebook, Social Media Monitor is not working. <br />If you are already logged in please wait for a few moments..."
+    "message": " <strong>Note!</strong> If you have not logged in Facebook, CheckMyNews is not working. <br />If you are already logged in please wait for a few moments..."
   },
 
   "consentButton": {
     "message": "Accept"
   },
   "consentAlert": {
-    "message": "<h4 class='alert-heading'>Welcome to Social Media Monitor! Why don't you sign the consent form? </h4> <hr /> <small> This popup will not appear again! </small>"
+    "message": "<h4 class='alert-heading'>Welcome to CheckMyNews! Why don't you sign the consent form? </h4> <hr /> <small> This popup will not appear again! </small>"
   }
 }

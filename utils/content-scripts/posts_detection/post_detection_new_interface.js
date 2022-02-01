@@ -1,5 +1,5 @@
 var LANDING_DOMAIN_NEW_INTERFACE_CLASS = "oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1et5uql a8c37x1j hop8lmos enqfppq2 e9vueds3 j5wam9gi knj5qynh m9osqain ni8dbmo4 stjgntxs ltmttdrg g0qnabr5";
-    var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
+var POST_CLASS_NEW_INTERFACE = "du4w35lb k4urcfbm l9j0dhe7 sjgh65i0";
 var POST_COLLECTED = "post_collected";
 var COMMENTS_CLASS_NEW_INTERFACE = "l9j0dhe7 ecm0bbzt hv4rvrfc qt6c0cv9 dati1w0a j83agx80 btwxx1t3 lzcic4wl";
 var POST_TEXT_CLASS_NEW_INTERFACE = "ecm0bbzt hv4rvrfc ihqw7lf3 dati1w0a";

@@ -736,23 +736,36 @@ function findFeedAdsWithLettersInBoldElementsNotContainedInLinks() {
 
 function findAdsWithPostTopClass() {
     var elems = document.getElementsByClassName("j1lvzwm4 stjgntxs ni8dbmo4 q9uorilb gpro0wi8");
-
     let links = [];
     for(let i=0; i<elems.length; i++){
-        let second_span = elems[i].getElementsByClassName("b6zbclly myohyog2 l9j0dhe7 aenfhxwr l94mrbxd ihxqhq3m nc684nl6 t5a262vz sdhka5h4")[0];
+//        let second_span = elems[i].getElementsByClassName("b6zbclly myohyog2 l9j0dhe7 aenfhxwr l94mrbxd ihxqhq3m nc684nl6 t5a262vz sdhka5h4")[0];
+        let second_span = elems[i].getElementsByTagName("span")[0];
+
         let res = ''
+
+        if (second_span === undefined || second_span === null) {
+            continue
+        }
+
         let childrens = second_span.children;
-        res += second_span.childNodes[0].nodeValue;
+
+        if (second_span.childNodes[0].nodeValue !== null) {
+            res += second_span.childNodes[0].nodeValue;
+        }
+
         for(let j=0; j<childrens.length; j++) {
-            if(childrens[j].style.position !== 'absolute') {
+            if(childrens[j].style.position !== 'absolute' && childrens[j].style.display !== 'none') {
                 res = res + childrens[j].textContent
             }
             else {
             }
         }
+
         if (res.includes('Sponsored')){
             links.push(elems[i])
         }
+
+
     }
     return links;
 
@@ -827,7 +840,6 @@ function hasSponsoredAreaLabel(currentElement) {
  * @return {array} array containing all front adsu
  */
 function getFeedAdFrames(funParent=getParentAdDiv) {
-
     var links = document.getElementsByTagName('a');
     links = filterFeedAds(links);
     Array.prototype.push.apply(links,getFeedAdsByClass());
@@ -838,7 +850,6 @@ function getFeedAdFrames(funParent=getParentAdDiv) {
     Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElementsNotContainedInLinks());
     Array.prototype.push.apply(links,findFeedAdsWithLettersInBoldElementsNotContainedInLinksUsingImgNextToSponsored());
     Array.prototype.push.apply(links,findAdsWithPostTopClass());
-
     links = uniqueArray(links);
     links = getGrabbed(links);
 

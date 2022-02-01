@@ -1,7 +1,7 @@
 # Social Media Monitor
 
 
-Social Media Monitor is a tool developed by the MIAI Multidisciplinary Institute on Artificial Intelligence in Europe that allows users to donate data about the posts that are shown in their Facebook timeline. 
+CheckMyNews is a tool developed by the MIAI Multidisciplinary Institute on Artificial Intelligence in Europe that allows users to donate data about the posts that are shown in their Facebook timeline. 
 
 This is a tool developed by academics to monitor what information gets amplified on social media platforms and measure if there are systemic biases in the quality of information users receive on Facebook from news medias among different socio-demographic groups.  
 
